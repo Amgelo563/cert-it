@@ -1,0 +1,28 @@
+# @cert-it/server
+
+Hono process that serves everything.
+
+- **API** under `{base_path}/api/` for the admin panel.
+- **Public pages** rendered with Hono JSX: the certificate page (`/c/{code}`) and the certificate lookup. They work under a strict CSP: no inline scripts or styles.
+- **Admin panel files**: the built [`apps/admin`](../admin) SPA, served under `{base_path}/admin/` so nginx can give it its own CSP.
+- **Certificate PDFs**: served after a status check, either streamed by the app or handed to nginx with `X-Accel-Redirect` (`files.serve`).
+- **PDF generation** in a child process started on demand with a capped heap, which exits when no jobs are left.
+
+All settings come from `config.yml`, which is validated at startup.
+
+Every URL comes from `site.base_url`, so the same image works on its own host or under a path such as `/certificados/`.
+
+Data lives in SQLite (WAL mode, via Drizzle) and plain files under a single data directory.
+
+## Layout
+
+```
+src/
+  app/          # composition: Hono app, middleware wiring, startup
+  generator/    # entry point of the PDF generator child process
+  config/, database/, http/, auth/, course/, certificate/…   # one folder per feature
+  error/        # errors shared by several features
+  util/         # app-wide utilities
+__tests__/      # mirrors the features: unit, integration, contract
+drizzle/        # generated migrations
+```

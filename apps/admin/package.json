@@ -1,0 +1,50 @@
+{
+  "name": "@cert-it/admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev",
+    "build": "vp build",
+    "preview": "vp preview",
+    "test": "vp test"
+  },
+  "dependencies": {
+    "@cert-it/shared": "workspace:^",
+    "@mantine/core": "9.8.0",
+    "@mantine/dates": "9.8.0",
+    "@mantine/dropzone": "9.8.0",
+    "@mantine/form": "9.8.0",
+    "@mantine/hooks": "9.8.0",
+    "@mantine/modals": "9.8.0",
+    "@mantine/notifications": "9.8.0",
+    "@pdfme/common": "6.2.8",
+    "@pdfme/generator": "6.2.8",
+    "@pdfme/schemas": "6.2.8",
+    "@pdfme/ui": "6.2.8",
+    "clsx": "2.1.1",
+    "dayjs": "1.11.23",
+    "fontkit": "2.0.4",
+    "i18next": "27.1.1",
+    "mantine-datatable": "9.8.0",
+    "papaparse": "5.7.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-i18next": "18.0.1",
+    "react-router": "8.5.1"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/fontkit": "2.0.9",
+    "@types/node": "24.12.0",
+    "@types/papaparse": "5.5.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "postcss": "8.5.33",
+    "postcss-preset-mantine": "1.18.0",
+    "postcss-simple-vars": "7.0.1",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

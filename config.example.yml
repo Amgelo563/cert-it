@@ -1,0 +1,156 @@
+# Global, public settings
+site:
+  # Public address of the app, exactly as visitors reach it. For example:
+  #   https://certs.example.org
+  #   https://example.org/certs
+  # Required.
+  base_url: https://certs.example.org
+
+  # Issuing organization, shown on the public certificate pages.
+  # Required.
+  org_name: 'Example Org'
+
+  # LinkedIn organization ID for the "Add to Profile" button. Without it, the
+  # button adds the certificate with the organization's name only.
+  # Empty: none.
+  linkedin_org_id: ''
+
+  # Language for new courses and for visitors without a language preference.
+  # es | en
+  # Empty: en.
+  default_locale: en
+
+  # Favicon for the public pages and the admin panel: an .ico, .png or .svg
+  # file placed in the data directory, given relative to it (e.g. favicon.png
+  # for /srv/cert-it/data/favicon.png). The app serves it from its own address,
+  # so it works under a strict CSP.
+  # Empty: the built-in cert-it icon.
+  favicon: ''
+
+# Settings for how a certificate link looks when shared, through Open Graph tags
+link_previews:
+  # Site name above the title (og:site_name).
+  # Empty: site.org_name.
+  site_name: ''
+
+  # Title (og:title). Placeholders: {name}, {course}, {org}, {date}, {code} and
+  # {status} (Valid or Revoked, in the course's language). For example:
+  #   '{name} · {course}'
+  # Empty: built-in text in the course's language.
+  title: ''
+
+  # Description (og:description), with the same placeholders as title. For example:
+  #   'Certificate issued by {org} on {date}. Status: {status}.'
+  # Empty: built-in text in the course's language.
+  description: ''
+
+  # Preview image (og:image), the same for every certificate: a .png, .jpg or
+  # .webp file in the data directory (served by the app), or an absolute https
+  # URL. 1200×630 px and under 600 KB displays well on both WhatsApp and Discord.
+  # Empty: no image.
+  image: ''
+
+  # Text alternative for the image (og:image:alt).
+  # Empty: none.
+  image_alt: ''
+
+  # Show the image large, below the text, instead of as a small thumbnail
+  # (twitter:card summary_large_image, which Discord follows too).
+  # Empty: true.
+  large_image: true
+
+  # Color of the stripe beside Discord previews (theme-color), and of the
+  # Discord component embed's border.
+  # Empty: '#0050b4'.
+  theme_color: '#0050b4'
+
+  # Discord component embed: a richer Discord preview with the holder's name,
+  # course, date and status, plus link buttons to view and download the
+  # certificate. Discord falls back to the Open Graph tags above when it can't
+  # render it. Revoked certificates never get a download button.
+  # Empty: true.
+  discord_component_embed: true
+
+admin:
+  # Email of the first Admin account, created at first start when there are no
+  # users yet. Its random password is printed once to the logs and must be
+  # changed at first login. Changing this later doesn't touch existing accounts;
+  # manage users from the admin panel instead.
+  # Required.
+  email: admin@example.org
+
+server:
+  # Addresses allowed to set the client IP through X-Real-IP or
+  # X-Forwarded-For (used for rate limits). Requests from anywhere else are
+  # identified by their connection address. Only change it when nginx runs on
+  # another machine with a public IP.
+  # Empty: loopback and private ranges, including Docker networks (the list below).
+  trusted_proxies:
+    - 127.0.0.0/8
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+    - ::1/128
+    - fc00::/7
+
+files:
+  # How certificate PDFs are delivered, after the app checks they're not revoked.
+  #   stream: the app sends the file itself. nginx needs no file access.
+  #   accel:  the app answers with X-Accel-Redirect and nginx sends the file.
+  #           nginx needs read access to data/certificates/ and an internal
+  #           _files location (see deploy/nginx/host.conf).
+  # stream is plenty for occasional downloads of small PDFs.
+  # Empty: stream.
+  serve: stream
+
+# Settings for user uploads. Nginx must accept requests larger than both limits (client_max_body_size).
+uploads:
+  # Maximum size of a template's base PDF, in MB. Every certificate carries a
+  # full copy of it, so keep bases small (the editor warns above ~1 MB).
+  # Empty: 5.
+  max_pdf_mb: 5
+
+  # Maximum size of an uploaded font file, in MB.
+  # Empty: 8.
+  max_font_mb: 8
+
+fonts:
+  # Online catalog editors can search and import fonts from.
+  # fontsource | google | none
+  # Empty: fontsource.
+  catalog: fontsource
+
+  # API key for the Google Fonts catalog. Needed when catalog is google.
+  # Empty: none.
+  google_api_key: ''
+
+lookup:
+  # Rate limit of the public "Find my certificate" page, per client IP.
+  rate_limit:
+    # Requests allowed per window.
+    # Empty: 10.
+    max_requests: 10
+
+    # Length of the window, in minutes.
+    # Empty: 10.
+    window_minutes: 10
+
+backup:
+  # Scheduled backups: a consistent SQLite snapshot plus the fonts, templates
+  # and certificates, uploaded with rclone to every remote below.
+  # Empty: false.
+  enabled: false
+
+  # When to run, as a cron expression (server time).
+  # Empty: '0 3 * * *' (every day at 03:00).
+  schedule: '0 3 * * *'
+
+  # How long to keep backups on each remote, in days.
+  # Empty: 30.
+  retention_days: 30
+
+  # rclone remotes and paths, defined in rclone.conf next to this file. For example:
+  #   - 's3:my-bucket/certs'
+  #   - 'gdrive:Backups/certs'
+  # Empty: none (backups have nowhere to go, so enable it only with a remote).
+  remotes: []

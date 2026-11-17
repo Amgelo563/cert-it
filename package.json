@@ -1,0 +1,25 @@
+{
+  "name": "cert-it",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare": "vp config",
+    "check": "vp check",
+    "fix": "vp check --fix",
+    "test": "vp test",
+    "build": "vp run -r build"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.4",
+    "@commitlint/config-conventional": "21.2.4",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "24.12.0",
+    "typescript": "7.0.2",
+    "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.11"
+  },
+  "packageManager": "pnpm@12.8.1"
+}

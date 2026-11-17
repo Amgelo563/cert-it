@@ -1,0 +1,16 @@
+{
+  "extends": "@repo/typescript-config/tsconfig.base.json",
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": ["vite/client", "node"],
+    "jsx": "react-jsx",
+    "allowArbitraryExtensions": true,
+    "allowImportingTsExtensions": true,
+    "moduleDetection": "force",
+    "erasableSyntaxOnly": true,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src", "__tests__", "vite.config.ts"]
+}
