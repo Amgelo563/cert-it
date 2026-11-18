@@ -46,14 +46,16 @@ You need a Linux server with Docker (with Compose) and an nginx that already han
 ### 1. Create the app directory
 
 ```bash
-sudo mkdir -p /srv/cert-it/data
+sudo mkdir -p /srv/cert-it/data /srv/cert-it/config
 cd /srv/cert-it
-cp <repo>/deploy/docker-compose.yml <repo>/config.example.yml .
-mv config.example.yml config.yml
+cp <repo>/deploy/docker-compose.yml .
+cp <repo>/config.example.yml config/config.yml
 sudo chown -R 1000:1000 data   # the container's user, change if yours is different
 ```
 
-### 2. Edit `config.yml`
+`config/` is mounted read-only into the container as a folder, so it holds `config.yml` and, for backups, `rclone.conf`.
+
+### 2. Edit `config/config.yml`
 
 A minimal config looks like this:
 
@@ -66,6 +68,8 @@ admin:
 ```
 
 The [`config.example.yml`](config.example.yml) lists every option with its default and what it does: language, LinkedIn, favicon, link previews (Open Graph and Discord), PDF delivery, upload limits, font catalog, rate limits and backups.
+
+To change a setting later, edit `config/config.yml` and run `docker compose restart`. If the file is invalid, the app stops at startup and `docker compose logs app` says what to fix.
 
 ### 3. Start the app
 
@@ -101,7 +105,7 @@ Open `{base_url}/admin/`, sign in with `admin.email` and the password from step 
 
 ### 6. Set up backups (optional)
 
-Add your rclone remotes to `rclone.conf` next to `config.yml`, fill in the `backup` section of `config.yml` (schedule, retention, remotes) and restart with `docker compose up -d`.
+Add your rclone remotes to `config/rclone.conf`, fill in the `backup` section of `config/config.yml` (schedule, retention, remotes) and restart with `docker compose restart`.
 
 ## 💻 Development
 

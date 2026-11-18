@@ -5,6 +5,7 @@
     "lib": ["es2023"],
     "module": "preserve",
     "moduleResolution": "bundler",
+    "customConditions": ["@cert-it/source"],
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
     "declaration": true,

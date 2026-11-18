@@ -320,6 +320,9 @@ importers:
       '@pdfme/schemas':
         specifier: 6.2.8
         version: 6.2.8(@pdfme/common@6.2.8)
+      better-result:
+        specifier: ^3.0.1
+        version: 3.0.1
       better-sqlite3:
         specifier: 13.2.0
         version: 13.2.0
@@ -376,6 +379,10 @@ importers:
   configs/typescript: {}
 
   packages/shared:
+    dependencies:
+      better-result:
+        specifier: ^3.0.1
+        version: 3.0.1
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*
@@ -2446,6 +2453,9 @@ packages:
 
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
+
+  better-result@3.0.1:
+    resolution: {integrity: sha512-rnCeqEXkKPHmz5MO5ZroPRDyHe4YvlNPyy7qj8cVcWs/GnvSvC3086G74/220W+wWcIWlXgzvcjskFV0A4blUQ==}
 
   better-sqlite3@13.2.0:
     resolution: {integrity: sha512-Z8Q/9x/uNyKxA1v4FNodyItRVRw1TeKBrmj32JhxhR0ceNcBY+wMobt/Bv7M7TzwPAXjnZRtNaEsATnUZSKWZQ==}
@@ -5574,6 +5584,8 @@ snapshots:
       yargs: 17.7.3
 
   base64-js@1.5.1: {}
+
+  better-result@3.0.1: {}
 
   better-sqlite3@13.2.0:
     dependencies:

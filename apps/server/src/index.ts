@@ -1,18 +1,14 @@
-import { serve } from '@hono/node-server';
-import { Hono } from 'hono';
+import { ConfigFileProcessor } from './config/file/ConfigFileProcessor';
+import { Server } from './app/Server';
 
-const app = new Hono();
-
-app.get('/', (c) => {
-  return c.text('Hello Hono!');
+const configResult = await ConfigFileProcessor.Instance.read();
+const config = configResult.match({
+  ok: (value) => value,
+  err: (error) => {
+    console.error(error.message);
+    process.exit(1);
+  },
 });
 
-serve(
-  {
-    fetch: app.fetch,
-    port: 3000,
-  },
-  (info) => {
-    console.log(`Server is running on http://localhost:${info.port}`);
-  },
-);
+const server = Server.create(config);
+server.start();

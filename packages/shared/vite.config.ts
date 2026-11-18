@@ -11,7 +11,11 @@ export default defineConfig({
     dts: {
       generator: 'tsgo',
     },
-    exports: true,
+    exports: {
+      // Adds a custom condition pointing at src, so workspace consumers get live types
+      // (paired with customConditions in the base tsconfig).
+      devExports: '@cert-it/source',
+    },
   },
   test: {
     name: 'shared',
