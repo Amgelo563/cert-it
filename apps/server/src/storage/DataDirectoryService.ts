@@ -1,8 +1,13 @@
-import { mkdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
 import type { CertificateCode } from '../certificate/code/CertificateCode';
 import type { CourseId } from '../course/Course';
 import { StartupError } from '../error/StartupError';
+
+/** Content {@link DataDirectoryService.writeFile} accepts: text, bytes or a stream of chunks. */
+export type FileContent = Parameters<typeof writeFile>[1];
 
 type DataDirectoryServiceOptions = {
   /** Path of the directory, absolute or relative to the working directory. */
@@ -19,6 +24,9 @@ export class DataDirectoryService {
 
   protected static readonly CertificatesFolder = 'certificates';
 
+  // ends every temporary file, so start() can find the ones a crash left behind
+  protected static readonly TempFileSuffix = '.tmp';
+
   protected readonly root: string;
 
   constructor(options: DataDirectoryServiceOptions) {
@@ -26,9 +34,9 @@ export class DataDirectoryService {
   }
 
   /**
-   * Creates the directory and its folders, keeping the ones that already exist.
+   * Creates the directory and its folders, keeping the ones that already exist, and removes the temporary files of interrupted writes.
    *
-   * @throws {StartupError} If a folder can't be created, such as when the directory isn't writable.
+   * @throws {StartupError} If a folder can't be created or cleaned, such as when the directory isn't writable.
    */
   public start(): void {
     const { FontsFolder, TemplatesFolder, CertificatesFolder } =
@@ -36,13 +44,33 @@ export class DataDirectoryService {
 
     try {
       for (const folder of [FontsFolder, TemplatesFolder, CertificatesFolder]) {
-        mkdirSync(join(this.root, folder), { recursive: true });
+        const path = join(this.root, folder);
+        mkdirSync(path, { recursive: true });
+        this.removeTempFiles(path);
       }
     } catch (error) {
       throw new StartupError(
         `Couldn't create the data directory at ${this.root}`,
         { cause: error },
       );
+    }
+  }
+
+  /**
+   * Writes a file so that readers see either its old content or the whole new one, never a partial file, even if the process dies mid-write.
+   *
+   * Creates the file's folder if needed. The content goes to a temporary file in the same folder, which is flushed to disk and then renamed over the target.
+   */
+  public async writeFile(path: string, content: FileContent): Promise<void> {
+    await mkdir(dirname(path), { recursive: true });
+    const temp = `${path}.${randomUUID()}${DataDirectoryService.TempFileSuffix}`;
+
+    try {
+      await writeFile(temp, content, { flush: true });
+      await rename(temp, path);
+    } catch (error) {
+      await rm(temp, { force: true });
+      throw error;
     }
   }
 
@@ -78,5 +106,18 @@ export class DataDirectoryService {
       String(courseId),
       `${code}.pdf`,
     );
+  }
+
+  protected removeTempFiles(folder: string): void {
+    const files = readdirSync(folder, { recursive: true, withFileTypes: true });
+
+    for (const file of files) {
+      if (
+        file.isFile()
+        && file.name.endsWith(DataDirectoryService.TempFileSuffix)
+      ) {
+        rmSync(join(file.parentPath, file.name), { force: true });
+      }
+    }
   }
 }

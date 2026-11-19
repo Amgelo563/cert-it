@@ -6,6 +6,7 @@ import { type Context, Hono, type MiddlewareHandler } from 'hono';
 import { getCookie, setCookie } from 'hono/cookie';
 import { secureHeaders } from 'hono/secure-headers';
 import { AdminPanelService } from '../admin/AdminPanelService';
+import type { CertificateFileService } from '../certificate/file/CertificateFileService';
 import type { Config } from '../config/schema/ConfigSchema';
 import type { DatabaseService } from '../database/DatabaseService';
 import { StartupError } from '../error/StartupError';
@@ -25,6 +26,7 @@ type HttpServiceOptions = {
   locales: LocaleResolver;
   messages: MessagesService;
   adminPanel: AdminPanelService;
+  certificateFiles: CertificateFileService;
   compressor: ResponseCompressor;
   revalidator: ResponseRevalidator;
   /** @default console.log */
@@ -64,6 +66,8 @@ export class HttpService {
 
   protected readonly adminPanel: AdminPanelService;
 
+  protected readonly certificateFiles: CertificateFileService;
+
   protected readonly compressor: ResponseCompressor;
 
   protected readonly revalidator: ResponseRevalidator;
@@ -82,6 +86,7 @@ export class HttpService {
     this.locales = options.locales;
     this.messages = options.messages;
     this.adminPanel = options.adminPanel;
+    this.certificateFiles = options.certificateFiles;
     this.compressor = options.compressor;
     this.revalidator = options.revalidator;
     this.log = options.log ?? console.log;
@@ -92,8 +97,9 @@ export class HttpService {
     config: Config;
     database: DatabaseService;
     adminPanel: AdminPanelService;
+    certificateFiles: CertificateFileService;
   }): HttpService {
-    const { config, database, adminPanel } = options;
+    const { config, database, adminPanel, certificateFiles } = options;
 
     return new HttpService({
       port: config.server.port,
@@ -105,6 +111,7 @@ export class HttpService {
       locales: new LocaleResolver({ defaultLocale: config.site.defaultLocale }),
       messages: new MessagesService(),
       adminPanel,
+      certificateFiles,
       compressor: new ResponseCompressor(),
       revalidator: new ResponseRevalidator(),
     });
@@ -167,6 +174,7 @@ export class HttpService {
 
     app.get('/', (c) => c.text('Hello Hono!'));
     app.route(AdminPanelService.Path, this.adminPanel.getApp());
+    app.route('/', this.certificateFiles.getApp());
 
     return root;
   }

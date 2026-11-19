@@ -1,4 +1,5 @@
 # Dev only. Start with: docker compose up -d --build, then check with: bash check.sh
+# (check.sh seeds two test certificates with seed.mjs first)
 #
 # Under a path:  https://localhost:8443/certs/ (or http://localhost:8080/certs/)
 # Own host:      https://certs.example.org:8443/
@@ -30,6 +31,7 @@ services:
     <<: *app
     volumes:
       - ./config/path.yml:/app/config/config.yml:ro
+      - ./seed.mjs:/app/seed.mjs:ro
       - path-data:/app/data
     ports:
       - 127.0.0.1:3010:3000
@@ -38,6 +40,7 @@ services:
     <<: *app
     volumes:
       - ./config/host.yml:/app/config/config.yml:ro
+      - ./seed.mjs:/app/seed.mjs:ro
       - host-data:/app/data
     ports:
       - 127.0.0.1:3011:3000

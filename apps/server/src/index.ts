@@ -1,4 +1,5 @@
 import { AdminPanelService } from './admin/AdminPanelService';
+import { CertificateFileService } from './certificate/file/CertificateFileService';
 import { ConfigService } from './config/file/ConfigService';
 import { DatabaseService } from './database/DatabaseService';
 import { HttpService } from './http/HttpService';
@@ -8,7 +9,17 @@ const config = await ConfigService.create().readOrExit();
 const dataDirectory = new DataDirectoryService({ root: config.server.dataDir });
 const database = new DatabaseService({ path: dataDirectory.getDatabasePath() });
 const adminPanel = AdminPanelService.create({ config });
-const http = HttpService.create({ config, database, adminPanel });
+const certificateFiles = CertificateFileService.create({
+  config,
+  database,
+  dataDirectory,
+});
+const http = HttpService.create({
+  config,
+  database,
+  adminPanel,
+  certificateFiles,
+});
 
 try {
   dataDirectory.start();

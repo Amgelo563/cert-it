@@ -2,6 +2,8 @@ import { brotliDecompressSync } from 'node:zlib';
 import { LocaleEnum } from '@cert-it/shared';
 import { afterAll, afterEach, describe, expect, test } from 'vite-plus/test';
 import { AdminPanelService } from '../../../src/admin/AdminPanelService';
+import { AccelFileServer } from '../../../src/certificate/file/AccelFileServer';
+import { CertificateFileService } from '../../../src/certificate/file/CertificateFileService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { StartupError } from '../../../src/error/StartupError';
 import { ClientIpResolver } from '../../../src/http/clientIp/ClientIpResolver';
@@ -39,14 +41,19 @@ function createHttp(adminPanel: AdminPanelService, baseUrl: string) {
   const database = createTestDatabase();
   databases.push(database);
 
+  const siteUrl = new SiteUrl({ baseUrl });
   const http = new HttpService({
     port: 0,
-    siteUrl: new SiteUrl({ baseUrl }),
+    siteUrl,
     clientIps: new ClientIpResolver({ trustedProxies: [] }),
     database,
     locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
     messages: new MessagesService(),
     adminPanel,
+    certificateFiles: new CertificateFileService({
+      database,
+      fileServer: new AccelFileServer({ siteUrl }),
+    }),
     compressor: new ResponseCompressor(),
     revalidator: new ResponseRevalidator(),
     log: () => {},

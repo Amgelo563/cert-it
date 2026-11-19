@@ -3,6 +3,8 @@ import { once } from 'node:events';
 import { LocaleEnum } from '@cert-it/shared';
 import { afterAll, afterEach, describe, expect, test } from 'vite-plus/test';
 import { AdminPanelService } from '../../../src/admin/AdminPanelService';
+import { AccelFileServer } from '../../../src/certificate/file/AccelFileServer';
+import { CertificateFileService } from '../../../src/certificate/file/CertificateFileService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { StartupError } from '../../../src/error/StartupError';
 import { ClientIpResolver } from '../../../src/http/clientIp/ClientIpResolver';
@@ -14,6 +16,7 @@ import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
 import { MessagesService } from '../../../src/i18n/MessagesService';
 import { createAdminBuild } from '../../admin/mocks/createAdminBuild';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
+import { MockSeeder } from '../../database/mocks/MockSeeder';
 
 const databases: DatabaseService[] = [];
 const adminBuild = createAdminBuild();
@@ -32,8 +35,11 @@ function createAdminPanel(siteUrl: SiteUrl): AdminPanelService {
   });
 }
 
-function createHttp(baseUrl: string, lines: string[] = []): HttpService {
-  const database = createTestDatabase();
+function createHttp(
+  baseUrl: string,
+  lines: string[] = [],
+  database = createTestDatabase(),
+): HttpService {
   databases.push(database);
 
   const siteUrl = new SiteUrl({ baseUrl });
@@ -46,6 +52,10 @@ function createHttp(baseUrl: string, lines: string[] = []): HttpService {
     locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
     messages: new MessagesService(),
     adminPanel: createAdminPanel(siteUrl),
+    certificateFiles: new CertificateFileService({
+      database,
+      fileServer: new AccelFileServer({ siteUrl }),
+    }),
     compressor: new ResponseCompressor(),
     revalidator: new ResponseRevalidator(),
     log: (line) => lines.push(line),
@@ -90,6 +100,29 @@ describe.each([
     const response = await request(http, `${base}/healthz`);
 
     expect(response.status).toBe(503);
+  });
+
+  test('GIVEN an active certificate WHEN requesting its PDF under the base path THEN hands it to nginx untouched by compression or ETags', async () => {
+    const database = createTestDatabase();
+    const seeder = new MockSeeder(database.getRepositories());
+    const course = seeder.course();
+    const certificate = seeder.certificate(
+      seeder.participant(course),
+      seeder.templateVersion(course, seeder.user()),
+    );
+
+    const response = await request(
+      createHttp(baseUrl, [], database),
+      `${base}/c/${certificate.code}/pdf`,
+      { 'Accept-Encoding': 'gzip' },
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-accel-redirect')).toBe(
+      `${base}/_files/${course.id}/${certificate.code}.pdf`,
+    );
+    expect(response.headers.get('content-encoding')).toBeNull();
+    expect(response.headers.get('etag')).toBeNull();
   });
 
   test('GIVEN a public page WHEN requesting it THEN sends the security headers and the public CSP', async () => {
@@ -269,6 +302,10 @@ describe('HttpService (start)', () => {
       locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
       messages: new MessagesService(),
       adminPanel: createAdminPanel(siteUrl),
+      certificateFiles: new CertificateFileService({
+        database,
+        fileServer: new AccelFileServer({ siteUrl }),
+      }),
       compressor: new ResponseCompressor(),
       revalidator: new ResponseRevalidator(),
       log: () => {},
