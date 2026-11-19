@@ -11,9 +11,12 @@ export const ItemMigrationsFolder = join(
 );
 
 export function createItemDatabase(): SqliteDatabase<ItemRepositories> {
-  return SqliteDatabase.create({
+  const database = SqliteDatabase.create({
     path: ':memory:',
     migrationsFolder: ItemMigrationsFolder,
     createRepositories: (db) => ({ items: new SqliteItemRepository({ db }) }),
   });
+  database.start();
+
+  return database;
 }

@@ -35,6 +35,25 @@ function createWithMigrations(
   });
 }
 
+function startAndClose(database: SqliteDatabase<object>): void {
+  try {
+    database.start();
+  } finally {
+    database.close();
+  }
+}
+
+function countTables(path: string): unknown {
+  const client = new BetterSqlite3(path);
+  const count = client
+    .prepare(`SELECT count(*) FROM sqlite_master WHERE type = 'table'`)
+    .pluck()
+    .get();
+  client.close();
+
+  return count;
+}
+
 function insertParentWithChildren(path: string, children: number): void {
   const client = new BetterSqlite3(path);
   client.prepare(`INSERT INTO parents (id, name) VALUES (1, 'parent')`).run();
@@ -63,7 +82,18 @@ function countChildren(path: string): unknown {
 }
 
 describe('SqliteDatabase (create)', () => {
-  test('GIVEN a migrations folder WHEN creating THEN applies the migrations and configures the connection', () => {
+  test('GIVEN a migrations folder WHEN creating THEN applies nothing until started', () => {
+    withTempFolder((folder) => {
+      const path = join(folder, 'test.db');
+      createWithMigrations(path, 'initial').close();
+
+      expect(countTables(path)).toBe(0);
+    });
+  });
+});
+
+describe('SqliteDatabase (start)', () => {
+  test('GIVEN a migrations folder WHEN starting THEN applies the migrations and configures the connection', () => {
     withTempFolder((folder) => {
       const path = join(folder, 'test.db');
       const database = SqliteDatabase.create({
@@ -73,6 +103,7 @@ describe('SqliteDatabase (create)', () => {
           items: new SqliteItemRepository({ db }),
         }),
       });
+      database.start();
 
       const created = database
         .getRepositories()
@@ -93,16 +124,16 @@ describe('SqliteDatabase (create)', () => {
   test('GIVEN a migration that rebuilds a parent table WHEN applying it THEN keeps the rows of tables that cascade from it', () => {
     withTempFolder((folder) => {
       const path = join(folder, 'test.db');
-      createWithMigrations(path, 'initial').close();
+      startAndClose(createWithMigrations(path, 'initial'));
       insertParentWithChildren(path, 2);
 
-      createWithMigrations(path, 'rebuild').close();
+      startAndClose(createWithMigrations(path, 'rebuild'));
 
       expect(countChildren(path)).toBe(2);
     });
   });
 
-  test('GIVEN applied migrations WHEN creating THEN enforces foreign keys', () => {
+  test('GIVEN applied migrations WHEN starting THEN enforces foreign keys', () => {
     withTempFolder((folder) => {
       let executor: SqliteExecutor | null = null;
       const database = SqliteDatabase.create({
@@ -113,6 +144,7 @@ describe('SqliteDatabase (create)', () => {
           return {};
         },
       });
+      database.start();
 
       const thrown = getThrown(() =>
         executor?.run(sql`INSERT INTO children (parent_id) VALUES (999)`),
@@ -129,10 +161,12 @@ describe('SqliteDatabase (create)', () => {
   test('GIVEN a migration that leaves rows pointing at missing rows WHEN applying it THEN throws a ForeignKeyViolationError', () => {
     withTempFolder((folder) => {
       const path = join(folder, 'test.db');
-      createWithMigrations(path, 'initial').close();
+      startAndClose(createWithMigrations(path, 'initial'));
       insertParentWithChildren(path, 2);
 
-      const thrown = getThrown(() => createWithMigrations(path, 'orphan'));
+      const thrown = getThrown(() =>
+        startAndClose(createWithMigrations(path, 'orphan')),
+      );
 
       expect(ForeignKeyViolationError.is(thrown)).toBe(true);
       expect((thrown as ForeignKeyViolationError).violations).toEqual([
@@ -142,15 +176,15 @@ describe('SqliteDatabase (create)', () => {
     });
   });
 
-  test('GIVEN a missing migrations folder WHEN creating THEN throws', () => {
+  test('GIVEN a missing migrations folder WHEN starting THEN throws', () => {
     withTempFolder((folder) => {
-      expect(() =>
-        SqliteDatabase.create({
-          path: ':memory:',
-          migrationsFolder: join(folder, 'missing'),
-          createRepositories: () => ({}),
-        }),
-      ).toThrow(/_journal\.json/);
+      const database = SqliteDatabase.create({
+        path: ':memory:',
+        migrationsFolder: join(folder, 'missing'),
+        createRepositories: () => ({}),
+      });
+
+      expect(() => startAndClose(database)).toThrow(/_journal\.json/);
     });
   });
 });

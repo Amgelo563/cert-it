@@ -135,6 +135,7 @@ const database = SqliteDatabase.create<Repositories>({
     books: new SqliteBookRepository({ db }),
   }),
 });
+database.start(); // configures the connection and applies pending migrations
 
 const { authors } = database.getRepositories();
 
@@ -221,7 +222,7 @@ pnpm drizzle-kit generate --name=add-author-deactivation
 pnpm drizzle-kit generate --custom --name=audit-log-triggers   # empty file, for SQL drizzle-kit can't generate
 ```
 
-`SqliteDatabase.create` applies pending migrations from `migrationsFolder` in one transaction, with foreign keys off so
+`SqliteDatabase.start` applies pending migrations from `migrationsFolder` in one transaction, with foreign keys off so
 table rebuilds don't cascade-delete rows. If they leave a row pointing at a missing row, it throws a
 `ForeignKeyViolationError`, and the migrations stay applied.
 
