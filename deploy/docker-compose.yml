@@ -1,0 +1,37 @@
+# Start with: docker compose up -d --build
+#
+# Expects, under CERT_IT_DIR:
+#   config/config.yml   copied from config.example.yml
+#   data/               owned by APP_UID:APP_GID
+#
+# Settings, from the environment or a .env file next to this one:
+#   CERT_IT_DIR       default /srv/cert-it
+#   APP_UID, APP_GID  user and group the app runs as, default 1000
+#   APP_PORT          loopback port for nginx, default 3000
+#   APP_MEMORY        memory limit, default 256m
+name: cert-it
+
+services:
+  app:
+    build:
+      context: ..
+      args:
+        APP_UID: ${APP_UID:-1000}
+        APP_GID: ${APP_GID:-1000}
+    image: cert-it:latest
+    restart: unless-stopped
+    init: true
+    ports:
+      - 127.0.0.1:${APP_PORT:-3000}:3000
+    volumes:
+      - ${CERT_IT_DIR:-/srv/cert-it}/data:/app/data
+      - ${CERT_IT_DIR:-/srv/cert-it}/config:/app/config:ro
+    mem_limit: ${APP_MEMORY:-256m}
+    memswap_limit: ${APP_MEMORY:-256m}
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

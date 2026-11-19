@@ -1,0 +1,66 @@
+# Dev only. Start with: docker compose up -d --build, then check with: bash check.sh
+#
+# Under a path:  https://localhost:8443/certs/ (or http://localhost:8080/certs/)
+# Own host:      https://certs.example.org:8443/
+#   Point certs.example.org at 127.0.0.1 in your hosts file, or use
+#   curl --resolve certs.example.org:8443:127.0.0.1.
+#
+# After editing deploy/nginx/, run: docker compose restart nginx
+name: cert-it-dev
+
+x-app: &app
+  build:
+    context: ../..
+  image: cert-it:dev
+  init: true
+  read_only: true
+  tmpfs:
+    - /tmp
+  mem_limit: 256m
+  memswap_limit: 256m
+  healthcheck:
+    test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1:3000/healthz']
+    interval: 30s
+    timeout: 5s
+    start_period: 20s
+    start_interval: 1s
+
+services:
+  app-path:
+    <<: *app
+    volumes:
+      - ./config/path.yml:/app/config/config.yml:ro
+      - path-data:/app/data
+    ports:
+      - 127.0.0.1:3010:3000
+
+  app-host:
+    <<: *app
+    volumes:
+      - ./config/host.yml:/app/config/config.yml:ro
+      - host-data:/app/data
+    ports:
+      - 127.0.0.1:3011:3000
+
+  nginx:
+    build: ./nginx
+    ports:
+      - 8443:443
+      - 8080:80
+    volumes:
+      - ../nginx:/etc/nginx/shipped:ro
+      - type: volume
+        source: host-data
+        target: /srv/cert-it/data/certificates
+        read_only: true
+        volume:
+          subpath: certificates
+    depends_on:
+      app-path:
+        condition: service_healthy
+      app-host:
+        condition: service_healthy
+
+volumes:
+  path-data:
+  host-data:

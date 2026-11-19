@@ -40,7 +40,7 @@ export class HttpService {
   public static readonly AdminCsp =
     "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
 
-  // no includeSubDomains, the app may run under a path of a shared domain
+  // only on a host of its own: under a path, the site's HSTS would be replaced
   protected static readonly HstsMaxAgeSeconds = 31_536_000;
 
   protected static readonly HealthPath = '/healthz';
@@ -229,7 +229,9 @@ export class HttpService {
     const headers = secureHeaders({
       xFrameOptions: 'SAMEORIGIN',
       strictTransportSecurity:
-        this.siteUrl.isSecure() && `max-age=${HttpService.HstsMaxAgeSeconds}`,
+        this.siteUrl.isSecure()
+        && this.siteUrl.getBasePath() === '/'
+        && `max-age=${HttpService.HstsMaxAgeSeconds}`,
     });
     const adminPath = this.siteUrl.path(AdminPanelService.Path);
 

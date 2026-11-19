@@ -43,17 +43,40 @@ it's valid, download the PDF or add it to LinkedIn.
 
 You need a Linux server with Docker (with Compose) and an nginx that already handles TLS for your domain. cert-it doesn't ship its own nginx.
 
-### 1. Create the app directory
+### What to change for your setup
+
+| Your setup                                                                                                                 | Files to change                                                                                            |
+| -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Every setup                                                                                                                | `config/config.yml`: `site.base_url`, `site.org_name` and `admin.email`                                    |
+| Data somewhere other than `/srv/cert-it`, another port than `3000`, another user than `1000:1000`, or another memory limit | `deploy/.env`: `CERT_IT_DIR`, `APP_PORT`, `APP_UID`/`APP_GID`, `APP_MEMORY`                                |
+| App on its own host (`https://certs.example.org`)                                                                          | `deploy/nginx/host.conf`: `server_name`, certificate paths, port and `/srv/cert-it`                        |
+| App under a path of an existing site (`https://example.org/certs`)                                                         | `deploy/nginx/path.conf`: `/certs` in every block and the port                                             |
+| nginx sends the PDFs (`files.serve: accel`, own host or same machine only)                                                 | `config/config.yml`: `files.serve: accel`. `deploy/.env`: `APP_GID` set to a group nginx's user belongs to |
+
+Each file lists, at its top, what to replace in it.
+
+### 1. Get the code and create the app directory
+
+The image is built from the repository, so `docker compose` runs from its `deploy/` folder, not from the repository root or the app directory.
 
 ```bash
+git clone <repo-url> /opt/cert-it
 sudo mkdir -p /srv/cert-it/data /srv/cert-it/config
-cd /srv/cert-it
-cp <repo>/deploy/docker-compose.yml .
-cp <repo>/config.example.yml config/config.yml
-sudo chown -R 1000:1000 data   # the container's user, change if yours is different
+sudo cp /opt/cert-it/config.example.yml /srv/cert-it/config/config.yml
+sudo chown -R 1000:1000 /srv/cert-it/data   # APP_UID:APP_GID
 ```
 
-`config/` is mounted read-only into the container as a folder, so it holds `config.yml` and, for backups, `rclone.conf`.
+`/srv/cert-it/config/` is mounted read-only into the container as a folder, so it holds `config.yml` and, for backups, `rclone.conf`.
+
+If you need other values than the defaults (see the table above), create `/opt/cert-it/deploy/.env`:
+
+```bash
+CERT_IT_DIR=/srv/cert-it
+APP_PORT=3000
+APP_UID=1000
+APP_GID=1000
+APP_MEMORY=256m
+```
 
 ### 2. Edit `config/config.yml`
 
@@ -69,17 +92,20 @@ admin:
 
 The [`config.example.yml`](config.example.yml) lists every option with its default and what it does: language, LinkedIn, favicon, link previews (Open Graph and Discord), PDF delivery, upload limits, font catalog, rate limits and backups.
 
-To change a setting later, edit `config/config.yml` and run `docker compose restart`. If the file is invalid, the app stops at startup and `docker compose logs app` says what to fix.
+To change a setting later, edit `config/config.yml` and run `docker compose restart` from `/opt/cert-it/deploy`. If the file is invalid, the app stops at startup and `docker compose logs app` says what to fix.
 
 ### 3. Start the app
 
 ```bash
-docker compose up -d
+cd /opt/cert-it/deploy
+docker compose up -d --build
 docker compose logs app        # the first Admin's password is printed once, here
 curl http://127.0.0.1:3000/healthz
 ```
 
-The app listens on `127.0.0.1:3000` only. If you set a path in `base_url`, the health check is at `<path>/healthz` instead.
+The app listens on `127.0.0.1:3000` (or `APP_PORT`) only. `/healthz` answers at the root even when `base_url` has a path.
+
+After changing `APP_UID` or `APP_GID`, or updating the code with `git pull`, run `docker compose up -d --build` again.
 
 ### 4. Add the nginx config
 
@@ -91,13 +117,13 @@ sudo nginx -t && sudo systemctl reload nginx
 
 #### Own host (eg `certs.example.org`)
 
-1. Copy `deploy/nginx/host.conf` into nginx's `conf.d/`
-2. Set `server_name` and TLS as you do for your other sites.
-3. Optionally, to let nginx send the PDFs, set `files.serve: accel`, point the `_files` alias at `/srv/cert-it/data/certificates/` and give nginx's user read access to that folder only.
+1. Copy `deploy/nginx/host.conf` into nginx's `conf.d/`.
+2. Set `server_name`, the certificate paths and the port, as listed at the top of the file.
+3. Optionally, to let nginx send the PDFs, set `files.serve: accel`, check that the `_files` alias points at your `data/certificates/` folder, and add nginx's user to the group `APP_GID` so it can read that folder. Without it, keep `files.serve: stream`; the `_files` block is then unused.
 
 #### Path on an existing site (eg `example.org/certs/`)
 
-Paste the two `location` blocks from `deploy/nginx/path.conf` into that site's `server { … }`. The second block gives the admin panel the CSP its template editor needs.
+Paste the `location` blocks from `deploy/nginx/path.conf` into that site's `server { … }`, replacing `/certs` with your path if it's different and setting the port. The second block gives the admin panel the CSP its template editor needs; it's only needed if the site sets its own CSP.
 
 ### 5. Sign in
 
@@ -105,7 +131,7 @@ Open `{base_url}/admin/`, sign in with `admin.email` and the password from step 
 
 ### 6. Set up backups (optional)
 
-Add your rclone remotes to `config/rclone.conf`, fill in the `backup` section of `config/config.yml` (schedule, retention, remotes) and restart with `docker compose restart`.
+Add your rclone remotes to `config/rclone.conf`, fill in the `backup` section of `config/config.yml` (schedule, retention, remotes) and restart with `docker compose restart` from `/opt/cert-it/deploy`.
 
 ## 💻 Development
 
@@ -117,4 +143,12 @@ pnpm check        # format, lint and type check
 pnpm fix          # fix formatting and lint issues
 pnpm test         # run every package's tests
 pnpm build        # build all packages
+```
+
+To run the app behind an nginx set up like a real server (under `/certs/` with a strict CSP, and on its own host with `X-Accel-Redirect`), see [`deploy/dev/compose.yml`](deploy/dev/compose.yml):
+
+```bash
+cd deploy/dev
+docker compose up -d --build
+bash check.sh
 ```

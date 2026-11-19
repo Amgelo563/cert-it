@@ -1,0 +1,9 @@
+site:
+  base_url: https://localhost:8443/certs
+  org_name: 'Dev Org'
+
+admin:
+  email: admin@example.org
+
+files:
+  serve: stream

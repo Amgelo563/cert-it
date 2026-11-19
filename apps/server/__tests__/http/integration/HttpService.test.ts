@@ -125,12 +125,15 @@ describe.each([
     );
   });
 
-  test('GIVEN an HTTPS base URL WHEN requesting THEN sends HSTS without includeSubDomains', async () => {
-    const response = await request(createHttp(baseUrl), `${base}/`);
-    const hsts = response.headers.get('strict-transport-security');
+  test.skipIf(base !== '')(
+    'GIVEN an HTTPS base URL WHEN requesting THEN sends HSTS without includeSubDomains',
+    async () => {
+      const response = await request(createHttp(baseUrl), `${base}/`);
+      const hsts = response.headers.get('strict-transport-security');
 
-    expect(hsts).toMatch(/^max-age=\d+$/);
-  });
+      expect(hsts).toMatch(/^max-age=\d+$/);
+    },
+  );
 
   test('GIVEN a request through a trusted proxy WHEN logged THEN shows the forwarded IP and no query', async () => {
     const lines: string[] = [];

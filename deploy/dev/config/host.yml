@@ -1,0 +1,9 @@
+site:
+  base_url: https://certs.example.org:8443
+  org_name: 'Dev Org'
+
+admin:
+  email: admin@example.org
+
+files:
+  serve: accel
