@@ -6,7 +6,9 @@ import { AdminPanelService } from '../../../src/admin/AdminPanelService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { StartupError } from '../../../src/error/StartupError';
 import { ClientIpResolver } from '../../../src/http/clientIp/ClientIpResolver';
+import { ResponseCompressor } from '../../../src/http/compression/ResponseCompressor';
 import { HttpService } from '../../../src/http/HttpService';
+import { ResponseRevalidator } from '../../../src/http/revalidation/ResponseRevalidator';
 import { SiteUrl } from '../../../src/http/url/SiteUrl';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
 import { MessagesService } from '../../../src/i18n/MessagesService';
@@ -44,6 +46,8 @@ function createHttp(baseUrl: string, lines: string[] = []): HttpService {
     locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
     messages: new MessagesService(),
     adminPanel: createAdminPanel(siteUrl),
+    compressor: new ResponseCompressor(),
+    revalidator: new ResponseRevalidator(),
     log: (line) => lines.push(line),
   });
 }
@@ -262,6 +266,8 @@ describe('HttpService (start)', () => {
       locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
       messages: new MessagesService(),
       adminPanel: createAdminPanel(siteUrl),
+      compressor: new ResponseCompressor(),
+      revalidator: new ResponseRevalidator(),
       log: () => {},
     });
 

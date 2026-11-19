@@ -5,7 +5,9 @@ import { AdminPanelService } from '../../../src/admin/AdminPanelService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { StartupError } from '../../../src/error/StartupError';
 import { ClientIpResolver } from '../../../src/http/clientIp/ClientIpResolver';
+import { ResponseCompressor } from '../../../src/http/compression/ResponseCompressor';
 import { HttpService } from '../../../src/http/HttpService';
+import { ResponseRevalidator } from '../../../src/http/revalidation/ResponseRevalidator';
 import { SiteUrl } from '../../../src/http/url/SiteUrl';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
 import { MessagesService } from '../../../src/i18n/MessagesService';
@@ -45,6 +47,8 @@ function createHttp(adminPanel: AdminPanelService, baseUrl: string) {
     locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
     messages: new MessagesService(),
     adminPanel,
+    compressor: new ResponseCompressor(),
+    revalidator: new ResponseRevalidator(),
     log: () => {},
   });
 
@@ -130,6 +134,31 @@ describe.each([
 
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('no-cache');
+  });
+
+  test.each(['/admin/favicon.svg', '/admin/'])(
+    'GIVEN the current ETag of %s WHEN revalidating it THEN answers 304',
+    async (path) => {
+      const request = await startedHttp(baseUrl);
+      const first = await request(`${base}${path}`);
+      const tag = first.headers.get('etag') ?? '';
+
+      const response = await request(`${base}${path}`, {
+        'if-none-match': tag,
+      });
+
+      expect(tag).not.toBe('');
+      expect(response.status).toBe(304);
+      expect(response.headers.get('cache-control')).toBe('no-cache');
+    },
+  );
+
+  test('GIVEN a hashed asset WHEN requesting it THEN sends no ETag', async () => {
+    const request = await startedHttp(baseUrl);
+
+    const response = await request(`${base}/admin/assets/index-abc123.js`);
+
+    expect(response.headers.get('etag')).toBeNull();
   });
 
   test.each(['/admin/assets/missing-123.js', '/admin/courses/missing.css'])(

@@ -12,7 +12,9 @@ import { StartupError } from '../error/StartupError';
 import { LocaleResolver } from '../i18n/LocaleResolver';
 import { MessagesService } from '../i18n/MessagesService';
 import { ClientIpResolver } from './clientIp/ClientIpResolver';
+import { ResponseCompressor } from './compression/ResponseCompressor';
 import type { HttpEnv } from './HttpEnv';
+import { ResponseRevalidator } from './revalidation/ResponseRevalidator';
 import { SiteUrl } from './url/SiteUrl';
 
 type HttpServiceOptions = {
@@ -23,6 +25,8 @@ type HttpServiceOptions = {
   locales: LocaleResolver;
   messages: MessagesService;
   adminPanel: AdminPanelService;
+  compressor: ResponseCompressor;
+  revalidator: ResponseRevalidator;
   /** @default console.log */
   log?: (line: string) => void;
 };
@@ -60,6 +64,10 @@ export class HttpService {
 
   protected readonly adminPanel: AdminPanelService;
 
+  protected readonly compressor: ResponseCompressor;
+
+  protected readonly revalidator: ResponseRevalidator;
+
   protected readonly log: (line: string) => void;
 
   protected readonly app: Hono<HttpEnv>;
@@ -74,6 +82,8 @@ export class HttpService {
     this.locales = options.locales;
     this.messages = options.messages;
     this.adminPanel = options.adminPanel;
+    this.compressor = options.compressor;
+    this.revalidator = options.revalidator;
     this.log = options.log ?? console.log;
     this.app = this.createApp();
   }
@@ -95,6 +105,8 @@ export class HttpService {
       locales: new LocaleResolver({ defaultLocale: config.site.defaultLocale }),
       messages: new MessagesService(),
       adminPanel,
+      compressor: new ResponseCompressor(),
+      revalidator: new ResponseRevalidator(),
     });
   }
 
@@ -138,7 +150,13 @@ export class HttpService {
     const root = new Hono<HttpEnv>({ strict: false });
     const app = root.basePath(this.siteUrl.getBasePath());
 
-    root.use(this.resolveClientIp(), this.logRequests(), this.secureHeaders());
+    root.use(
+      this.resolveClientIp(),
+      this.logRequests(),
+      this.secureHeaders(),
+      this.compressor.middleware(),
+      this.revalidator.middleware(),
+    );
     app.use(this.resolveLocale());
 
     // at the root too, so health checks don't depend on the base path
