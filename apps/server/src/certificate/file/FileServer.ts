@@ -9,7 +9,7 @@ export type ServedFile = {
   download: boolean;
 };
 
-/** An object that sends certificate PDFs, set by `files.serve` (STO-2). Callers check the certificate's status first. */
+/** An object that sends certificate PDFs, set by `files.serve`. Callers check the certificate's status first. */
 export interface FileServer {
   /**
    * Returns the response that sends the given certificate's PDF.

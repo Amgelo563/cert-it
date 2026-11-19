@@ -121,7 +121,7 @@ describe('DataDirectoryService (paths)', () => {
     );
   });
 
-  test('GIVEN a course and version WHEN getting file paths THEN follows the STO-1 layout', () => {
+  test('GIVEN a course and version WHEN getting file paths THEN follows the data directory layout', () => {
     const directory = new DataDirectoryService({ root });
     const courseId = 7 as CourseId;
 

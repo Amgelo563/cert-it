@@ -19,7 +19,7 @@ const DesignerTheme = {
   },
 };
 
-// skeleton only: the field types are restricted and the course's base PDF loaded in P3
+// skeleton only: the field types are restricted and the course's base PDF loaded later
 const Plugins = { text, qrcode: barcodes.qrcode };
 
 /** The pdfme template Designer. Lazy-loaded: pdfme and antd only download on this page. */

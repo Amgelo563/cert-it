@@ -1,4 +1,4 @@
-// Issuing benchmark (S1, NFR-1, NFR-2): generates certificates in a child
+// Issuing benchmark: generates certificates in a child
 // process while a Hono app stands in for the server, then checks time and
 // memory against the targets. Exits with 1 if a target is missed.
 //
@@ -6,7 +6,7 @@
 //   --base   light: ~220 KB base PDF (typical), heavy: ~2.9 MB (stress)
 //   --font   a TTF for the name field, e.g. a large CJK font, to stress memory
 //
-// NFR-2's 2-minute target is for 1 vCPU: on a multi-core machine the time is
+// The 2-minute target is for 1 vCPU: on a multi-core machine the time is
 // optimistic. For the real figures run it in Docker with --cpus=1
 // --memory=256m, where the container's memory is read from cgroup v2.
 import { fork } from 'node:child_process';
@@ -24,7 +24,7 @@ import { parseArgs } from 'node:util';
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 
-// same caps as the real generator process (NFR-1)
+// same caps as the real generator process
 const ChildFlags = ['--max-old-space-size=64', '--max-semi-space-size=3'];
 const Targets = {
   idleMb: 80,
@@ -53,7 +53,7 @@ if (!(args.base in BaseImageSide)) fail('--base must be light or heavy');
 const mb = (bytes) => Math.round(bytes / 1_048_576);
 const rss = () => process.memoryUsage.rss();
 
-// the container's non-reclaimable memory: what counts against its limit (S1)
+// the container's non-reclaimable memory: what counts against its limit
 function anon() {
   try {
     const stat = readFileSync('/sys/fs/cgroup/memory.stat', 'utf8');

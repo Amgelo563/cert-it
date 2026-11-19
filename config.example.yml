@@ -130,6 +130,17 @@ fonts:
   # Empty: none.
   google_api_key: ''
 
+auth:
+  # Rate limit of admin panel logins, applied per client IP and per account.
+  rate_limit:
+    # Login attempts allowed per window.
+    # Empty: 15.
+    max_attempts: 15
+
+    # Length of the window, in minutes.
+    # Empty: 1.
+    window_minutes: 1
+
 lookup:
   # Rate limit of the public "Find my certificate" page, per client IP.
   rate_limit:

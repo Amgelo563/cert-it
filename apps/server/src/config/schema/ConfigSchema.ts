@@ -123,6 +123,13 @@ export const ConfigSchema = strictObject({
       },
     ),
 
+  auth: strictObject({
+    rateLimit: strictObject({
+      maxAttempts: blank(int().positive().default(15)),
+      windowMinutes: blank(number().positive().default(1)),
+    }).prefault({}),
+  }).prefault({}),
+
   lookup: strictObject({
     rateLimit: strictObject({
       maxRequests: blank(int().positive().default(10)),

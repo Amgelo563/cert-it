@@ -2,6 +2,8 @@ export * from './certificate/CertificateStatusEnum';
 export * from './i18n/CourseDateFormatter';
 export * from './i18n/LocaleCookieName';
 export * from './i18n/LocaleEnum';
+export * from './role/PermissionEnum';
+export * from './role/PermissionMatrix';
 export * from './role/RoleEnum';
 export * from './theme/ThemeValues';
 export * from './types/Brand';

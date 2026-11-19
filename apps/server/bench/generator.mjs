@@ -1,7 +1,7 @@
 // The generator child process of the bench: renders one certificate per
-// generate() call and writes each to disk, like the issuing job will (S1).
+// generate() call and writes each to disk, like the issuing job will.
 //
-// TODO(P4): replace the inline template with the real generator entry from
+// TODO: replace the inline template with the real generator entry from
 // src/generator/, so the bench measures the real code path.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

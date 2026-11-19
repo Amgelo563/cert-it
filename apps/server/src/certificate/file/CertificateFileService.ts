@@ -22,7 +22,7 @@ type CertificateFileServiceOptions = {
   logError?: (line: string) => void;
 };
 
-/** Serves certificate PDFs at `{base_path}/c/{code}/pdf`, only while the certificate is active (STO-2, PUB-2). */
+/** Serves certificate PDFs at `{base_path}/c/{code}/pdf`, only while the certificate is active. */
 export class CertificateFileService {
   /** Path of a certificate's PDF, relative to the base path. `?download=1` makes the browser save it. */
   public static readonly Path = '/c/:code/pdf';
