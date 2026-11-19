@@ -6,6 +6,7 @@ export * from './shared/page/PageRequest';
 export * from './shared/transaction/UnitOfWork';
 export * from './sqlite/database/SqliteDatabase';
 export * from './sqlite/database/SqliteExecutor';
+export * from './sqlite/errors/ForeignKeyViolationError';
 export * from './sqlite/repository/AbstractSqliteRepository';
 export * from './sqlite/repository/SqliteRepositoriesFactory';
 export * from './sqlite/transaction/SqliteUnitOfWork';

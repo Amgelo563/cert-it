@@ -5,6 +5,7 @@ import {
 } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import type { UnitOfWork } from '../../shared/transaction/UnitOfWork';
+import { ForeignKeyViolationError } from '../errors/ForeignKeyViolationError';
 import type { SqliteRepositoriesFactory } from '../repository/SqliteRepositoriesFactory';
 import { SqliteUnitOfWork } from '../transaction/SqliteUnitOfWork';
 
@@ -46,7 +47,11 @@ export class SqliteDatabase<Repositories> {
     });
   }
 
-  /** Opens the database at the given path, configures it and applies pending migrations. */
+  /**
+   * Opens the database at the given path, configures it and applies pending migrations.
+   *
+   * @throws {ForeignKeyViolationError} If the migrations left rows pointing at missing rows. The migrations stay applied.
+   */
   public static create<Repositories>(
     options: SqliteDatabaseCreateOptions<Repositories>,
   ): SqliteDatabase<Repositories> {
@@ -61,7 +66,10 @@ export class SqliteDatabase<Repositories> {
       const db = drizzle({ client });
       if (options.migrationsFolder) {
         migrate(db, { migrationsFolder: options.migrationsFolder });
+        SqliteDatabase.checkForeignKeys(client);
       }
+
+      client.pragma('foreign_keys = ON');
 
       return new SqliteDatabase({
         client,
@@ -71,6 +79,35 @@ export class SqliteDatabase<Repositories> {
     } catch (error) {
       client.close();
       throw error;
+    }
+  }
+
+  protected static configure(
+    client: BetterSqlite3.Database,
+    busyTimeoutMs: number,
+  ): void {
+    client.pragma('journal_mode = WAL');
+    client.pragma(`busy_timeout = ${busyTimeoutMs}`);
+    client.pragma('synchronous = NORMAL');
+    // turned on after migrating, see create()
+    client.pragma('foreign_keys = OFF');
+  }
+
+  protected static checkForeignKeys(client: BetterSqlite3.Database): void {
+    const violations = client.pragma('foreign_key_check') as {
+      table: string;
+      rowid: number | null;
+      parent: string;
+    }[];
+
+    if (violations.length > 0) {
+      throw new ForeignKeyViolationError({
+        violations: violations.map(({ table, rowid, parent }) => ({
+          table,
+          rowid,
+          parent,
+        })),
+      });
     }
   }
 
@@ -86,15 +123,5 @@ export class SqliteDatabase<Repositories> {
 
   public getUnitOfWork(): UnitOfWork<Repositories> {
     return this.unitOfWork;
-  }
-
-  protected static configure(
-    client: BetterSqlite3.Database,
-    busyTimeoutMs: number,
-  ): void {
-    client.pragma('journal_mode = WAL');
-    client.pragma(`busy_timeout = ${busyTimeoutMs}`);
-    client.pragma('foreign_keys = ON');
-    client.pragma('synchronous = NORMAL');
   }
 }

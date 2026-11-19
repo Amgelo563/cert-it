@@ -1,6 +1,7 @@
 import { Result } from 'better-result';
 import {
   count,
+  DrizzleError,
   DrizzleQueryError,
   eq,
   getTableColumns,
@@ -165,9 +166,12 @@ export abstract class AbstractSqliteRepository<
     const { UniqueViolationCodes, UniqueViolationPrefix } =
       AbstractSqliteRepository;
 
-    // drizzle wraps driver errors, keeping the driver's error as the cause
+    // drizzle wraps driver errors, keeping the driver's error as the cause: query builders throw
+    // DrizzleQueryError, raw sql run with db.run() and friends throws DrizzleError
     const driverError =
-      error instanceof DrizzleQueryError ? error.cause : error;
+      error instanceof DrizzleQueryError || error instanceof DrizzleError
+        ? error.cause
+        : error;
     if (
       !(driverError instanceof Error)
       || !('code' in driverError)

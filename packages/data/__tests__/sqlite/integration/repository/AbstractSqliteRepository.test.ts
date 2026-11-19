@@ -161,6 +161,17 @@ describe('AbstractSqliteRepository (update)', () => {
   });
 });
 
+describe('AbstractSqliteRepository (toDuplicateErrorOrThrow)', () => {
+  test('GIVEN a subclass query with raw sql WHEN it repeats a unique value THEN returns a DuplicateModelError', () => {
+    createItem('a', 1);
+    const second = createItem('b', 2);
+
+    const result = items.renameSlugWithRawSql(second.id, 'a');
+
+    expect(result.isErr() && result.error.isOn('slug')).toBe(true);
+  });
+});
+
 describe('AbstractSqliteRepository (delete)', () => {
   test('GIVEN an item WHEN deleting it THEN it no longer exists', () => {
     const created = createItem('a', 1);
