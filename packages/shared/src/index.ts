@@ -8,3 +8,5 @@ export * from './file/io/errors/write/SerializationFileWriteError';
 export * from './file/process/FileProcessor';
 export * from './file/validation/Validator';
 export * from './file/validation/errors/ValidationError';
+export * from './types/Brand';
+export * from './types/Identifiable';

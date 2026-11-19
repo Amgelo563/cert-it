@@ -378,6 +378,37 @@ importers:
 
   configs/typescript: {}
 
+  packages/data:
+    dependencies:
+      '@cert-it/shared':
+        specifier: workspace:^
+        version: link:../shared
+      better-result:
+        specifier: ^3.0.1
+        version: 3.0.1
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../../configs/typescript
+      '@types/better-sqlite3':
+        specifier: 7.6.13
+        version: 7.6.13
+      '@types/node':
+        specifier: 24.12.0
+        version: 24.12.0
+      barrelsby:
+        specifier: 2.8.1
+        version: 2.8.1
+      better-sqlite3:
+        specifier: 13.2.0
+        version: 13.2.0
+      drizzle-orm:
+        specifier: 0.45.4
+        version: 0.45.4(@types/better-sqlite3@7.6.13)(better-sqlite3@13.2.0)
+      vite-plus:
+        specifier: 'catalog:'
+        version: 1.7.0(@types/node@24.12.0)(@vitest/ui@5.1.0)(esbuild@0.28.2)(jiti@2.7.0)(sugarss@5.0.2(postcss@8.5.33))(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.1)
+
   packages/shared:
     dependencies:
       better-result:
