@@ -1,5 +1,5 @@
+import type { Locale } from '@cert-it/shared';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import type { Locale } from '../../config/schema/enums/LocaleEnum';
 import type { CourseId } from '../Course';
 
 export const courseTable = sqliteTable('courses', {

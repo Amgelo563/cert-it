@@ -1,4 +1,7 @@
 export * from './certificate/CertificateStatusEnum';
+export * from './i18n/CourseDateFormatter';
+export * from './i18n/LocaleCookieName';
+export * from './i18n/LocaleEnum';
 export * from './role/RoleEnum';
 export * from './types/Brand';
 export * from './types/Identifiable';

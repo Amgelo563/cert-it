@@ -4,8 +4,8 @@ import type {
   Page,
   PageRequest,
 } from '@cert-it/data';
+import type { Locale } from '@cert-it/shared';
 import type { Result } from 'better-result';
-import type { Locale } from '../../config/schema/enums/LocaleEnum';
 import type { Course, CourseId } from '../Course';
 
 /** An object that stores and queries courses. */

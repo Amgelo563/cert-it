@@ -1,5 +1,4 @@
-import type { Brand } from '@cert-it/shared';
-import type { Locale } from '../config/schema/enums/LocaleEnum';
+import type { Brand, Locale } from '@cert-it/shared';
 
 export type CourseId = Brand<number, 'CourseId'>;
 

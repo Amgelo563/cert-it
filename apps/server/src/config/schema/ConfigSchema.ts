@@ -1,3 +1,4 @@
+import { LocaleEnum } from '@cert-it/shared';
 import ipaddr from 'ipaddr.js';
 import {
   array,
@@ -16,7 +17,6 @@ import {
 } from 'zod';
 import { FileServeModeEnum } from './enums/FileServeModeEnum';
 import { FontCatalogEnum } from './enums/FontCatalogEnum';
-import { LocaleEnum } from './enums/LocaleEnum';
 
 /** Treats an empty value ('', null or an empty list) as absent, so `.optional()` / `.default()` apply. */
 const blank = <T extends ZodType>(schema: T) =>

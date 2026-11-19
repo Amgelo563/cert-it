@@ -1,7 +1,6 @@
-import { RoleEnum } from '@cert-it/shared';
+import { LocaleEnum, RoleEnum } from '@cert-it/shared';
 import type { CertificateCode } from '../../../src/certificate/code/CertificateCode';
 import type { Certificate } from '../../../src/certificate/Certificate';
-import { LocaleEnum } from '../../../src/config/schema/enums/LocaleEnum';
 import type { Course } from '../../../src/course/Course';
 import type { Repositories } from '../../../src/database/Repositories';
 import type { Font } from '../../../src/font/Font';
