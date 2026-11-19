@@ -1,16 +1,8 @@
-import { join } from 'node:path';
-import type { SqliteDatabase } from '@cert-it/data';
-import { createDatabase } from '../../../src/database/createDatabase';
-import type { Repositories } from '../../../src/database/Repositories';
-
-const MigrationsFolder = join(import.meta.dirname, '../../../drizzle');
+import { DatabaseService } from '../../../src/database/DatabaseService';
 
 /** Returns a started in-memory database with the app's migrations applied. */
-export function createTestDatabase(): SqliteDatabase<Repositories> {
-  const database = createDatabase({
-    path: ':memory:',
-    migrationsFolder: MigrationsFolder,
-  });
+export function createTestDatabase(): DatabaseService {
+  const database = new DatabaseService({ path: ':memory:' });
   database.start();
 
   return database;

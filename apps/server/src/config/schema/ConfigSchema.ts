@@ -98,6 +98,7 @@ export const ConfigSchema = strictObject({
       ).default(DefaultTrustedProxies),
     ),
     port: blank(int().positive().default(3000)),
+    dataDir: blank(string().trim().min(1).default('data')),
   }).prefault({}),
 
   files: strictObject({

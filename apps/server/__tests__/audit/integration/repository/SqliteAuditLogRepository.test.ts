@@ -1,4 +1,4 @@
-import type { SqliteDatabase } from '@cert-it/data';
+import type { DatabaseService } from '../../../../src/database/DatabaseService';
 import { afterEach, beforeEach, describe, expect, test } from 'vite-plus/test';
 import { AuditActionEnum } from '../../../../src/audit/AuditActionEnum';
 import { AuditEntityEnum } from '../../../../src/audit/AuditEntityEnum';
@@ -6,7 +6,7 @@ import type { Repositories } from '../../../../src/database/Repositories';
 import { createTestDatabase } from '../../../database/mocks/createTestDatabase';
 import { MockSeeder } from '../../../database/mocks/MockSeeder';
 
-let database: SqliteDatabase<Repositories>;
+let database: DatabaseService;
 let repositories: Repositories;
 
 beforeEach(() => {

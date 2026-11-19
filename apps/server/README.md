@@ -29,7 +29,7 @@ drizzle/        # generated migrations
 
 ## Database
 
-Each feature owns its model at its top level (`src/course/Course.ts`) and its Drizzle table and repository under `repository/`, built on [`@cert-it/data`](../../packages/data). `src/database/` lists every repository in `Repositories` and opens the database with `createDatabase`, which applies pending migrations from `drizzle/` at startup.
+Each feature owns its model at its top level (`src/course/Course.ts`) and its Drizzle table and repository under `repository/`, built on [`@cert-it/data`](../../packages/data). `src/database/` lists every repository in `Repositories` and `DatabaseService` opens the database inside the data directory, applying pending migrations from `drizzle/` at startup. `src/index.ts` builds the services from the config, starts the data directory, database and HTTP services in that order, and stops them on SIGTERM/SIGINT.
 
 After changing a `*Table.ts`, generate a migration and commit it with `drizzle/meta/`:
 

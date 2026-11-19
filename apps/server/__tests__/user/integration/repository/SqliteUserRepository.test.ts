@@ -1,4 +1,4 @@
-import type { SqliteDatabase } from '@cert-it/data';
+import type { DatabaseService } from '../../../../src/database/DatabaseService';
 import { RoleEnum } from '@cert-it/shared';
 import { afterEach, beforeEach, describe, expect, test } from 'vite-plus/test';
 import type { Repositories } from '../../../../src/database/Repositories';
@@ -6,7 +6,7 @@ import { createTestDatabase } from '../../../database/mocks/createTestDatabase';
 import { MockSeeder } from '../../../database/mocks/MockSeeder';
 import { normalizeEmail } from '../../../../src/util/email/NormalizedEmail';
 
-let database: SqliteDatabase<Repositories>;
+let database: DatabaseService;
 let repositories: Repositories;
 let seeder: MockSeeder;
 

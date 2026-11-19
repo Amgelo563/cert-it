@@ -1,27 +1,33 @@
-import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { ConfigFileProcessor } from './config/file/ConfigFileProcessor';
-import { Server } from './app/Server';
-import { createDatabase } from './database/createDatabase';
+import { HttpService } from './app/HttpService';
+import { ConfigService } from './config/file/ConfigService';
+import { DatabaseService } from './database/DatabaseService';
+import { DataDirectoryService } from './storage/DataDirectoryService';
 
-const DatabasePath = 'data/app.db';
-const MigrationsFolder = 'drizzle';
+const config = await ConfigService.create().readOrExit();
+const dataDirectory = new DataDirectoryService({ root: config.server.dataDir });
+const database = new DatabaseService({ path: dataDirectory.getDatabasePath() });
+const http = HttpService.create(config);
 
-const configResult = await ConfigFileProcessor.Instance.read();
-const config = configResult.match({
-  ok: (value) => value,
-  err: (error) => {
-    console.error(error.message);
-    process.exit(1);
-  },
-});
+try {
+  dataDirectory.start();
+  database.start();
+  http.start();
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(1);
+}
 
-mkdirSync(dirname(DatabasePath), { recursive: true });
-const database = createDatabase({
-  path: DatabasePath,
-  migrationsFolder: MigrationsFolder,
-});
-database.start();
-
-const server = Server.create(config);
-server.start();
+for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+  process.once(signal, () => {
+    http.stop().then(
+      () => {
+        database.close();
+        process.exit(0);
+      },
+      (error: unknown) => {
+        console.error("Couldn't shut down cleanly:", error);
+        process.exit(1);
+      },
+    );
+  });
+}

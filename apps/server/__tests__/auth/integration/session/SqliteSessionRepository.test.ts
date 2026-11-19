@@ -1,4 +1,4 @@
-import type { SqliteDatabase } from '@cert-it/data';
+import type { DatabaseService } from '../../../../src/database/DatabaseService';
 import { afterEach, beforeEach, describe, expect, test } from 'vite-plus/test';
 import type { User } from '../../../../src/user/User';
 import type { Repositories } from '../../../../src/database/Repositories';
@@ -7,7 +7,7 @@ import { MockSeeder } from '../../../database/mocks/MockSeeder';
 
 const Now = new Date('2026-11-18T12:00:00.000Z');
 
-let database: SqliteDatabase<Repositories>;
+let database: DatabaseService;
 let repositories: Repositories;
 let seeder: MockSeeder;
 let user: User;

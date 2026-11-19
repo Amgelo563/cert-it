@@ -93,6 +93,12 @@ server:
     - ::1/128
     - fc00::/7
 
+  # Directory holding the database (app.db) and the stored fonts, templates and
+  # certificates, absolute or relative to the app's working directory. Created
+  # at startup if missing. Back it up as a whole.
+  # Empty: data.
+  data_dir: data
+
 files:
   # How certificate PDFs are delivered, after the app checks they're not revoked.
   #   stream: the app sends the file itself. nginx needs no file access.
