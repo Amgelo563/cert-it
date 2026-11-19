@@ -7,7 +7,8 @@
     "dev": "vpx --watch src/index.ts",
     "build": "vp pack",
     "start": "node dist/index.mjs",
-    "test": "vp test"
+    "test": "vp test",
+    "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
     "@hono/node-server": "2.1.6",
@@ -27,6 +28,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@cert-it/data": "workspace:^",
     "@cert-it/file": "workspace:^",
     "@cert-it/shared": "workspace:^",
     "@repo/typescript-config": "workspace:*",

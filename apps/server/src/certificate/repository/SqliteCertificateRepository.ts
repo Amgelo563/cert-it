@@ -1,0 +1,156 @@
+import {
+  AbstractSqliteRepository,
+  type Page,
+  type PageRequest,
+} from '@cert-it/data';
+import { CertificateStatusEnum } from '@cert-it/shared';
+import {
+  and,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  inArray,
+  ne,
+} from 'drizzle-orm';
+import type { CourseId } from '../../course/Course';
+import type { ParticipantId } from '../../participant/Participant';
+import { participantTable } from '../../participant/repository/participantTable';
+import type { TemplateVersionId } from '../../template/TemplateVersion';
+import type { NormalizedEmail } from '../../util/email/NormalizedEmail';
+import type { CertificateCode } from '../code/CertificateCode';
+import type { Certificate, CertificateId } from '../Certificate';
+import type { CertificateCounts } from '../CertificateCounts';
+import type { CertificateRepository } from './CertificateRepository';
+import { certificateTable } from './certificateTable';
+
+export class SqliteCertificateRepository
+  extends AbstractSqliteRepository<Certificate, typeof certificateTable>
+  implements CertificateRepository
+{
+  protected static readonly EmptyCounts: CertificateCounts = {
+    [CertificateStatusEnum.Active]: 0,
+    [CertificateStatusEnum.Revoked]: 0,
+  };
+
+  protected readonly table = certificateTable;
+
+  public findByIds(ids: readonly CertificateId[]): Certificate[] {
+    return this.db
+      .select()
+      .from(certificateTable)
+      .where(inArray(certificateTable.id, [...ids]))
+      .orderBy(certificateTable.id)
+      .all()
+      .map((row) => this.toModel(row));
+  }
+
+  public findByCode(code: CertificateCode): Certificate | null {
+    const row = this.db
+      .select()
+      .from(certificateTable)
+      .where(eq(certificateTable.code, code))
+      .get();
+
+    return row ? this.toModel(row) : null;
+  }
+
+  public findByParticipant(participantId: ParticipantId): Certificate | null {
+    const row = this.db
+      .select()
+      .from(certificateTable)
+      .where(eq(certificateTable.participantId, participantId))
+      .get();
+
+    return row ? this.toModel(row) : null;
+  }
+
+  public findActiveByEmail(
+    courseId: CourseId,
+    email: NormalizedEmail,
+  ): Certificate | null {
+    const row = this.db
+      .select(getTableColumns(certificateTable))
+      .from(certificateTable)
+      .innerJoin(
+        participantTable,
+        eq(participantTable.id, certificateTable.participantId),
+      )
+      .where(
+        and(
+          eq(certificateTable.courseId, courseId),
+          eq(certificateTable.status, CertificateStatusEnum.Active),
+          eq(participantTable.email, email),
+        ),
+      )
+      .get();
+
+    return row ? this.toModel(row) : null;
+  }
+
+  public listByCourse(
+    courseId: CourseId,
+    page: PageRequest,
+  ): Page<Certificate> {
+    return this.findPage(page, {
+      where: eq(certificateTable.courseId, courseId),
+      orderBy: [desc(certificateTable.id)],
+    });
+  }
+
+  public listAllByCourse(courseId: CourseId): Certificate[] {
+    return this.db
+      .select()
+      .from(certificateTable)
+      .where(eq(certificateTable.courseId, courseId))
+      .orderBy(certificateTable.id)
+      .all()
+      .map((row) => this.toModel(row));
+  }
+
+  public listWithOtherVersion(
+    courseId: CourseId,
+    templateVersionId: TemplateVersionId,
+  ): Certificate[] {
+    return this.db
+      .select()
+      .from(certificateTable)
+      .where(
+        and(
+          eq(certificateTable.courseId, courseId),
+          ne(certificateTable.templateVersionId, templateVersionId),
+        ),
+      )
+      .orderBy(certificateTable.id)
+      .all()
+      .map((row) => this.toModel(row));
+  }
+
+  public countByCourses(
+    courseIds: readonly CourseId[],
+  ): ReadonlyMap<CourseId, CertificateCounts> {
+    const rows = this.db
+      .select({
+        courseId: certificateTable.courseId,
+        status: certificateTable.status,
+        total: count(),
+      })
+      .from(certificateTable)
+      .where(inArray(certificateTable.courseId, [...courseIds]))
+      .groupBy(certificateTable.courseId, certificateTable.status)
+      .all();
+
+    const counts = new Map<CourseId, CertificateCounts>();
+    for (const { courseId, status, total } of rows) {
+      const current =
+        counts.get(courseId) ?? SqliteCertificateRepository.EmptyCounts;
+      counts.set(courseId, { ...current, [status]: total });
+    }
+
+    return counts;
+  }
+
+  protected toModel(row: typeof certificateTable.$inferSelect): Certificate {
+    return row;
+  }
+}

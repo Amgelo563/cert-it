@@ -14,7 +14,7 @@ Project-agnostic data layer, using Drizzle and better-sqlite3.
 The model is a plain type with a branded ID. The table is a normal Drizzle table with an `id` primary key.
 
 ```ts
-// author/model/Author.ts
+// author/Author.ts
 import type { Brand } from '@cert-it/shared';
 
 export type AuthorId = Brand<number, 'AuthorId'>;

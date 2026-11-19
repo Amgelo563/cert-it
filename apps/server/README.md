@@ -26,3 +26,13 @@ src/
 __tests__/      # mirrors the features: unit, integration, contract
 drizzle/        # generated migrations
 ```
+
+## Database
+
+Each feature owns its model at its top level (`src/course/Course.ts`) and its Drizzle table and repository under `repository/`, built on [`@cert-it/data`](../../packages/data). `src/database/` lists every repository in `Repositories` and opens the database with `createDatabase`, which applies pending migrations from `drizzle/` at startup.
+
+After changing a `*Table.ts`, generate a migration and commit it with `drizzle/meta/`:
+
+```bash
+pnpm db:generate --name=add-something
+```
