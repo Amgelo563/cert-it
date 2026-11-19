@@ -10,7 +10,7 @@ Hono process that serves everything.
 
 All settings come from `config.yml`, which is validated at startup.
 
-Every URL comes from `site.base_url`, so the same image works on its own host or under a path such as `/certificados/`.
+Every URL comes from `site.base_url`, so the same image works on its own host or under a path such as `/certs/`.
 
 Data lives in SQLite (WAL mode, via Drizzle) and plain files under a single data directory.
 

@@ -1,17 +1,36 @@
+import '@fontsource-variable/inter/wght.css';
+import '@mantine/core/styles.css';
+import '@mantine/notifications/styles.css';
+import { MantineProvider } from '@mantine/core';
+import { ModalsProvider } from '@mantine/modals';
+import { Notifications } from '@mantine/notifications';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
-import './index.css';
-import App from './App.tsx';
+import { createBrowserRouter, RouterProvider } from 'react-router';
 import { AdminI18n } from './app/i18n/AdminI18n';
+import { AdminBaseUrl } from './app/router/AdminBaseUrl';
+import { AdminRoutes } from './app/router/AdminRoutes';
+import { AdminTheme } from './app/theme/AdminTheme';
 
 const i18n = AdminI18n.create();
 await i18n.start();
 
+// the server injects <base href="{base_path}/admin/">, so one build works under any path
+const router = createBrowserRouter(AdminRoutes, {
+  basename: AdminBaseUrl.create().getRouterBasename(),
+});
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <I18nextProvider i18n={i18n.getInstance()}>
-      <App />
+      {/* no ColorSchemeScript: it's an inline script, which the admin CSP blocks */}
+      <MantineProvider theme={AdminTheme} defaultColorScheme="auto">
+        <Notifications position="bottom-right" />
+        <ModalsProvider>
+          <RouterProvider router={router} />
+        </ModalsProvider>
+      </MantineProvider>
     </I18nextProvider>
   </StrictMode>,
 );

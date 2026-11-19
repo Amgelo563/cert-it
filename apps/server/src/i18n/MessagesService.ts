@@ -1,7 +1,7 @@
-import {type Locale, LocaleEnum} from '@cert-it/shared';
-import {EnMessages} from './messages/EnMessages';
-import {EsMessages} from './messages/EsMessages';
-import type {Messages} from './messages/Messages';
+import { type Locale, LocaleEnum } from '@cert-it/shared';
+import { EnMessages } from './messages/EnMessages';
+import { EsMessages } from './messages/EsMessages';
+import type { Messages } from './messages/Messages';
 
 /** Gives the texts of each supported language, with their placeholders replaced. */
 export class MessagesService {

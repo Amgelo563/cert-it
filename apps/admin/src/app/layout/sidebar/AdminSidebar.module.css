@@ -1,0 +1,92 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  height: rem(64px);
+  padding: 0 var(--mantine-spacing-md) 0 var(--mantine-spacing-lg);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: rem(10px);
+  font-size: var(--mantine-font-size-md);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--mantine-color-text);
+  text-decoration: none;
+}
+
+.logoMark {
+  display: grid;
+  place-items: center;
+  width: rem(32px);
+  height: rem(32px);
+  border-radius: rem(10px);
+  background: linear-gradient(
+    135deg,
+    var(--mantine-color-brand-4),
+    var(--mantine-color-brand-7)
+  );
+  color: var(--mantine-color-white);
+  box-shadow: 0 rem(4px) rem(12px) rgb(0 80 180 / 0.3);
+}
+
+.sections {
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-md)
+    var(--mantine-spacing-lg);
+}
+
+.section + .section {
+  margin-top: var(--mantine-spacing-lg);
+}
+
+.sectionTitle {
+  margin-bottom: rem(6px);
+  padding-inline: rem(12px);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 500;
+  color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-dark-3));
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: rem(12px);
+  height: rem(40px);
+  padding-inline: rem(12px);
+  border-radius: var(--mantine-radius-md);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 500;
+  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-dark-1));
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+
+  & + & {
+    margin-top: rem(2px);
+  }
+
+  &:hover {
+    background-color: light-dark(
+      var(--mantine-color-gray-1),
+      var(--mantine-color-dark-6)
+    );
+    color: var(--mantine-color-text);
+  }
+
+  /* flat tint of the brand color, like a selected list item */
+  &[aria-current='page'] {
+    background-color: var(--mantine-primary-color-light);
+    color: var(--mantine-primary-color-light-color);
+    font-weight: 600;
+  }
+}

@@ -5,6 +5,7 @@ import { getConnInfo } from '@hono/node-server/conninfo';
 import { type Context, Hono, type MiddlewareHandler } from 'hono';
 import { getCookie, setCookie } from 'hono/cookie';
 import { secureHeaders } from 'hono/secure-headers';
+import { AdminPanelService } from '../admin/AdminPanelService';
 import type { Config } from '../config/schema/ConfigSchema';
 import type { DatabaseService } from '../database/DatabaseService';
 import { StartupError } from '../error/StartupError';
@@ -21,6 +22,7 @@ type HttpServiceOptions = {
   database: DatabaseService;
   locales: LocaleResolver;
   messages: MessagesService;
+  adminPanel: AdminPanelService;
   /** @default console.log */
   log?: (line: string) => void;
 };
@@ -56,6 +58,8 @@ export class HttpService {
 
   protected readonly messages: MessagesService;
 
+  protected readonly adminPanel: AdminPanelService;
+
   protected readonly log: (line: string) => void;
 
   protected readonly app: Hono<HttpEnv>;
@@ -69,6 +73,7 @@ export class HttpService {
     this.database = options.database;
     this.locales = options.locales;
     this.messages = options.messages;
+    this.adminPanel = options.adminPanel;
     this.log = options.log ?? console.log;
     this.app = this.createApp();
   }
@@ -76,8 +81,9 @@ export class HttpService {
   public static create(options: {
     config: Config;
     database: DatabaseService;
+    adminPanel: AdminPanelService;
   }): HttpService {
-    const { config, database } = options;
+    const { config, database, adminPanel } = options;
 
     return new HttpService({
       port: config.server.port,
@@ -88,6 +94,7 @@ export class HttpService {
       database,
       locales: new LocaleResolver({ defaultLocale: config.site.defaultLocale }),
       messages: new MessagesService(),
+      adminPanel,
     });
   }
 
@@ -141,6 +148,7 @@ export class HttpService {
     }
 
     app.get('/', (c) => c.text('Hello Hono!'));
+    app.route(AdminPanelService.Path, this.adminPanel.getApp());
 
     return root;
   }
@@ -205,7 +213,7 @@ export class HttpService {
       strictTransportSecurity:
         this.siteUrl.isSecure() && `max-age=${HttpService.HstsMaxAgeSeconds}`,
     });
-    const adminPath = this.siteUrl.path('/admin');
+    const adminPath = this.siteUrl.path(AdminPanelService.Path);
 
     return async (c, next) => {
       await headers(c, next);

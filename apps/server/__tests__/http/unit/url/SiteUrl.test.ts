@@ -15,25 +15,20 @@ describe('SiteUrl (root)', () => {
 });
 
 describe('SiteUrl (path)', () => {
-  test.each([
-    'https://example.org/certificados',
-    'https://example.org/certificados/',
-  ])(
+  test.each(['https://example.org/certs', 'https://example.org/certs/'])(
     'GIVEN %s WHEN building paths and URLs THEN prefixes the base path once',
     (baseUrl) => {
       const siteUrl = new SiteUrl({ baseUrl });
 
-      expect(siteUrl.getBasePath()).toBe('/certificados');
-      expect(siteUrl.path('/c/ABC')).toBe('/certificados/c/ABC');
-      expect(siteUrl.url('/c/ABC')).toBe(
-        'https://example.org/certificados/c/ABC',
-      );
+      expect(siteUrl.getBasePath()).toBe('/certs');
+      expect(siteUrl.path('/c/ABC')).toBe('/certs/c/ABC');
+      expect(siteUrl.url('/c/ABC')).toBe('https://example.org/certs/c/ABC');
     },
   );
 
   test('GIVEN a base URL with a path WHEN getting the origin THEN leaves the path out', () => {
     const siteUrl = new SiteUrl({
-      baseUrl: 'https://example.org/certificados',
+      baseUrl: 'https://example.org/certs',
     });
 
     expect(siteUrl.getOrigin()).toBe('https://example.org');

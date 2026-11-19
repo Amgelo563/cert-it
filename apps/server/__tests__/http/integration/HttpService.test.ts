@@ -1,7 +1,8 @@
 import { createServer, type Server } from 'node:net';
 import { once } from 'node:events';
 import { LocaleEnum } from '@cert-it/shared';
-import { afterEach, describe, expect, test } from 'vite-plus/test';
+import { afterAll, afterEach, describe, expect, test } from 'vite-plus/test';
+import { AdminPanelService } from '../../../src/admin/AdminPanelService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { StartupError } from '../../../src/error/StartupError';
 import { ClientIpResolver } from '../../../src/http/clientIp/ClientIpResolver';
@@ -9,25 +10,40 @@ import { HttpService } from '../../../src/http/HttpService';
 import { SiteUrl } from '../../../src/http/url/SiteUrl';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
 import { MessagesService } from '../../../src/i18n/MessagesService';
+import { createAdminBuild } from '../../admin/mocks/createAdminBuild';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
 
 const databases: DatabaseService[] = [];
+const adminBuild = createAdminBuild();
 
 afterEach(() => {
   for (const database of databases.splice(0)) database.close();
 });
 
+afterAll(() => adminBuild.remove());
+
+function createAdminPanel(siteUrl: SiteUrl): AdminPanelService {
+  return new AdminPanelService({
+    directory: adminBuild.directory,
+    siteUrl,
+    defaultLocale: LocaleEnum.Es,
+  });
+}
+
 function createHttp(baseUrl: string, lines: string[] = []): HttpService {
   const database = createTestDatabase();
   databases.push(database);
 
+  const siteUrl = new SiteUrl({ baseUrl });
+
   return new HttpService({
     port: 0,
-    siteUrl: new SiteUrl({ baseUrl }),
+    siteUrl,
     clientIps: new ClientIpResolver({ trustedProxies: ['127.0.0.0/8'] }),
     database,
     locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
     messages: new MessagesService(),
+    adminPanel: createAdminPanel(siteUrl),
     log: (line) => lines.push(line),
   });
 }
@@ -47,7 +63,7 @@ function request(
 
 describe.each([
   { baseUrl: 'https://certs.example.org', base: '' },
-  { baseUrl: 'https://example.org/certificados', base: '/certificados' },
+  { baseUrl: 'https://example.org/certs', base: '/certs' },
 ])('HttpService ($baseUrl)', ({ baseUrl, base }) => {
   test('GIVEN a started database WHEN requesting healthz under the base path THEN answers ok', async () => {
     const response = await request(createHttp(baseUrl), `${base}/healthz`);
@@ -141,9 +157,9 @@ describe.each([
 describe.each([
   { baseUrl: 'https://certs.example.org', base: '', cookiePath: '/' },
   {
-    baseUrl: 'https://example.org/certificados',
-    base: '/certificados',
-    cookiePath: '/certificados',
+    baseUrl: 'https://example.org/certs',
+    base: '/certs',
+    cookiePath: '/certs',
   },
 ])('HttpService (locale, $baseUrl)', ({ baseUrl, base, cookiePath }) => {
   // answers with the resolved locale and a text in it, to see what the middleware set
@@ -206,7 +222,7 @@ describe.each([
 describe('HttpService (base path)', () => {
   test('GIVEN a base path WHEN requesting a route outside it THEN answers 404 with security headers', async () => {
     const response = await request(
-      createHttp('https://example.org/certificados'),
+      createHttp('https://example.org/certs'),
       '/',
     );
 
@@ -237,13 +253,15 @@ describe('HttpService (start)', () => {
 
     const database = createTestDatabase();
     databases.push(database);
+    const siteUrl = new SiteUrl({ baseUrl: 'https://certs.example.org' });
     const http = new HttpService({
       port,
-      siteUrl: new SiteUrl({ baseUrl: 'https://certs.example.org' }),
+      siteUrl,
       clientIps: new ClientIpResolver({ trustedProxies: [] }),
       database,
       locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
       messages: new MessagesService(),
+      adminPanel: createAdminPanel(siteUrl),
       log: () => {},
     });
 

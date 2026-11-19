@@ -1,0 +1,18 @@
+/* white / zinc-900 card floating on the page background, no border */
+.surface {
+  border-radius: var(--mantine-radius-lg);
+  background-color: var(--mantine-color-body);
+
+  &[data-feel='elevated'] {
+    box-shadow: var(--mantine-shadow-sm);
+
+    @mixin dark {
+      box-shadow: none;
+    }
+  }
+
+  &[data-feel='bordered'] {
+    border: rem(1px) solid
+      light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  }
+}

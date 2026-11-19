@@ -9,6 +9,8 @@
     "allowImportingTsExtensions": true,
     "moduleDetection": "force",
     "erasableSyntaxOnly": true,
+    // CSS Modules are typed as an index signature, so `classes.header` would need `classes['header']`
+    "noPropertyAccessFromIndexSignature": false,
     "declaration": false,
     "declarationMap": false
   },
