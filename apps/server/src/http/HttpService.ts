@@ -1,11 +1,15 @@
 import { once } from 'node:events';
+import { LocaleCookieName } from '@cert-it/shared';
 import { serve, type ServerType } from '@hono/node-server';
 import { getConnInfo } from '@hono/node-server/conninfo';
 import { type Context, Hono, type MiddlewareHandler } from 'hono';
+import { getCookie, setCookie } from 'hono/cookie';
 import { secureHeaders } from 'hono/secure-headers';
 import type { Config } from '../config/schema/ConfigSchema';
 import type { DatabaseService } from '../database/DatabaseService';
 import { StartupError } from '../error/StartupError';
+import { LocaleResolver } from '../i18n/LocaleResolver';
+import { MessagesService } from '../i18n/MessagesService';
 import { ClientIpResolver } from './clientIp/ClientIpResolver';
 import type { HttpEnv } from './HttpEnv';
 import { SiteUrl } from './url/SiteUrl';
@@ -15,6 +19,8 @@ type HttpServiceOptions = {
   siteUrl: SiteUrl;
   clientIps: ClientIpResolver;
   database: DatabaseService;
+  locales: LocaleResolver;
+  messages: MessagesService;
   /** @default console.log */
   log?: (line: string) => void;
 };
@@ -33,6 +39,11 @@ export class HttpService {
 
   protected static readonly HealthPath = '/healthz';
 
+  /** Query parameter the language switcher links set. */
+  protected static readonly LocaleParam = 'lang';
+
+  protected static readonly LocaleCookieMaxAgeSeconds = 31_536_000;
+
   protected readonly port: number;
 
   protected readonly siteUrl: SiteUrl;
@@ -40,6 +51,10 @@ export class HttpService {
   protected readonly clientIps: ClientIpResolver;
 
   protected readonly database: DatabaseService;
+
+  protected readonly locales: LocaleResolver;
+
+  protected readonly messages: MessagesService;
 
   protected readonly log: (line: string) => void;
 
@@ -52,6 +67,8 @@ export class HttpService {
     this.siteUrl = options.siteUrl;
     this.clientIps = options.clientIps;
     this.database = options.database;
+    this.locales = options.locales;
+    this.messages = options.messages;
     this.log = options.log ?? console.log;
     this.app = this.createApp();
   }
@@ -69,6 +86,8 @@ export class HttpService {
         trustedProxies: config.server.trustedProxies,
       }),
       database,
+      locales: new LocaleResolver({ defaultLocale: config.site.defaultLocale }),
+      messages: new MessagesService(),
     });
   }
 
@@ -109,11 +128,11 @@ export class HttpService {
   }
 
   protected createApp(): Hono<HttpEnv> {
-    // not strict, so the base path matches with and without a trailing slash
     const root = new Hono<HttpEnv>({ strict: false });
     const app = root.basePath(this.siteUrl.getBasePath());
 
     root.use(this.resolveClientIp(), this.logRequests(), this.secureHeaders());
+    app.use(this.resolveLocale());
 
     // at the root too, so health checks don't depend on the base path
     root.get(HttpService.HealthPath, (c) => this.healthz(c));
@@ -151,6 +170,32 @@ export class HttpService {
       this.log(
         `${c.req.method} ${pathname} ${c.res.status} ${ms}ms ${c.get('clientIp')}`,
       );
+    };
+  }
+
+  // a ?lang= choice is saved for the whole app, admin panel included
+  protected resolveLocale(): MiddlewareHandler<HttpEnv> {
+    return async (c, next) => {
+      const chosen = this.locales.parse(c.req.query(HttpService.LocaleParam));
+      if (chosen) {
+        setCookie(c, LocaleCookieName, chosen, {
+          path: this.siteUrl.getBasePath(),
+          maxAge: HttpService.LocaleCookieMaxAgeSeconds,
+          sameSite: 'Lax',
+          secure: this.siteUrl.isSecure(),
+        });
+      }
+
+      c.set(
+        'locale',
+        this.locales.resolve({
+          query: chosen ?? undefined,
+          cookie: getCookie(c, LocaleCookieName),
+          acceptLanguage: c.req.header('accept-language'),
+        }),
+      );
+      c.set('messages', this.messages);
+      await next();
     };
   }
 

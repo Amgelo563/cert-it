@@ -1,11 +1,14 @@
 import { createServer, type Server } from 'node:net';
 import { once } from 'node:events';
+import { LocaleEnum } from '@cert-it/shared';
 import { afterEach, describe, expect, test } from 'vite-plus/test';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { StartupError } from '../../../src/error/StartupError';
 import { ClientIpResolver } from '../../../src/http/clientIp/ClientIpResolver';
 import { HttpService } from '../../../src/http/HttpService';
 import { SiteUrl } from '../../../src/http/url/SiteUrl';
+import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
+import { MessagesService } from '../../../src/i18n/MessagesService';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
 
 const databases: DatabaseService[] = [];
@@ -23,6 +26,8 @@ function createHttp(baseUrl: string, lines: string[] = []): HttpService {
     siteUrl: new SiteUrl({ baseUrl }),
     clientIps: new ClientIpResolver({ trustedProxies: ['127.0.0.0/8'] }),
     database,
+    locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
+    messages: new MessagesService(),
     log: (line) => lines.push(line),
   });
 }
@@ -133,6 +138,71 @@ describe.each([
   });
 });
 
+describe.each([
+  { baseUrl: 'https://certs.example.org', base: '', cookiePath: '/' },
+  {
+    baseUrl: 'https://example.org/certificados',
+    base: '/certificados',
+    cookiePath: '/certificados',
+  },
+])('HttpService (locale, $baseUrl)', ({ baseUrl, base, cookiePath }) => {
+  // answers with the resolved locale and a text in it, to see what the middleware set
+  function createLocaleHttp(): HttpService {
+    const http = createHttp(baseUrl);
+    http
+      .getApp()
+      .get(`${base}/locale`, (c) =>
+        c.text(
+          `${c.get('locale')} ${c.get('messages').get(c.get('locale')).language.name}`,
+        ),
+      );
+    return http;
+  }
+
+  test('GIVEN a supported ?lang= WHEN requesting THEN uses it and saves it in a cookie under the base path', async () => {
+    const response = await request(
+      createLocaleHttp(),
+      `${base}/locale?lang=es`,
+    );
+    const cookie = response.headers.get('set-cookie') ?? '';
+
+    expect(await response.text()).toBe('es Español');
+    expect(cookie).toMatch(/^lang=es;/);
+    expect(cookie).toContain(`Path=${cookiePath};`);
+    expect(cookie).toContain('Secure');
+    expect(cookie).toContain('SameSite=Lax');
+    expect(cookie).not.toContain('HttpOnly');
+  });
+
+  test('GIVEN an unsupported ?lang= WHEN requesting THEN sets no cookie and falls back', async () => {
+    const response = await request(
+      createLocaleHttp(),
+      `${base}/locale?lang=fr`,
+      {
+        'accept-language': 'es-PE,es;q=0.9',
+      },
+    );
+
+    expect(await response.text()).toBe('es Español');
+    expect(response.headers.get('set-cookie')).toBeNull();
+  });
+
+  test('GIVEN a lang cookie and another browser language WHEN requesting THEN prefers the cookie', async () => {
+    const response = await request(createLocaleHttp(), `${base}/locale`, {
+      cookie: 'lang=es',
+      'accept-language': 'en',
+    });
+
+    expect(await response.text()).toBe('es Español');
+  });
+
+  test('GIVEN no preference WHEN requesting THEN uses the default locale', async () => {
+    const response = await request(createLocaleHttp(), `${base}/locale`);
+
+    expect(await response.text()).toBe('en English');
+  });
+});
+
 describe('HttpService (base path)', () => {
   test('GIVEN a base path WHEN requesting a route outside it THEN answers 404 with security headers', async () => {
     const response = await request(
@@ -172,6 +242,8 @@ describe('HttpService (start)', () => {
       siteUrl: new SiteUrl({ baseUrl: 'https://certs.example.org' }),
       clientIps: new ClientIpResolver({ trustedProxies: [] }),
       database,
+      locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
+      messages: new MessagesService(),
       log: () => {},
     });
 
