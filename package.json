@@ -8,6 +8,7 @@
     "check": "vp check",
     "fix": "vp check --fix",
     "test": "vp test",
+    "bench": "pnpm --filter @cert-it/server bench",
     "build": "vp run -r build"
   },
   "devDependencies": {
