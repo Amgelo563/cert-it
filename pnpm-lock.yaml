@@ -441,6 +441,10 @@ importers:
         version: 4.6.7
 
   packages/shared:
+    dependencies:
+      dayjs:
+        specifier: 1.11.23
+        version: 1.11.23
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*

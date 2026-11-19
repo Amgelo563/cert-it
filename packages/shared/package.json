@@ -26,6 +26,9 @@
     "coverage": "vp test run --coverage",
     "barrel": "barrelsby --directory ./src --delete --singleQuotes --noHeader"
   },
+  "dependencies": {
+    "dayjs": "1.11.23"
+  },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "@types/node": "24.12.0",
