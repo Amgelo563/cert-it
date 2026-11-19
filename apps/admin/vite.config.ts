@@ -1,11 +1,11 @@
-import {readdir, readFile, writeFile} from 'node:fs/promises';
-import {join} from 'node:path';
-import {promisify} from 'node:util';
-import {brotliCompress, constants, gzip} from 'node:zlib';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { promisify } from 'node:util';
+import { brotliCompress, constants, gzip } from 'node:zlib';
 import react from '@vitejs/plugin-react';
 import postcssPresetMantine from 'postcss-preset-mantine';
 import postcssSimpleVars from 'postcss-simple-vars';
-import {defineConfig, lazyPlugins, type Plugin} from 'vite-plus';
+import { defineConfig, lazyPlugins, type Plugin } from 'vite-plus';
 
 const DevBasePath = '/admin/';
 
@@ -21,7 +21,7 @@ function devBaseTag(): Plugin {
     name: 'cert-it:dev-base-tag',
     apply: 'serve',
     transformIndexHtml: () => [
-      {tag: 'base', attrs: {href: DevBasePath}, injectTo: 'head-prepend'},
+      { tag: 'base', attrs: { href: DevBasePath }, injectTo: 'head-prepend' },
     ],
   };
 }
@@ -37,7 +37,7 @@ function compressAssets(): Plugin {
       outDir = config.build.outDir;
     },
     closeBundle: async () => {
-      const files = await readdir(outDir, {recursive: true});
+      const files = await readdir(outDir, { recursive: true });
 
       await Promise.all(
         files
@@ -50,12 +50,12 @@ function compressAssets(): Plugin {
             await writeFile(
               `${path}.br`,
               await brotli(content, {
-                params: {[constants.BROTLI_PARAM_QUALITY]: 11},
+                params: { [constants.BROTLI_PARAM_QUALITY]: 11 },
               }),
             );
             await writeFile(
               `${path}.gz`,
-              await gzipAsync(content, {level: 9}),
+              await gzipAsync(content, { level: 9 }),
             );
           }),
       );
@@ -64,7 +64,7 @@ function compressAssets(): Plugin {
 }
 
 // https://vite.dev/config/
-export default defineConfig(({command}) => ({
+export default defineConfig(({ command }) => ({
   // relative asset paths, so one build works at / or under any base path
   base: command === 'build' ? './' : DevBasePath,
   plugins: lazyPlugins(() => [react(), devBaseTag(), compressAssets()]),

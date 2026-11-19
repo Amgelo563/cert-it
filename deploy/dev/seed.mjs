@@ -3,8 +3,8 @@
 //
 //   DEVA-CTIV-EA  active, serves its PDF
 //   DEVR-EVOK-ED  revoked, answers 404
-import {mkdirSync, writeFileSync} from 'node:fs';
-import {join} from 'node:path';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import Database from 'better-sqlite3';
 
 const DataDir = '/app/data';

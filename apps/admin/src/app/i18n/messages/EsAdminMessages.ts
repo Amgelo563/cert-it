@@ -1,4 +1,4 @@
-import type {AdminMessages} from './AdminMessages';
+import type { AdminMessages } from './AdminMessages';
 
 export const EsAdminMessages = {
   app: {
@@ -23,8 +23,7 @@ export const EsAdminMessages = {
   },
   home: {
     title: 'Inicio',
-    description:
-      'Desde aquí se gestionarán los cursos, participantes y certs.',
+    description: 'Desde aquí se gestionarán los cursos, participantes y certs.',
     designerCardTitle: 'Diseñador de plantillas',
     designerCardDescription:
       'Ubica el nombre del participante, la fecha y el código QR en una plantilla de certificado.',

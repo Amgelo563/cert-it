@@ -1,15 +1,11 @@
-import {LocaleEnum} from '@cert-it/shared';
+import { LocaleEnum } from '@cert-it/shared';
 import dayjs from 'dayjs';
-import {createInstance} from 'i18next';
-import {describe, expect, test} from 'vite-plus/test';
-import {AdminI18n} from '../../../../src/app/i18n/AdminI18n';
-import {
-  EnAdminMessages
-} from '../../../../src/app/i18n/messages/EnAdminMessages';
-import {
-  EsAdminMessages
-} from '../../../../src/app/i18n/messages/EsAdminMessages';
-import {StubDocument} from '../mocks/StubDocument';
+import { createInstance } from 'i18next';
+import { describe, expect, test } from 'vite-plus/test';
+import { AdminI18n } from '../../../../src/app/i18n/AdminI18n';
+import { EnAdminMessages } from '../../../../src/app/i18n/messages/EnAdminMessages';
+import { EsAdminMessages } from '../../../../src/app/i18n/messages/EsAdminMessages';
+import { StubDocument } from '../mocks/StubDocument';
 
 const Placeholder = /\{(\w+)\}/g;
 
@@ -67,7 +63,7 @@ describe('AdminI18n (detection)', () => {
   });
 
   test('GIVEN no cookie or supported browser language WHEN starting THEN uses the site default', async () => {
-    const document = new StubDocument({defaultLocale: 'es'});
+    const document = new StubDocument({ defaultLocale: 'es' });
 
     const i18n = await start(document, ['fr']);
 
@@ -92,13 +88,13 @@ describe('AdminI18n (changes)', () => {
   });
 
   test.each([
-    {pathname: '/admin/courses', path: '/'},
-    {pathname: '/certs/admin/', path: '/certs'},
-    {pathname: '/certs/admin', path: '/certs'},
+    { pathname: '/admin/courses', path: '/' },
+    { pathname: '/certs/admin/', path: '/certs' },
+    { pathname: '/certs/admin', path: '/certs' },
   ])(
     'GIVEN the admin at $pathname WHEN changing the language THEN saves it under $path',
-    async ({pathname, path}) => {
-      const document = new StubDocument({pathname});
+    async ({ pathname, path }) => {
+      const document = new StubDocument({ pathname });
       const i18n = await start(document, ['en']);
 
       await i18n.getInstance().changeLanguage(LocaleEnum.Es);
@@ -112,7 +108,7 @@ describe('AdminI18n (changes)', () => {
   );
 
   test('GIVEN plain HTTP WHEN changing the language THEN saves the cookie without Secure', async () => {
-    const document = new StubDocument({protocol: 'http:'});
+    const document = new StubDocument({ protocol: 'http:' });
     const i18n = await start(document, ['en']);
 
     await i18n.getInstance().changeLanguage(LocaleEnum.Es);

@@ -1,8 +1,8 @@
-import {describe, expect, test} from 'vite-plus/test';
-import {AdminBaseUrl} from '../../../../src/app/router/AdminBaseUrl';
+import { describe, expect, test } from 'vite-plus/test';
+import { AdminBaseUrl } from '../../../../src/app/router/AdminBaseUrl';
 
 function basename(baseUri: string): string {
-  return AdminBaseUrl.create({injections: {baseUri}}).getRouterBasename();
+  return AdminBaseUrl.create({ injections: { baseUri } }).getRouterBasename();
 }
 
 describe('AdminBaseUrl', () => {
