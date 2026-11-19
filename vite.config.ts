@@ -8,6 +8,7 @@ const Ignored = [
   'spikes/**',
   'packages/shared/src/index.ts',
   'packages/data/src/index.ts',
+  'packages/file/src/index.ts',
 ];
 
 export default defineConfig({
@@ -71,7 +72,13 @@ export default defineConfig({
     '*.{ts,tsx}': 'vp check --fix',
   },
   test: {
-    projects: ['packages/shared', 'packages/data', 'apps/server', 'apps/admin'],
+    projects: [
+      'packages/shared',
+      'packages/file',
+      'packages/data',
+      'apps/server',
+      'apps/admin',
+    ],
     passWithNoTests: true,
     coverage: {
       provider: 'v8',

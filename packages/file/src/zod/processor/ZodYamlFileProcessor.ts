@@ -1,7 +1,7 @@
 import type { output, ZodType } from 'zod';
-import { FileProcessor } from '@cert-it/shared';
+import { FileProcessor } from '../../shared/process/FileProcessor';
 import { ZodValidator } from '../validator/ZodValidator';
-import { YamlIO } from '../io/YamlIO';
+import { YamlIO } from '../../yaml/io/YamlIO';
 
 export class ZodYamlFileProcessor<Schema extends ZodType> extends FileProcessor<
   output<Schema>

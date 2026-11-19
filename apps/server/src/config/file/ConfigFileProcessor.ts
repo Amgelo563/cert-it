@@ -1,4 +1,4 @@
-import { ZodYamlFileProcessor } from '../../file/processor/ZodYamlFileProcessor';
+import { ZodYamlFileProcessor } from '@cert-it/file';
 import { ConfigSchema } from '../schema/ConfigSchema';
 
 export class ConfigFileProcessor extends ZodYamlFileProcessor<

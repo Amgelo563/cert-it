@@ -27,6 +27,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@cert-it/file": "workspace:^",
     "@cert-it/shared": "workspace:^",
     "@repo/typescript-config": "workspace:*",
     "@types/better-sqlite3": "7.6.13",

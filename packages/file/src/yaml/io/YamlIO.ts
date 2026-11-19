@@ -1,13 +1,13 @@
-import {
-  DoesntExistFileError,
-  type FileIO,
-  type FileReadError,
-  FileSystemError,
-  type FileWriteError,
-  SerializationFileWriteError,
-  SyntaxFileReadError,
-} from '@cert-it/shared';
 import { Result } from 'better-result';
+import { DoesntExistFileError } from '../../shared/io/errors/generic/DoesntExistFileError';
+import { FileSystemError } from '../../shared/io/errors/generic/FileSystemError';
+import type {
+  FileReadError,
+  FileWriteError,
+} from '../../shared/io/errors/IOError';
+import { SyntaxFileReadError } from '../../shared/io/errors/read/SyntaxFileReadError';
+import { SerializationFileWriteError } from '../../shared/io/errors/write/SerializationFileWriteError';
+import type { FileIO } from '../../shared/io/FileIO';
 import { existsSync, statSync } from 'node:fs';
 import { parse, stringify } from 'yaml';
 import { readFile, writeFile } from 'node:fs/promises';

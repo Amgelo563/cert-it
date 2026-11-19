@@ -1,5 +1,5 @@
 import { type output, prettifyError, type ZodType } from 'zod';
-import type { Validator } from '@cert-it/shared';
+import type { Validator } from '../../shared/validation/Validator';
 import { Result } from 'better-result';
 
 export class ZodValidator<Schema extends ZodType> implements Validator<
