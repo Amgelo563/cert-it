@@ -76,6 +76,15 @@ export class DatabaseService {
   }
 
   /**
+   * Checks that the database answers a trivial query.
+   *
+   * @throws {DatabaseNotStartedError} If the database isn't open.
+   */
+  public ping(): void {
+    this.getDatabase().ping();
+  }
+
+  /**
    * Returns the repositories, each running its queries outside of any transaction.
    *
    * @throws {DatabaseNotStartedError} If the database isn't open.

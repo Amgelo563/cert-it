@@ -62,3 +62,11 @@ describe('DatabaseService (getRepositories)', () => {
     expect(() => database.getUnitOfWork()).toThrow(DatabaseNotStartedError);
   });
 });
+
+describe('DatabaseService (ping)', () => {
+  test('GIVEN a database that was not started WHEN pinging THEN throws a DatabaseNotStartedError', () => {
+    const database = new DatabaseService({ path: ':memory:' });
+
+    expect(() => database.ping()).toThrow(DatabaseNotStartedError);
+  });
+});

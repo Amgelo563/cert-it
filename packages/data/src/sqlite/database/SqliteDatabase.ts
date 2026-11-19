@@ -87,6 +87,11 @@ export class SqliteDatabase<Repositories> {
     this.client.close();
   }
 
+  /** Runs a trivial query, throwing if the connection can't answer it. */
+  public ping(): void {
+    this.client.prepare('SELECT 1').get();
+  }
+
   /** Returns the repositories, each running its queries outside of any transaction. */
   public getRepositories(): Repositories {
     return this.repositories;

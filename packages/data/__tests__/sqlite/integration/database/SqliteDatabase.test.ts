@@ -188,3 +188,25 @@ describe('SqliteDatabase (start)', () => {
     });
   });
 });
+
+describe('SqliteDatabase (ping)', () => {
+  test('GIVEN an open database WHEN pinging THEN does not throw', () => {
+    const database = SqliteDatabase.create({
+      path: ':memory:',
+      createRepositories: () => ({}),
+    });
+
+    expect(() => database.ping()).not.toThrow();
+    database.close();
+  });
+
+  test('GIVEN a closed database WHEN pinging THEN throws', () => {
+    const database = SqliteDatabase.create({
+      path: ':memory:',
+      createRepositories: () => ({}),
+    });
+    database.close();
+
+    expect(() => database.ping()).toThrow(/not open/);
+  });
+});
