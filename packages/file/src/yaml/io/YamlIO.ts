@@ -9,7 +9,6 @@ import { SyntaxFileReadError } from '../../shared/io/errors/read/SyntaxFileReadE
 import { AlreadyExistsFileWriteError } from '../../shared/io/errors/write/AlreadyExistsFileWriteError';
 import { SerializationFileWriteError } from '../../shared/io/errors/write/SerializationFileWriteError';
 import type { FileIO } from '../../shared/io/FileIO';
-import { existsSync, statSync } from 'node:fs';
 import { parse, stringify } from 'yaml';
 import { readFile, writeFile } from 'node:fs/promises';
 
@@ -69,19 +68,15 @@ export class YamlIO implements FileIO {
 
   public async read(path: string): Promise<Result<unknown, FileReadError>> {
     const fullPath = YamlIO.buildName(path);
-    if (!existsSync(fullPath)) {
-      return Result.err(new DoesntExistFileError({ path: fullPath }));
-    }
-
-    const stat = statSync(fullPath);
-    if (!stat || !stat.isFile()) {
-      return Result.err(new DoesntExistFileError({ path: fullPath }));
-    }
 
     let read;
     try {
       read = await readFile(fullPath, { encoding: 'utf-8' });
     } catch (e) {
+      if (DoesntExistFileError.matches(e)) {
+        return Result.err(new DoesntExistFileError({ path: fullPath }));
+      }
+
       const error = e as Error;
       return Result.err(
         new FileSystemError({

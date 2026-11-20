@@ -1,4 +1,5 @@
 import { open } from 'node:fs/promises';
+import { DoesntExistFileError } from '@cert-it/file';
 import { Readable } from 'node:stream';
 import type { DataDirectoryService } from '../../storage/DataDirectoryService';
 import { AbstractFileServer } from './AbstractFileServer';
@@ -34,7 +35,7 @@ export class StreamFileServer extends AbstractFileServer {
       file.code,
     );
     const handle = await open(path).catch((error: unknown) => {
-      throw this.isMissing(error)
+      throw DoesntExistFileError.matches(error)
         ? new CertificateFileNotFoundError(file.code, { cause: error })
         : error;
     });
@@ -100,13 +101,5 @@ export class StreamFileServer extends AbstractFileServer {
     if (start >= size) return { satisfiable: false };
 
     return { satisfiable: true, start, end: Math.min(end, size - 1) };
-  }
-
-  protected isMissing(error: unknown): boolean {
-    return (
-      error instanceof Error
-      && 'code' in error
-      && (error.code === 'ENOENT' || error.code === 'ENOTDIR')
-    );
   }
 }

@@ -1,7 +1,15 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vite-plus/test';
+import { DoesntExistFileError } from '../../../src/shared/io/errors/generic/DoesntExistFileError';
+import { SyntaxFileReadError } from '../../../src/shared/io/errors/read/SyntaxFileReadError';
 import { AlreadyExistsFileWriteError } from '../../../src/shared/io/errors/write/AlreadyExistsFileWriteError';
 import { YamlIO } from '../../../src/yaml/io/YamlIO';
 
@@ -13,6 +21,46 @@ beforeEach(() => {
 
 afterEach(() => {
   rmSync(directory, { recursive: true, force: true });
+});
+
+describe('YamlIO (read)', () => {
+  test('GIVEN a file WHEN reading it without the extension THEN returns its parsed content', async () => {
+    writeFileSync(join(directory, 'settings.yml'), 'a: 1\n');
+
+    const result = await YamlIO.Instance.read(join(directory, 'settings'));
+
+    expect(result.unwrap()).toEqual({ a: 1 });
+  });
+
+  test('GIVEN no file WHEN reading THEN returns a DoesntExistFileError', async () => {
+    const result = await YamlIO.Instance.read(join(directory, 'missing'));
+
+    expect(result.isErr() && DoesntExistFileError.is(result.error)).toBe(true);
+  });
+
+  test('GIVEN a missing parent folder WHEN reading THEN returns a DoesntExistFileError', async () => {
+    writeFileSync(join(directory, 'file'), '');
+
+    const result = await YamlIO.Instance.read(join(directory, 'file', 'inner'));
+
+    expect(result.isErr() && DoesntExistFileError.is(result.error)).toBe(true);
+  });
+
+  test('GIVEN a folder WHEN reading it as a file THEN returns a DoesntExistFileError', async () => {
+    mkdirSync(join(directory, 'folder.yml'));
+
+    const result = await YamlIO.Instance.read(join(directory, 'folder'));
+
+    expect(result.isErr() && DoesntExistFileError.is(result.error)).toBe(true);
+  });
+
+  test('GIVEN invalid YAML WHEN reading THEN returns a SyntaxFileReadError', async () => {
+    writeFileSync(join(directory, 'settings.yml'), 'a: [1\n');
+
+    const result = await YamlIO.Instance.read(join(directory, 'settings'));
+
+    expect(result.isErr() && SyntaxFileReadError.is(result.error)).toBe(true);
+  });
 });
 
 describe('YamlIO (write)', () => {
