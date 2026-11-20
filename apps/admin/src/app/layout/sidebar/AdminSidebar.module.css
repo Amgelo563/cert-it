@@ -13,32 +13,6 @@
   padding: 0 var(--mantine-spacing-md) 0 var(--mantine-spacing-lg);
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: rem(10px);
-  font-size: var(--mantine-font-size-md);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--mantine-color-text);
-  text-decoration: none;
-}
-
-.logoMark {
-  display: grid;
-  place-items: center;
-  width: rem(32px);
-  height: rem(32px);
-  border-radius: rem(10px);
-  background: linear-gradient(
-    135deg,
-    var(--mantine-color-brand-4),
-    var(--mantine-color-brand-7)
-  );
-  color: var(--mantine-color-white);
-  box-shadow: 0 rem(4px) rem(12px) rgb(0 80 180 / 0.3);
-}
-
 .sections {
   padding: var(--mantine-spacing-xs) var(--mantine-spacing-md)
     var(--mantine-spacing-lg);

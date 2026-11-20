@@ -1,4 +1,7 @@
-import type { RouteObject } from 'react-router';
+import { Outlet, type RouteObject } from 'react-router';
+import { AuthProvider } from '../../auth/AuthProvider';
+import { RequireAuth } from '../../auth/guard/RequireAuth';
+import { RequireGuest } from '../../auth/guard/RequireGuest';
 import { RouteErrorPage } from '../error/RouteErrorPage';
 import { AdminLayout } from '../layout/AdminLayout';
 import { PageLoader } from '../layout/PageLoader';
@@ -8,29 +11,74 @@ import { AdminPathEnum } from './AdminPathEnum';
 export const AdminRoutes: RouteObject[] = [
   {
     path: AdminPathEnum.Home,
-    element: <AdminLayout />,
+    element: (
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
+    ),
     errorElement: <RouteErrorPage />,
     hydrateFallbackElement: <PageLoader />,
     children: [
       {
-        index: true,
-        lazy: async () => ({
-          Component: (await import('../../home/HomePage')).HomePage,
-        }),
+        element: (
+          <RequireGuest>
+            <Outlet />
+          </RequireGuest>
+        ),
+        children: [
+          {
+            path: AdminPathEnum.Login.slice(1),
+            lazy: async () => ({
+              Component: (await import('../../auth/login/LoginPage')).LoginPage,
+            }),
+          },
+        ],
       },
       {
-        path: AdminPathEnum.TemplateDesigner.slice(1),
-        lazy: async () => ({
-          Component: (
-            await import('../../template/designer/TemplateDesignerPage')
-          ).TemplateDesignerPage,
-        }),
+        element: (
+          <RequireAuth allowPendingPasswordChange>
+            <Outlet />
+          </RequireAuth>
+        ),
+        children: [
+          {
+            path: AdminPathEnum.ChangePassword.slice(1),
+            lazy: async () => ({
+              Component: (
+                await import('../../auth/password/ChangePasswordPage')
+              ).ChangePasswordPage,
+            }),
+          },
+        ],
       },
       {
-        path: '*',
-        lazy: async () => ({
-          Component: (await import('../error/NotFoundPage')).NotFoundPage,
-        }),
+        element: (
+          <RequireAuth>
+            <AdminLayout />
+          </RequireAuth>
+        ),
+        children: [
+          {
+            index: true,
+            lazy: async () => ({
+              Component: (await import('../../home/HomePage')).HomePage,
+            }),
+          },
+          {
+            path: AdminPathEnum.TemplateDesigner.slice(1),
+            lazy: async () => ({
+              Component: (
+                await import('../../template/designer/TemplateDesignerPage')
+              ).TemplateDesignerPage,
+            }),
+          },
+          {
+            path: '*',
+            lazy: async () => ({
+              Component: (await import('../error/NotFoundPage')).NotFoundPage,
+            }),
+          },
+        ],
       },
     ],
   },

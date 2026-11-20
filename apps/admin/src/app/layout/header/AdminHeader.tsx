@@ -3,12 +3,13 @@ import { IconLayoutSidebar } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { ColorSchemeToggle } from './ColorSchemeToggle';
 import { LanguagePicker } from './LanguagePicker';
+import { UserMenu } from './UserMenu';
 
 type AdminHeaderProps = {
   onToggleNavigation: () => void;
 };
 
-/** Top bar: navigation toggle on the left, language and color scheme on the right. */
+/** Top bar: navigation toggle on the left, language, color scheme and account on the right. */
 export function AdminHeader({ onToggleNavigation }: AdminHeaderProps) {
   const { t } = useTranslation();
 
@@ -27,6 +28,7 @@ export function AdminHeader({ onToggleNavigation }: AdminHeaderProps) {
       <Group gap={4} wrap="nowrap">
         <LanguagePicker />
         <ColorSchemeToggle />
+        <UserMenu />
       </Group>
     </Group>
   );

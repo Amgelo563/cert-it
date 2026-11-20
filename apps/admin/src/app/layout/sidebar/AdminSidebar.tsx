@@ -1,8 +1,8 @@
 import { ActionIcon, Box, ScrollArea, Text } from '@mantine/core';
-import { IconCertificate, IconX } from '@tabler/icons-react';
+import { IconX } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router';
-import { AdminPathEnum } from '../../router/AdminPathEnum';
+import { AdminLogo } from '../AdminLogo';
 import { AdminNavigation } from './AdminNavigation';
 import classes from './AdminSidebar.module.css';
 
@@ -18,16 +18,7 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
   return (
     <div className={classes.sidebar}>
       <div className={classes.header}>
-        <NavLink
-          to={AdminPathEnum.Home}
-          className={classes.logo}
-          onClick={onClose}
-        >
-          <span className={classes.logoMark}>
-            <IconCertificate size={20} stroke={1.8} />
-          </span>
-          <span>{t('app.name')}</span>
-        </NavLink>
+        <AdminLogo onClick={onClose} />
         <ActionIcon
           hiddenFrom="sm"
           onClick={onClose}

@@ -1,4 +1,4 @@
-import type { ApiErrorCodeEnum } from '@cert-it/shared';
+import type { ApiErrorCodeEnum, Role } from '@cert-it/shared';
 
 /** Texts of the admin panel, in one language. Placeholders are written as `{key}`. */
 export type AdminMessages = {
@@ -26,6 +26,35 @@ export type AdminMessages = {
     templates: string;
     templateDesigner: string;
   };
+  auth: {
+    loginTitle: string;
+    loginDescription: string;
+    email: string;
+    password: string;
+    login: string;
+    logout: string;
+    /** Accessible label of the avatar that opens the account menu. */
+    accountMenu: string;
+    changePasswordTitle: string;
+    /** Shown when the password is temporary and must be replaced. */
+    changePasswordRequired: string;
+    /** Shown when changing the password by choice, with the minimum length in `{min}`. */
+    changePasswordDescription: string;
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+    changePassword: string;
+    passwordChanged: string;
+    cancel: string;
+    fieldRequired: string;
+    /** With the minimum length in `{min}`. */
+    passwordTooShort: string;
+    /** With the maximum length in `{max}`. */
+    passwordTooLong: string;
+    passwordsDontMatch: string;
+  };
+  /** Names of the roles, keyed by their value. */
+  roles: Record<Role, string>;
   home: {
     title: string;
     description: string;
