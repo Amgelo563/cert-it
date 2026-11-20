@@ -44,4 +44,26 @@ export const EnAdminMessages = {
     backHome: 'Back to home',
     reload: 'Reload',
   },
+  apiErrors: {
+    codes: {
+      invalidRequest: "Check the form: some values aren't valid.",
+      unauthorized: 'Your session has ended. Log in again.',
+      forbidden: "Your role doesn't allow this.",
+      crossOrigin:
+        'The request was blocked because it came from another site. Reload the page and try again.',
+      passwordChangeRequired: 'Change your password to continue.',
+      invalidCredentials:
+        'The email or password is wrong, or the account is deactivated.',
+      tooManyAttempts: 'Too many attempts. Try again later.',
+      wrongPassword: 'The current password is wrong.',
+      samePassword: 'The new password must be different from the current one.',
+      notFound: "It doesn't exist anymore. Reload the page.",
+      emailTaken: 'Another user already has this email.',
+      lastAdmin: 'There must be at least one active admin.',
+      ownAccount: "You can't change your own role, status or password here.",
+    },
+    network: "Couldn't reach the server. Check your connection and try again.",
+    unexpected: 'Something went wrong. Try again.',
+    tooManyAttemptsWait: 'Too many attempts. Try again in {wait}.',
+  },
 } satisfies AdminMessages;

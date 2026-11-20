@@ -43,4 +43,28 @@ export const EsAdminMessages = {
     backHome: 'Volver al inicio',
     reload: 'Recargar',
   },
+  apiErrors: {
+    codes: {
+      invalidRequest: 'Revisa el formulario: algunos valores no son válidos.',
+      unauthorized: 'Tu sesión terminó. Vuelve a iniciar sesión.',
+      forbidden: 'Tu rol no permite hacer esto.',
+      crossOrigin:
+        'Se bloqueó la solicitud porque vino de otro sitio. Recarga la página e inténtalo de nuevo.',
+      passwordChangeRequired: 'Cambia tu contraseña para continuar.',
+      invalidCredentials:
+        'El correo o la contraseña son incorrectos, o la cuenta está desactivada.',
+      tooManyAttempts: 'Demasiados intentos. Inténtalo más tarde.',
+      wrongPassword: 'La contraseña actual es incorrecta.',
+      samePassword: 'La nueva contraseña debe ser distinta de la actual.',
+      notFound: 'Ya no existe. Recarga la página.',
+      emailTaken: 'Otro usuario ya tiene este correo.',
+      lastAdmin: 'Debe quedar al menos un administrador activo.',
+      ownAccount:
+        'No puedes cambiar tu propio rol, estado o contraseña desde aquí.',
+    },
+    network:
+      'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.',
+    unexpected: 'Algo salió mal. Inténtalo de nuevo.',
+    tooManyAttemptsWait: 'Demasiados intentos. Inténtalo de nuevo en {wait}.',
+  },
 } satisfies AdminMessages;

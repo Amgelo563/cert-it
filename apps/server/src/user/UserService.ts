@@ -1,5 +1,4 @@
 import { ModelNotFoundError } from '@cert-it/data';
-import { parseJson } from '@cert-it/hono';
 import {
   type ApiErrorCode,
   ApiErrorCodeEnum,
@@ -8,7 +7,9 @@ import {
   AuditActionEnum,
   AuditEntityEnum,
   type CreatedUserResponse,
+  type CreateUserRequest,
   CreateUserRequestSchema,
+  type PageQuery,
   PageQuerySchema,
   PermissionEnum,
   type ResetPasswordResponse,
@@ -19,7 +20,7 @@ import {
 } from '@cert-it/shared';
 import { Result } from 'better-result';
 import { type Context, Hono } from 'hono';
-import type { ContentfulStatusCode } from 'hono/utils/http-status';
+import type { ClientErrorStatusCode } from 'hono/utils/http-status';
 import type { AuditLogService } from '../audit/AuditLogService';
 import type { AuthEnv } from '../auth/AuthEnv';
 import type { AuthGuard } from '../auth/AuthGuard';
@@ -28,6 +29,7 @@ import type { SessionService } from '../auth/session/SessionService';
 import type { Config } from '../config/schema/ConfigSchema';
 import type { DatabaseService } from '../database/DatabaseService';
 import { apiError } from '../http/api/apiError';
+import { apiValidator } from '../http/api/apiValidator';
 import { jsonBodyLimit } from '../http/api/jsonBodyLimit';
 import { normalizeEmail } from '../util/email/NormalizedEmail';
 import type { User, UserId } from './User';
@@ -50,7 +52,7 @@ export class UserService {
   public static readonly Path = '/api/users';
 
   protected static readonly ErrorStatuses: Partial<
-    Record<ApiErrorCode, ContentfulStatusCode>
+    Record<ApiErrorCode, ClientErrorStatusCode>
   > = {
     [ApiErrorCodeEnum.NotFound]: 404,
     [ApiErrorCodeEnum.EmailTaken]: 409,
@@ -72,7 +74,7 @@ export class UserService {
 
   protected readonly log: (line: string) => void;
 
-  protected readonly app: Hono<AuthEnv>;
+  protected readonly app: ReturnType<UserService['createApp']>;
 
   constructor(options: UserServiceOptions) {
     this.database = options.database;
@@ -129,44 +131,43 @@ export class UserService {
   }
 
   /** Returns the routes, to mount at {@link UserService.Path}. */
-  public getApp(): Hono<AuthEnv> {
+  public getApp(): UserService['app'] {
     return this.app;
   }
 
-  protected createApp(): Hono<AuthEnv> {
-    const app = new Hono<AuthEnv>({ strict: false });
-
-    app.use(
-      jsonBodyLimit(),
-      this.guard.authenticate(),
-      this.guard.requirePermission(PermissionEnum.ManageUsers),
-    );
-    app.get('/', (c) => this.list(c));
-    app.post('/', (c) => this.add(c));
-    app.patch('/:id', (c) => this.update(c));
-    app.post('/:id/reset-password', (c) => this.resetPassword(c));
-
-    return app;
+  // chained, so hono/client can infer the routes' types
+  protected createApp() {
+    return new Hono<AuthEnv>({ strict: false })
+      .use(
+        jsonBodyLimit(),
+        this.guard.authenticate(),
+        this.guard.requirePermission(PermissionEnum.ManageUsers),
+      )
+      .get('/', apiValidator('query', PageQuerySchema), (c) =>
+        this.list(c, c.req.valid('query')),
+      )
+      .post('/', apiValidator('json', CreateUserRequestSchema), (c) =>
+        this.add(c, c.req.valid('json')),
+      )
+      .patch('/:id', apiValidator('json', UpdateUserRequestSchema), (c) =>
+        this.update(c, c.req.valid('json')),
+      )
+      .post('/:id/reset-password', (c) => this.resetPassword(c));
   }
 
-  protected list(c: Context<AuthEnv>): Response {
-    const query = PageQuerySchema.safeParse(c.req.query());
-    if (!query.success) {
-      return apiError(c, 400, ApiErrorCodeEnum.InvalidRequest);
-    }
-
-    const page = this.database.getRepositories().users.list(query.data);
-    return c.json<ApiPage<UserSummary>>({
-      ...page,
-      items: page.items.map((user) => UserService.toSummary(user)),
-    });
+  protected list(c: Context<AuthEnv>, query: PageQuery) {
+    const page = this.database.getRepositories().users.list(query);
+    return c.json<ApiPage<UserSummary>, 200>(
+      {
+        ...page,
+        items: page.items.map((user) => UserService.toSummary(user)),
+      },
+      200,
+    );
   }
 
   // the password is only ever shown in this response
-  protected async add(c: Context<AuthEnv>): Promise<Response> {
-    const body = await parseJson(c, CreateUserRequestSchema);
-    if (!body) return apiError(c, 400, ApiErrorCodeEnum.InvalidRequest);
-
+  protected async add(c: Context<AuthEnv>, body: CreateUserRequest) {
     const password = this.passwords.generate();
     const created = this.database.getRepositories().users.create({
       email: normalizeEmail(body.email),
@@ -180,17 +181,15 @@ export class UserService {
 
     const user = created.value;
     this.audit(c, user, AuditActionEnum.Create, { role: user.role });
-    return c.json<CreatedUserResponse>(
+    return c.json<CreatedUserResponse, 201>(
       { user: UserService.toSummary(user), password },
       201,
     );
   }
 
   // checked and written in one transaction, so two Admins can't demote each other at once
-  protected async update(c: Context<AuthEnv>): Promise<Response> {
+  protected update(c: Context<AuthEnv>, body: UpdateUserRequest) {
     const id = UserService.parseId(c);
-    const body = await parseJson(c, UpdateUserRequestSchema);
-    if (!body) return apiError(c, 400, ApiErrorCodeEnum.InvalidRequest);
 
     const result = this.database
       .getUnitOfWork()
@@ -216,11 +215,11 @@ export class UserService {
     const user = result.value;
     if (!user.active) this.sessions.endAll(user.id);
     this.audit(c, user, AuditActionEnum.Update, { ...body });
-    return c.json(UserService.toSummary(user));
+    return c.json<UserSummary, 200>(UserService.toSummary(user), 200);
   }
 
   // ends the user's sessions, so only the new password works from now on
-  protected async resetPassword(c: Context<AuthEnv>): Promise<Response> {
+  protected async resetPassword(c: Context<AuthEnv>) {
     const id = UserService.parseId(c);
     const { users } = this.database.getRepositories();
     const target = id === null ? null : users.findById(id);
@@ -241,7 +240,7 @@ export class UserService {
 
     this.sessions.endAll(target.id);
     this.audit(c, target, AuditActionEnum.ResetPassword);
-    return c.json<ResetPasswordResponse>({ password });
+    return c.json<ResetPasswordResponse, 200>({ password }, 200);
   }
 
   protected audit(
@@ -259,7 +258,7 @@ export class UserService {
     });
   }
 
-  protected error(c: Context<AuthEnv>, code: ApiErrorCode): Response {
+  protected error(c: Context<AuthEnv>, code: ApiErrorCode) {
     return apiError(c, UserService.ErrorStatuses[code] ?? 400, code);
   }
 

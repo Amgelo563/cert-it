@@ -1,11 +1,13 @@
-import { parseJson, RateLimiter } from '@cert-it/hono';
+import { RateLimiter } from '@cert-it/hono';
 import {
   ApiErrorCodeEnum,
   AuditActionEnum,
   type AuditAction,
   AuditEntityEnum,
+  type ChangePasswordRequest,
   ChangePasswordRequestSchema,
   type CurrentUser,
+  type LoginRequest,
   LoginRequestSchema,
 } from '@cert-it/shared';
 import { type Context, Hono } from 'hono';
@@ -13,6 +15,7 @@ import type { AuditLogService } from '../audit/AuditLogService';
 import type { Config } from '../config/schema/ConfigSchema';
 import type { DatabaseService } from '../database/DatabaseService';
 import { apiError } from '../http/api/apiError';
+import { apiValidator } from '../http/api/apiValidator';
 import { jsonBodyLimit } from '../http/api/jsonBodyLimit';
 import type { User } from '../user/User';
 import { normalizeEmail } from '../util/email/NormalizedEmail';
@@ -52,7 +55,7 @@ export class AuthService {
 
   protected readonly accountLimiter: RateLimiter;
 
-  protected readonly app: Hono<AuthEnv>;
+  protected readonly app: ReturnType<AuthService['createApp']>;
 
   /** Hash checked for unknown emails, so they take as long as known ones. */
   protected dummyHash: Promise<string> | null = null;
@@ -97,32 +100,35 @@ export class AuthService {
   }
 
   /** Returns the routes, to mount at {@link AuthService.Path}. */
-  public getApp(): Hono<AuthEnv> {
+  public getApp(): AuthService['app'] {
     return this.app;
   }
 
-  protected createApp(): Hono<AuthEnv> {
-    const app = new Hono<AuthEnv>({ strict: false });
+  // chained, so hono/client can infer the routes' types
+  protected createApp() {
     const loggedIn = this.guard.authenticate({
       allowPendingPasswordChange: true,
     });
 
-    app.use(jsonBodyLimit());
-    app.post('/login', (c) => this.login(c));
-    app.post('/logout', (c) => this.logout(c));
-    app.get('/me', loggedIn, (c) =>
-      c.json(AuthService.toCurrentUser(c.get('user'))),
-    );
-    app.post('/password', loggedIn, (c) => this.changePassword(c));
-
-    return app;
+    return new Hono<AuthEnv>({ strict: false })
+      .use(jsonBodyLimit())
+      .post('/login', apiValidator('json', LoginRequestSchema), (c) =>
+        this.login(c, c.req.valid('json')),
+      )
+      .post('/logout', (c) => this.logout(c))
+      .get('/me', loggedIn, (c) =>
+        c.json<CurrentUser, 200>(AuthService.toCurrentUser(c.get('user')), 200),
+      )
+      .post(
+        '/password',
+        loggedIn,
+        apiValidator('json', ChangePasswordRequestSchema),
+        (c) => this.changePassword(c, c.req.valid('json')),
+      );
   }
 
   // unknown emails, wrong passwords and deactivated accounts answer alike
-  protected async login(c: Context<AuthEnv>): Promise<Response> {
-    const body = await parseJson(c, LoginRequestSchema);
-    if (!body) return apiError(c, 400, ApiErrorCodeEnum.InvalidRequest);
-
+  protected async login(c: Context<AuthEnv>, body: LoginRequest) {
     const email = normalizeEmail(body.email);
     const waitSeconds = Math.max(
       this.ipLimiter.hit(c.get('clientIp')),
@@ -145,19 +151,19 @@ export class AuthService {
     this.accountLimiter.reset(email);
     this.sessions.create(c, user.id);
     this.audit(user, AuditActionEnum.Login);
-    return c.json(AuthService.toCurrentUser(user));
+    return c.json<CurrentUser, 200>(AuthService.toCurrentUser(user), 200);
   }
 
-  protected logout(c: Context<AuthEnv>): Response {
+  protected logout(c: Context<AuthEnv>) {
     this.sessions.end(c);
     return c.body(null, 204);
   }
 
   // ends every session of the user, then starts a fresh one for this browser
-  protected async changePassword(c: Context<AuthEnv>): Promise<Response> {
-    const body = await parseJson(c, ChangePasswordRequestSchema);
-    if (!body) return apiError(c, 400, ApiErrorCodeEnum.InvalidRequest);
-
+  protected async changePassword(
+    c: Context<AuthEnv>,
+    body: ChangePasswordRequest,
+  ) {
     const user = c.get('user');
     const waitSeconds = this.accountLimiter.hit(user.email);
     if (waitSeconds > 0) return AuthService.tooManyAttempts(c, waitSeconds);
@@ -179,7 +185,7 @@ export class AuthService {
     this.sessions.endAll(user.id);
     this.sessions.create(c, user.id);
     this.audit(user, AuditActionEnum.ChangePassword);
-    return c.json(AuthService.toCurrentUser(updated));
+    return c.json<CurrentUser, 200>(AuthService.toCurrentUser(updated), 200);
   }
 
   protected audit(user: User, action: AuditAction): void {
@@ -196,7 +202,7 @@ export class AuthService {
     return this.dummyHash;
   }
 
-  protected static tooManyAttempts(c: Context, seconds: number): Response {
+  protected static tooManyAttempts(c: Context, seconds: number) {
     c.header('Retry-After', String(seconds));
     return apiError(c, 429, ApiErrorCodeEnum.TooManyAttempts);
   }

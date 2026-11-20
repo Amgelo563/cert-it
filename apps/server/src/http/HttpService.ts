@@ -95,6 +95,8 @@ export class HttpService {
 
   protected readonly log: (line: string) => void;
 
+  protected readonly api: ReturnType<HttpService['createApi']>;
+
   protected readonly app: Hono<HttpEnv>;
 
   protected server: ServerType | null = null;
@@ -115,6 +117,7 @@ export class HttpService {
     this.compressor = options.compressor;
     this.revalidator = options.revalidator;
     this.log = options.log ?? console.log;
+    this.api = this.createApi();
     this.app = this.createApp();
   }
 
@@ -195,6 +198,19 @@ export class HttpService {
     return this.app;
   }
 
+  /** Returns the API routes, mounted under the base path, typed for the admin panel as CertItApi. */
+  public getApi(): HttpService['api'] {
+    return this.api;
+  }
+
+  // chained, so hono/client can infer the routes' types
+  protected createApi() {
+    return new Hono<HttpEnv>({ strict: false })
+      .route(AuthService.Path, this.auth.getApp())
+      .route(UserService.Path, this.users.getApp())
+      .route(AuditLogService.Path, this.auditLog.getApp());
+  }
+
   protected createApp(): Hono<HttpEnv> {
     const root = new Hono<HttpEnv>({ strict: false });
     const app = root.basePath(this.siteUrl.getBasePath());
@@ -215,9 +231,7 @@ export class HttpService {
     }
 
     app.use(`${HttpService.ApiPath}/*`, this.csrf.middleware(), this.noStore());
-    app.route(AuthService.Path, this.auth.getApp());
-    app.route(UserService.Path, this.users.getApp());
-    app.route(AuditLogService.Path, this.auditLog.getApp());
+    app.route('/', this.api);
 
     app.get('/', (c) => c.text('Hello Hono!'));
     app.route(AdminPanelService.Path, this.adminPanel.getApp());

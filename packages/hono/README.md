@@ -5,7 +5,7 @@ Small helpers for [Hono](https://hono.dev) apps, not tied to any one project.
 - `clientIp/`: `ClientIpResolver` finds the visitor's real IP, even when the app runs behind nginx or another proxy.
 - `csrf/`: `CsrfGuard` blocks form posts and API writes that come from other websites.
 - `rateLimit/`: `RateLimiter` limits how often someone can do something, such as trying to log in.
-- `json/`: `parseJson` reads and validates a JSON request body.
+- `validation/`: `standardValidator` checks a JSON body or query string and types it for `hono/client`.
 - `file/`: `FileStreamer` sends a file from disk, including just part of it when the browser asks for a part.
 - `compression/` and `revalidation/`: `ResponseCompressor` gzips responses, and `ResponseRevalidator` lets the browser
   reuse a page it already has.
@@ -124,23 +124,28 @@ app.post('/login', async (c) => {
 `hit` records an attempt and returns `0`, or, if the key used up its attempts, how many seconds to wait. Blocked attempts
 aren't counted. Old attempts are forgotten as they expire, so the limiter doesn't keep growing.
 
-### 4. JSON bodies
+### 4. Request validation
 
-`parseJson` returns the body checked by your schema, or `null` if it isn't valid JSON or doesn't match. It works with
-Zod and any other library that supports [Standard Schema](https://standardschema.dev).
+`standardValidator` is a middleware that checks the JSON body or the query string with your schema. It works with Zod
+and any other library that supports [Standard Schema](https://standardschema.dev). Malformed JSON and values the schema
+rejects both go to your `onInvalid` answer. Chain the routes so `hono/client` can type their input.
 
 ```ts
-import { parseJson } from '@cert-it/hono';
+import { standardValidator } from '@cert-it/hono';
 import { email, strictObject, string } from 'zod';
 
 const LoginSchema = strictObject({ email: email(), password: string() });
 
-app.post('/login', async (c) => {
-  const body = await parseJson(c, LoginSchema);
-  if (!body) return c.json({ error: 'invalid_request' }, 400);
-
-  body.email; // string
-});
+const app = new Hono().post(
+  '/login',
+  standardValidator('json', LoginSchema, (c) =>
+    c.json({ error: 'invalid_request' }, 400),
+  ),
+  (c) => {
+    const body = c.req.valid('json');
+    body.email; // string
+  },
+);
 ```
 
 To limit how large a body can be, add Hono's `bodyLimit` middleware.

@@ -1,9 +1,9 @@
 import {
-  ApiErrorCodeEnum,
   type ApiPage,
   type AuditAction,
   type AuditEntity,
   type AuditEntrySummary,
+  type PageQuery,
   PageQuerySchema,
   PermissionEnum,
 } from '@cert-it/shared';
@@ -11,7 +11,7 @@ import { type Context, Hono } from 'hono';
 import type { AuthEnv } from '../auth/AuthEnv';
 import type { AuthGuard } from '../auth/AuthGuard';
 import type { DatabaseService } from '../database/DatabaseService';
-import { apiError } from '../http/api/apiError';
+import { apiValidator } from '../http/api/apiValidator';
 import type { UserId } from '../user/User';
 import type { AuditEntry } from './AuditEntry';
 
@@ -29,7 +29,7 @@ export class AuditLogService {
 
   protected readonly guard: AuthGuard;
 
-  protected readonly app: Hono<AuthEnv>;
+  protected readonly app: ReturnType<AuditLogService['createApp']>;
 
   constructor(options: AuditLogServiceOptions) {
     this.database = options.database;
@@ -50,33 +50,31 @@ export class AuditLogService {
   }
 
   /** Returns the routes, to mount at {@link AuditLogService.Path}. */
-  public getApp(): Hono<AuthEnv> {
+  public getApp(): AuditLogService['app'] {
     return this.app;
   }
 
-  protected createApp(): Hono<AuthEnv> {
-    const app = new Hono<AuthEnv>({ strict: false });
-
-    app.use(
-      this.guard.authenticate(),
-      this.guard.requirePermission(PermissionEnum.ViewAuditLog),
-    );
-    app.get('/', (c) => this.list(c));
-
-    return app;
+  // chained, so hono/client can infer the routes' types
+  protected createApp() {
+    return new Hono<AuthEnv>({ strict: false })
+      .use(
+        this.guard.authenticate(),
+        this.guard.requirePermission(PermissionEnum.ViewAuditLog),
+      )
+      .get('/', apiValidator('query', PageQuerySchema), (c) =>
+        this.list(c, c.req.valid('query')),
+      );
   }
 
-  protected list(c: Context<AuthEnv>): Response {
-    const query = PageQuerySchema.safeParse(c.req.query());
-    if (!query.success) {
-      return apiError(c, 400, ApiErrorCodeEnum.InvalidRequest);
-    }
-
-    const page = this.database.getRepositories().auditLog.list(query.data);
-    return c.json<ApiPage<AuditEntrySummary>>({
-      ...page,
-      items: page.items.map((entry) => AuditLogService.toSummary(entry)),
-    });
+  protected list(c: Context<AuthEnv>, query: PageQuery) {
+    const page = this.database.getRepositories().auditLog.list(query);
+    return c.json<ApiPage<AuditEntrySummary>, 200>(
+      {
+        ...page,
+        items: page.items.map((entry) => AuditLogService.toSummary(entry)),
+      },
+      200,
+    );
   }
 
   protected static toSummary(entry: AuditEntry): AuditEntrySummary {

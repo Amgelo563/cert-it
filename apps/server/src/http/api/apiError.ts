@@ -1,13 +1,13 @@
 import type { ApiError, ApiErrorCode } from '@cert-it/shared';
-import type { Context } from 'hono';
+import type { Context, TypedResponse } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 
-/** Answers an API error with its code, never cached. */
-export function apiError(
+/** Answers an API error with its code, never cached; typed for `hono/client`. */
+export function apiError<Status extends ContentfulStatusCode>(
   c: Context,
-  status: ContentfulStatusCode,
+  status: Status,
   code: ApiErrorCode,
-): Response {
+): Response & TypedResponse<ApiError, Status, 'json'> {
   c.header('Cache-Control', 'no-store');
-  return c.json<ApiError>({ error: code }, status);
+  return c.json<ApiError, Status>({ error: code }, status);
 }
