@@ -3,6 +3,7 @@ import {
   AuditActionEnum,
   AuditEntityEnum,
   type AuditEntrySummary,
+  LocaleEnum,
   RoleEnum,
 } from '@cert-it/shared';
 import { type MantineColor, Stack, Text } from '@mantine/core';
@@ -10,6 +11,7 @@ import { DataTable } from 'mantine-datatable';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { enumMessageKeys } from '../../app/i18n/enumMessageKeys';
+import { useLocaleNames } from '../../app/i18n/useLocaleNames';
 import { MonoFigure } from '../../app/layout/MonoFigure';
 import { StatusLabel } from '../../app/layout/StatusLabel';
 
@@ -51,6 +53,7 @@ export function AuditLogTable({
   onPageChange,
 }: AuditLogTableProps) {
   const { t, i18n } = useTranslation();
+  const localeNames = useLocaleNames();
   const dates = useMemo(
     () =>
       new Intl.DateTimeFormat(i18n.language, {
@@ -61,14 +64,35 @@ export function AuditLogTable({
   );
 
   // the known detail fields, translated; anything else is shown as it is
-  const describeDetail = (key: string, value: unknown): string => {
+  const describeDetail = (
+    entry: AuditEntrySummary,
+    key: string,
+    value: unknown,
+  ): string | null => {
+    const isCourse = entry.entity === AuditEntityEnum.Course;
+    // the target column already names it, unless it was renamed
+    if (key === 'name' && entry.action !== AuditActionEnum.Update) return null;
+    if (key === 'name' && typeof value === 'string') {
+      return `${t('courses.name')}: ${value}`;
+    }
     if (key === 'role') {
       const role = Object.values(RoleEnum).find((r) => r === value);
       if (role) return `${t('auditLog.detailRole')}: ${t(`roles.${role}`)}`;
     }
     if (key === 'active' && typeof value === 'boolean') {
-      return `${t('auditLog.detailStatus')}: ${
-        value ? t('users.active') : t('users.inactive')
+      const inactive = isCourse ? t('courses.archived') : t('users.inactive');
+      return `${t('auditLog.detailStatus')}: ${value ? t('users.active') : inactive}`;
+    }
+    if (isCourse && key === 'locale') {
+      const locale = Object.values(LocaleEnum).find((l) => l === value);
+      if (locale) return `${t('courses.locale')}: ${localeNames(locale)}`;
+    }
+    if (isCourse && key === 'dateFormat' && typeof value === 'string') {
+      return `${t('courses.dateFormat')}: ${value}`;
+    }
+    if (isCourse && key === 'lookupEnabled' && typeof value === 'boolean') {
+      return `${t('courses.lookup')}: ${
+        value ? t('courses.listed') : t('courses.hidden')
       }`;
     }
     return `${key}: ${typeof value === 'string' ? value : JSON.stringify(value)}`;
@@ -149,7 +173,8 @@ export function AuditLogTable({
           render: (entry) => (
             <Text size="sm" c="dimmed">
               {Object.entries(entry.details)
-                .map(([key, value]) => describeDetail(key, value))
+                .map(([key, value]) => describeDetail(entry, key, value))
+                .filter((detail) => detail !== null)
                 .join(' · ')}
             </Text>
           ),

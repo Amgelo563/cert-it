@@ -1,5 +1,6 @@
 import {
   type Icon,
+  IconCertificate,
   IconHistory,
   IconHome,
   IconTemplate,
@@ -20,7 +21,10 @@ export type AdminNavigationSection = {
 export const AdminNavigation: AdminNavigationSection[] = [
   {
     title: 'overview',
-    links: [{ label: 'home', icon: IconHome, to: AdminPathEnum.Home }],
+    links: [
+      { label: 'home', icon: IconHome, to: AdminPathEnum.Home },
+      { label: 'courses', icon: IconCertificate, to: AdminPathEnum.Courses },
+    ],
   },
   {
     title: 'templates',

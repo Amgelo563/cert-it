@@ -3,6 +3,9 @@ export const AdminPathEnum = {
   Home: '/',
   Login: '/login',
   ChangePassword: '/change-password',
+  Courses: '/courses',
+  /** A course's page, whose tabs are in CourseTabEnum. */
+  Course: '/courses/:courseId',
   TemplateDesigner: '/template-designer',
   Users: '/users',
   AuditLog: '/audit-log',

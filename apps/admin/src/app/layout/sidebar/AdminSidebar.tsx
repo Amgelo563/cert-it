@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router';
 import { usePermissions } from '../../../auth/usePermissions';
 import { AdminPagePermissions } from '../../router/AdminPagePermissions';
+import { AdminPathEnum } from '../../router/AdminPathEnum';
 import { AdminLogo } from '../AdminLogo';
 import { AdminNavigation } from './AdminNavigation';
 import classes from './AdminSidebar.module.css';
@@ -52,7 +53,8 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
                 <NavLink
                   key={label}
                   to={to}
-                  end
+                  // other links stay active on their subpages
+                  end={to === AdminPathEnum.Home}
                   className={classes.link}
                   onClick={onClose}
                 >

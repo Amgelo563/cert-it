@@ -18,6 +18,7 @@ import { AuthService } from '../auth/AuthService';
 import { createCsrfGuard } from '../auth/csrf/createCsrfGuard';
 import type { CertificateFileService } from '../certificate/file/CertificateFileService';
 import type { Config } from '../config/schema/ConfigSchema';
+import { CourseService } from '../course/CourseService';
 import type { DatabaseService } from '../database/DatabaseService';
 import { StartupError } from '../error/StartupError';
 import { LocaleResolver } from '../i18n/LocaleResolver';
@@ -36,6 +37,7 @@ type HttpServiceOptions = {
   certificateFiles: CertificateFileService;
   auth: AuthService;
   users: UserService;
+  courses: CourseService;
   auditLog: AuditLogService;
   csrf: CsrfGuard;
   compressor: ResponseCompressor;
@@ -85,6 +87,8 @@ export class HttpService {
 
   protected readonly users: UserService;
 
+  protected readonly courses: CourseService;
+
   protected readonly auditLog: AuditLogService;
 
   protected readonly csrf: CsrfGuard;
@@ -112,6 +116,7 @@ export class HttpService {
     this.certificateFiles = options.certificateFiles;
     this.auth = options.auth;
     this.users = options.users;
+    this.courses = options.courses;
     this.auditLog = options.auditLog;
     this.csrf = options.csrf;
     this.compressor = options.compressor;
@@ -128,6 +133,7 @@ export class HttpService {
     certificateFiles: CertificateFileService;
     auth: AuthService;
     users: UserService;
+    courses: CourseService;
     auditLog: AuditLogService;
   }): HttpService {
     const {
@@ -137,6 +143,7 @@ export class HttpService {
       certificateFiles,
       auth,
       users,
+      courses,
       auditLog,
     } = options;
     const siteUrl = new SiteUrl({ baseUrl: config.site.baseUrl });
@@ -155,6 +162,7 @@ export class HttpService {
       certificateFiles,
       auth,
       users,
+      courses,
       auditLog,
       csrf: createCsrfGuard(siteUrl),
       compressor: new ResponseCompressor(),
@@ -208,6 +216,7 @@ export class HttpService {
     return new Hono<HttpEnv>({ strict: false })
       .route(AuthService.Path, this.auth.getApp())
       .route(UserService.Path, this.users.getApp())
+      .route(CourseService.Path, this.courses.getApp())
       .route(AuditLogService.Path, this.auditLog.getApp());
   }
 

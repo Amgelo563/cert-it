@@ -5,6 +5,8 @@ import { type AdminPath, AdminPathEnum } from './AdminPathEnum';
 export const AdminPagePermissions: Readonly<
   Partial<Record<AdminPath, Permission>>
 > = {
+  [AdminPathEnum.Courses]: PermissionEnum.ViewRecords,
+  [AdminPathEnum.Course]: PermissionEnum.ViewRecords,
   [AdminPathEnum.TemplateDesigner]: PermissionEnum.EditCourses,
   [AdminPathEnum.Users]: PermissionEnum.ManageUsers,
   [AdminPathEnum.AuditLog]: PermissionEnum.ViewAuditLog,

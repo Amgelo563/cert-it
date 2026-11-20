@@ -24,6 +24,11 @@ const RouteAccessTable: Readonly<Record<string, RouteAccess>> = {
   'POST /users': PermissionEnum.ManageUsers,
   'PATCH /users/:id': PermissionEnum.ManageUsers,
   'POST /users/:id/reset-password': PermissionEnum.ManageUsers,
+  'GET /courses': PermissionEnum.ViewRecords,
+  'GET /courses/:id': PermissionEnum.ViewRecords,
+  'POST /courses': PermissionEnum.EditCourses,
+  'PATCH /courses/:id': PermissionEnum.EditCourses,
+  'DELETE /courses/:id': PermissionEnum.DeleteRecords,
   'GET /audit': PermissionEnum.ViewAuditLog,
 };
 

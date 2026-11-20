@@ -11,6 +11,7 @@ import { DatabaseService } from '../database/DatabaseService';
 import { HttpService } from '../http/HttpService';
 import { DataDirectoryService } from '../storage/DataDirectoryService';
 import { UserService } from '../user/UserService';
+import { CourseService } from '../course/CourseService';
 
 type AppServiceOptions = {
   dataDirectory: DataDirectoryService;
@@ -139,6 +140,7 @@ export class AppService {
     const services = { config, database, passwords, sessions, guard, auditLog };
     const users = UserService.create(services);
     const auth = AuthService.create(services);
+    const courses = CourseService.create(services);
     const adminPanel = AdminPanelService.create({ config });
     const certificateFiles = CertificateFileService.create({
       config,
@@ -152,6 +154,7 @@ export class AppService {
       certificateFiles,
       auth,
       users,
+      courses,
       auditLog,
     });
 

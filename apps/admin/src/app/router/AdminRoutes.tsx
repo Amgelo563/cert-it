@@ -1,5 +1,8 @@
 import type { ComponentType } from 'react';
-import { Outlet, type RouteObject } from 'react-router';
+import { PermissionEnum } from '@cert-it/shared';
+import { Navigate, Outlet, type RouteObject } from 'react-router';
+import { CourseTabEnum } from '../../course/CourseTabEnum';
+import { RequireCoursePermission } from '../../course/RequireCoursePermission';
 import { AuthProvider } from '../../auth/AuthProvider';
 import { RequireAuth } from '../../auth/guard/RequireAuth';
 import { RequireGuest } from '../../auth/guard/RequireGuest';
@@ -14,10 +17,12 @@ import { type AdminPath, AdminPathEnum } from './AdminPathEnum';
 function page(
   path: AdminPath,
   load: () => Promise<ComponentType>,
+  children?: RouteObject[],
 ): RouteObject {
   const route: RouteObject = {
     path: path.slice(1),
     lazy: async () => ({ Component: await load() }),
+    children,
   };
   const permission = AdminPagePermissions[path];
   if (!permission) return route;
@@ -31,6 +36,35 @@ function page(
     children: [route],
   };
 }
+
+// a course's tabs, each its own chunk; settings only for roles that can change it
+const CourseTabRoutes: RouteObject[] = [
+  {
+    index: true,
+    element: <Navigate to={CourseTabEnum.Participants} replace />,
+  },
+  {
+    path: CourseTabEnum.Participants,
+    lazy: async () => ({
+      Component: (await import('../../course/participants/ParticipantsTab'))
+        .ParticipantsTab,
+    }),
+  },
+  {
+    element: (
+      <RequireCoursePermission permission={PermissionEnum.EditCourses} />
+    ),
+    children: [
+      {
+        path: CourseTabEnum.Settings,
+        lazy: async () => ({
+          Component: (await import('../../course/settings/SettingsTab'))
+            .SettingsTab,
+        }),
+      },
+    ],
+  },
+];
 
 // each page is its own chunk; the Designer's (pdfme + antd, several MB) only loads on its page
 export const AdminRoutes: RouteObject[] = [
@@ -89,6 +123,15 @@ export const AdminRoutes: RouteObject[] = [
               Component: (await import('../../home/HomePage')).HomePage,
             }),
           },
+          page(
+            AdminPathEnum.Courses,
+            async () => (await import('../../course/CoursesPage')).CoursesPage,
+          ),
+          page(
+            AdminPathEnum.Course,
+            async () => (await import('../../course/CoursePage')).CoursePage,
+            CourseTabRoutes,
+          ),
           page(
             AdminPathEnum.TemplateDesigner,
             async () =>

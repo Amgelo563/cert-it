@@ -6,6 +6,7 @@ import { initReactI18next } from 'react-i18next';
 import type { AdminMessages } from './messages/AdminMessages';
 import { EnAdminMessages } from './messages/EnAdminMessages';
 import { EsAdminMessages } from './messages/EsAdminMessages';
+import { readSiteDefaultLocale } from './readSiteDefaultLocale';
 
 type AdminI18nOptions = {
   instance: i18n;
@@ -24,9 +25,6 @@ export class AdminI18n {
 
   protected static readonly Supported: readonly string[] =
     Object.values(LocaleEnum);
-
-  // filled in by the server, from site.default_locale
-  protected static readonly DefaultLocaleMeta = 'cert-it-default-locale';
 
   protected static readonly CookieMaxAgeSeconds = 31_536_000;
 
@@ -105,7 +103,7 @@ export class AdminI18n {
     return (
       this.parse(this.readCookie())
       ?? browser
-      ?? this.parse(this.readDefaultLocale())
+      ?? readSiteDefaultLocale(this.document)
       ?? LocaleEnum.En
     );
   }
@@ -138,15 +136,5 @@ export class AdminI18n {
     const secure = location.protocol === 'https:' ? '; Secure' : '';
 
     this.document.cookie = `${LocaleCookieName}=${locale}; Path=${basePath}; Max-Age=${AdminI18n.CookieMaxAgeSeconds}; SameSite=Lax${secure}`;
-  }
-
-  protected readDefaultLocale(): string | null {
-    return (
-      this.document
-        .querySelector<HTMLMetaElement>(
-          `meta[name="${AdminI18n.DefaultLocaleMeta}"]`,
-        )
-        ?.getAttribute('content') ?? null
-    );
   }
 }
