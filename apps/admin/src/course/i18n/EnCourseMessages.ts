@@ -68,6 +68,16 @@ export const EnCourseMessages = {
   template: {
     emptyTitle: 'No template yet',
     emptyText:
-      "This course doesn't have a certificate template. Upload a base PDF to start one.",
+      "This course doesn't have a certificate template. Drop its base PDF here, or click to choose it.",
+    versionLabel: 'Version {version}',
+    unsaved: 'Not saved yet',
+    replacePdf: 'Replace base PDF',
+    pdfUploaded: 'Base PDF uploaded. Save to keep it in the template.',
+    largePdf:
+      'This PDF is {size}. Every certificate carries a full copy, so it multiplies disk use and generation time.',
+    addFont: 'Add font',
+    fontAdded: '{family} {style} added',
+    save: 'Save version',
+    saved: 'Saved as version {version}',
   },
 } satisfies CourseMessages;

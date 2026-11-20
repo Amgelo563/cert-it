@@ -67,5 +67,20 @@ export type CourseMessages = {
     /** Shown in place of the Designer's template when the course has none yet. */
     emptyTitle: string;
     emptyText: string;
+    /** Number of the version on the canvas, in `{version}`. */
+    versionLabel: string;
+    /** Shown in place of the version while nothing is saved. */
+    unsaved: string;
+    replacePdf: string;
+    /** Shown after uploading, until it's saved with the template. */
+    pdfUploaded: string;
+    /** Warning for a large base PDF, with its size in `{size}`, such as "2.4 MB". */
+    largePdf: string;
+    addFont: string;
+    /** With the font's family and style in `{family}` and `{style}`. */
+    fontAdded: string;
+    save: string;
+    /** With the new version number in `{version}`. */
+    saved: string;
   };
 };

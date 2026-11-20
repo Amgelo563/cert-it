@@ -1,61 +1,56 @@
-import { BLANK_A4_PDF, type Font, type Template } from '@pdfme/common';
-import { Alert, Stack } from '@mantine/core';
-import { IconAlertCircle, IconInfoCircle } from '@tabler/icons-react';
-import { useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import type { ApiRoutes } from '../../app/api/ApiClient';
-import { describeApiError } from '../../app/api/describeApiError';
-import { useApiRequest } from '../../app/api/useApiRequest';
-import { PageLoader } from '../../app/layout/PageLoader';
-import { useCourse } from '../useCourse';
-import { TemplateDesigner } from './designer/TemplateDesigner';
-import { useTemplateFiles } from './useTemplateFiles';
+import {Alert} from '@mantine/core';
+import {IconAlertCircle} from '@tabler/icons-react';
+import {useCallback, useMemo} from 'react';
+import {useTranslation} from 'react-i18next';
+import type {ApiRoutes} from '../../app/api/ApiClient';
+import {describeApiError} from '../../app/api/describeApiError';
+import {useApiRequest} from '../../app/api/useApiRequest';
+import {PageLoader} from '../../app/layout/PageLoader';
+import {useCourse} from '../useCourse';
+import {
+  TemplateEditor,
+  type TemplateEditorStart,
+} from './editor/TemplateEditor';
+import {useTemplateFiles} from './useTemplateFiles';
 
-// a course without a template starts from an empty A4 page
-const BlankTemplate: Template = { basePdf: BLANK_A4_PDF, schemas: [[]] };
+// a course without a template waits for its base PDF
+const BlankStart: TemplateEditorStart = {
+  version: null,
+  content: {schemas: [[]]},
+  basePdf: null,
+  fonts: new Map(),
+};
 
-const NoFonts: Font = {};
-
-/** A course's certificate template, in the Designer: its latest version, or a blank page if it has none. */
+/** A course's certificate template, in the Designer: its latest version, or a prompt for a base PDF if it has none. */
 export function TemplateTab() {
-  const { t, i18n } = useTranslation();
-  const { course } = useCourse();
+  const {i18n} = useTranslation();
+  const {course, reload} = useCourse();
   const courseId = String(course.id);
 
   const request = useApiRequest(
     useCallback(
       (routes: ApiRoutes) =>
-        routes.courses[':courseId'].template.$get({ param: { courseId } }),
+        routes.courses[':courseId'].template.$get({param: {courseId}}),
       [courseId],
     ),
   );
-  // null once loaded means the course has no template yet
-  const detail =
-    request.data && String(request.data.courseId) === courseId
-      ? request.data
-      : null;
+  // the last answer may be for the course before a link to another
+  const current = request.loading ? undefined : request.data;
+  const detail = current ?? null;
   const files = useTemplateFiles(detail);
 
-  const template = useMemo<Template | null>(
-    () =>
-      detail && files.files
-        ? { ...detail.template, basePdf: files.files.basePdf }
-        : null,
-    [detail, files.files],
-  );
-  // the first font is the fallback pdfme asks for; every field names its own
-  const fonts = useMemo<Font>(
-    () =>
-      files.files
-        ? Object.fromEntries(
-            [...files.files.fonts].map(([sha256, data], index) => [
-              sha256,
-              { data, fallback: index === 0 },
-            ]),
-          )
-        : NoFonts,
-    [files.files],
-  );
+  const start = useMemo<TemplateEditorStart | null>(() => {
+    if (current === null) return BlankStart;
+    if (!detail || !files.files) return null;
+
+    const {basePdf, fonts} = files.files;
+    return {
+      version: detail.version,
+      content: detail.template,
+      basePdf: {sha256: detail.basePdf, bytes: basePdf},
+      fonts,
+    };
+  }, [current, detail, files.files]);
 
   const error = request.error ?? files.error;
   if (error !== null) {
@@ -63,28 +58,21 @@ export function TemplateTab() {
       <Alert
         color="red"
         variant="light"
-        icon={<IconAlertCircle size={18} stroke={1.5} />}
+        icon={<IconAlertCircle size={18} stroke={1.5}/>}
       >
         {describeApiError(error, i18n)}
       </Alert>
     );
   }
+  if (!start) return <PageLoader/>;
 
-  const empty = request.data === null;
-  if (!empty && !template) return <PageLoader />;
-
+  // loaded once per course; saving keeps the canvas as it is
   return (
-    <Stack gap="md">
-      {empty && (
-        <Alert
-          variant="light"
-          title={t('template.emptyTitle')}
-          icon={<IconInfoCircle size={18} stroke={1.5} />}
-        >
-          {t('template.emptyText')}
-        </Alert>
-      )}
-      <TemplateDesigner template={template ?? BlankTemplate} fonts={fonts} />
-    </Stack>
+    <TemplateEditor
+      key={courseId}
+      courseId={course.id}
+      start={start}
+      onSaved={reload}
+    />
   );
 }

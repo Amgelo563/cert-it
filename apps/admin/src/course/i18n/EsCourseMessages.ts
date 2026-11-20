@@ -68,6 +68,16 @@ export const EsCourseMessages = {
   template: {
     emptyTitle: 'Aún no hay plantilla',
     emptyText:
-      'Este curso no tiene una plantilla de certificado. Sube un PDF base para crearla.',
+      'Este curso no tiene una plantilla de certificado. Suelta aquí su PDF base o haz clic para elegirlo.',
+    versionLabel: 'Versión {version}',
+    unsaved: 'Sin guardar',
+    replacePdf: 'Cambiar PDF base',
+    pdfUploaded: 'PDF base subido. Guarda para conservarlo en la plantilla.',
+    largePdf:
+      'Este PDF pesa {size}. Cada certificado lleva una copia completa, así que multiplica el uso de disco y el tiempo de generación.',
+    addFont: 'Agregar fuente',
+    fontAdded: 'Se agregó {family} {style}',
+    save: 'Guardar versión',
+    saved: 'Guardado como versión {version}',
   },
 } satisfies CourseMessages;
