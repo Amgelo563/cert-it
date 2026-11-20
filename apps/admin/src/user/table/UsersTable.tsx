@@ -11,9 +11,6 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../auth/useAuth';
 
-// badge labels hide their overflow, which lets the table squeeze them to nothing
-const BadgeStyles = { label: { overflow: 'visible' } };
-
 type UsersTableProps = {
   users: readonly UserSummary[];
   total: number;
@@ -88,12 +85,7 @@ export function UsersTable({
                 {user.email}
               </Text>
               {user.id === me?.id && (
-                <Badge
-                  size="sm"
-                  variant="light"
-                  color="gray"
-                  styles={BadgeStyles}
-                >
+                <Badge size="sm" variant="light" color="gray">
                   {t('users.you')}
                 </Badge>
               )}
@@ -126,17 +118,11 @@ export function UsersTable({
           // a temporary password only matters while the account is active
           render: (user) =>
             !user.active ? (
-              <Badge color="gray" styles={BadgeStyles}>
-                {t('users.inactive')}
-              </Badge>
+              <Badge color="gray">{t('users.inactive')}</Badge>
             ) : user.mustChangePassword ? (
-              <Badge color="orange" styles={BadgeStyles}>
-                {t('users.temporaryPassword')}
-              </Badge>
+              <Badge color="orange">{t('users.temporaryPassword')}</Badge>
             ) : (
-              <Badge color="teal" styles={BadgeStyles}>
-                {t('users.active')}
-              </Badge>
+              <Badge color="teal">{t('users.active')}</Badge>
             ),
         },
         {

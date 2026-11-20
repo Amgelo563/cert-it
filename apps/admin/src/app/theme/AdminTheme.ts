@@ -61,7 +61,11 @@ export const AdminTheme = createTheme({
     ActionIcon: ActionIcon.extend({
       defaultProps: { variant: 'subtle', color: 'gray', radius: 'md' },
     }),
-    Badge: Badge.extend({ defaultProps: { variant: 'light', radius: 'sm' } }),
+    Badge: Badge.extend({
+      defaultProps: { variant: 'light', radius: 'sm' },
+      // a hidden overflow lets tables squeeze badges down to an ellipsis
+      styles: { label: { overflow: 'visible' } },
+    }),
     Button: Button.extend({ defaultProps: { radius: 'md' } }),
     Card: Card.extend({
       defaultProps: { radius: 'lg', padding: 'lg', shadow: 'sm' },

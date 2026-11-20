@@ -2,6 +2,7 @@ import {
   type ApiPage,
   type AuditAction,
   type AuditEntity,
+  AuditEntityEnum,
   type AuditEntrySummary,
   type PageQuery,
   PageQuerySchema,
@@ -67,17 +68,36 @@ export class AuditLogService {
   }
 
   protected list(c: Context<AuthEnv>, query: PageQuery) {
-    const page = this.database.getRepositories().auditLog.list(query);
+    const { auditLog, users } = this.database.getRepositories();
+    const page = auditLog.list(query);
+    // a page shows few users, so one lookup per distinct ID is enough
+    const emails = new Map<number, string | null>();
+    const emailOf = (id: number): string | null => {
+      if (!emails.has(id)) {
+        emails.set(id, users.findById(id as UserId)?.email ?? null);
+      }
+      return emails.get(id) ?? null;
+    };
+
     return c.json<ApiPage<AuditEntrySummary>, 200>(
       {
         ...page,
-        items: page.items.map((entry) => AuditLogService.toSummary(entry)),
+        items: page.items.map((entry) => ({
+          ...AuditLogService.toSummary(entry),
+          userEmail: entry.userId === null ? null : emailOf(entry.userId),
+          entityName:
+            entry.entity === AuditEntityEnum.User
+              ? emailOf(entry.entityId)
+              : null,
+        })),
       },
       200,
     );
   }
 
-  protected static toSummary(entry: AuditEntry): AuditEntrySummary {
+  protected static toSummary(
+    entry: AuditEntry,
+  ): Omit<AuditEntrySummary, 'userEmail' | 'entityName'> {
     return {
       id: entry.id,
       userId: entry.userId,

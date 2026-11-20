@@ -1,17 +1,9 @@
-import { type ApiErrorCode, ApiErrorCodeEnum } from '@cert-it/shared';
+import { ApiErrorCodeEnum } from '@cert-it/shared';
 import type { i18n } from 'i18next';
-import type { AdminMessages } from '../i18n/messages/AdminMessages';
+import { enumMessageKeys } from '../i18n/enumMessageKeys';
 import { ApiRequestError } from './errors/ApiRequestError';
 
-type MessageKey = keyof AdminMessages['apiErrors']['codes'];
-
-// the messages are keyed by the enum's member names, such as invalidRequest for invalid_request
-const MessageKeys = Object.fromEntries(
-  Object.entries(ApiErrorCodeEnum).map(([name, code]) => [
-    code,
-    `${name.charAt(0).toLowerCase()}${name.slice(1)}`,
-  ]),
-) as Record<ApiErrorCode, MessageKey>;
+const MessageKeys = enumMessageKeys(ApiErrorCodeEnum);
 
 /** Returns a translated message for an error thrown by an API request, or a generic one for anything else. */
 export function describeApiError(error: unknown, i18n: i18n): string {
