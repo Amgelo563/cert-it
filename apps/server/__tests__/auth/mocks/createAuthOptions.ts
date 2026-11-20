@@ -8,9 +8,10 @@ import { PasswordHasher } from '../../../src/auth/password/PasswordHasher';
 import { SessionService } from '../../../src/auth/session/SessionService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { CourseService } from '../../../src/course/CourseService';
+import { ParticipantService } from '../../../src/participant/ParticipantService';
 import { UserService } from '../../../src/user/UserService';
 
-/** Returns the auth, user, course and audit log options of HttpService, with rate limits that tests can reach. */
+/** Returns the auth, user, course, participant and audit log options of HttpService, with rate limits that tests can reach. */
 export function createAuthOptions(
   database: DatabaseService,
   siteUrl: SiteUrl,
@@ -53,5 +54,14 @@ export function createAuthOptions(
     defaultLocale: LocaleEnum.En,
   });
 
-  return { auth, users, courses, auditLog, csrf: createCsrfGuard(siteUrl) };
+  const participants = new ParticipantService({ database, guard, auditLog });
+
+  return {
+    auth,
+    users,
+    courses,
+    participants,
+    auditLog,
+    csrf: createCsrfGuard(siteUrl),
+  };
 }

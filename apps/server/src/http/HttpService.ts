@@ -23,6 +23,7 @@ import type { DatabaseService } from '../database/DatabaseService';
 import { StartupError } from '../error/StartupError';
 import { LocaleResolver } from '../i18n/LocaleResolver';
 import { MessagesService } from '../i18n/MessagesService';
+import { ParticipantService } from '../participant/ParticipantService';
 import { UserService } from '../user/UserService';
 import type { HttpEnv } from './HttpEnv';
 
@@ -38,6 +39,7 @@ type HttpServiceOptions = {
   auth: AuthService;
   users: UserService;
   courses: CourseService;
+  participants: ParticipantService;
   auditLog: AuditLogService;
   csrf: CsrfGuard;
   compressor: ResponseCompressor;
@@ -89,6 +91,8 @@ export class HttpService {
 
   protected readonly courses: CourseService;
 
+  protected readonly participants: ParticipantService;
+
   protected readonly auditLog: AuditLogService;
 
   protected readonly csrf: CsrfGuard;
@@ -117,6 +121,7 @@ export class HttpService {
     this.auth = options.auth;
     this.users = options.users;
     this.courses = options.courses;
+    this.participants = options.participants;
     this.auditLog = options.auditLog;
     this.csrf = options.csrf;
     this.compressor = options.compressor;
@@ -134,6 +139,7 @@ export class HttpService {
     auth: AuthService;
     users: UserService;
     courses: CourseService;
+    participants: ParticipantService;
     auditLog: AuditLogService;
   }): HttpService {
     const {
@@ -144,6 +150,7 @@ export class HttpService {
       auth,
       users,
       courses,
+      participants,
       auditLog,
     } = options;
     const siteUrl = new SiteUrl({ baseUrl: config.site.baseUrl });
@@ -163,6 +170,7 @@ export class HttpService {
       auth,
       users,
       courses,
+      participants,
       auditLog,
       csrf: createCsrfGuard(siteUrl),
       compressor: new ResponseCompressor(),
@@ -217,6 +225,7 @@ export class HttpService {
       .route(AuthService.Path, this.auth.getApp())
       .route(UserService.Path, this.users.getApp())
       .route(CourseService.Path, this.courses.getApp())
+      .route(ParticipantService.Path, this.participants.getApp())
       .route(AuditLogService.Path, this.auditLog.getApp());
   }
 

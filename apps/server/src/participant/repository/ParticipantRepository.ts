@@ -41,8 +41,12 @@ export interface ParticipantRepository {
   /** Deletes a participant with their certificate. */
   delete(id: ParticipantId): Result<void, ModelNotFoundError>;
 
-  /** Returns a page of the participants of a course, sorted by name. */
-  listByCourse(courseId: CourseId, page: PageRequest): Page<Participant>;
+  /** Returns a page of the participants of a course, sorted by name, optionally only those whose name or email contains the search text. */
+  listByCourse(
+    courseId: CourseId,
+    page: PageRequest,
+    search?: string,
+  ): Page<Participant>;
 
   /** Returns the participants of a course who have no certificate, sorted by name. */
   listWithoutCertificate(courseId: CourseId): Participant[];

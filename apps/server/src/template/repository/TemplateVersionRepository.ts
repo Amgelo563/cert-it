@@ -14,6 +14,16 @@ export interface TemplateVersionRepository {
   /** Returns the newest template version of a course, or null if it has none. */
   findLatest(courseId: CourseId): TemplateVersion | null;
 
+  /** Returns the version number of each given template version, leaving out missing ones. */
+  findVersionNumbers(
+    ids: readonly TemplateVersionId[],
+  ): ReadonlyMap<TemplateVersionId, number>;
+
+  /** Returns the newest version number of each given course, leaving out courses with none. */
+  findLatestVersionNumbers(
+    courseIds: readonly CourseId[],
+  ): ReadonlyMap<CourseId, number>;
+
   /** Creates a template version, unless the course already has one with that number. */
   create(data: {
     courseId: CourseId;

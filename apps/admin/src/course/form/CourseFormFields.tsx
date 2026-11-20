@@ -1,9 +1,9 @@
-import {CourseDateFormatter, LocaleEnum} from '@cert-it/shared';
-import {Select, Stack, Switch, Text, TextInput} from '@mantine/core';
-import {useMemo} from 'react';
-import {useTranslation} from 'react-i18next';
-import {useLocaleNames} from '../../app/i18n/useLocaleNames';
-import type {CourseForm} from './useCourseForm';
+import { CourseDateFormatter, LocaleEnum } from '@cert-it/shared';
+import { Select, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useLocaleNames } from '../../app/i18n/useLocaleNames';
+import type { CourseForm } from './useCourseForm';
 
 type CourseFormFieldsProps = {
   form: CourseForm;
@@ -18,8 +18,8 @@ function today(): string {
 }
 
 /** The fields of a course: name, language, date format with a preview, and lookup listing. */
-export function CourseFormFields({form, focusName}: CourseFormFieldsProps) {
-  const {t} = useTranslation();
+export function CourseFormFields({ form, focusName }: CourseFormFieldsProps) {
+  const { t } = useTranslation();
   const localeNames = useLocaleNames();
 
   const locales = useMemo(
@@ -83,14 +83,14 @@ export function CourseFormFields({form, focusName}: CourseFormFieldsProps) {
         />
         {preview && (
           <Text size="sm" c="dimmed" aria-live="polite">
-            {t('courses.datePreview', {date: preview})}
+            {t('courses.datePreview', { date: preview })}
           </Text>
         )}
       </Stack>
       <Switch
         label={t('courses.lookupEnabled')}
         description={t('courses.lookupDescription')}
-        {...form.getInputProps('lookupEnabled', {type: 'checkbox'})}
+        {...form.getInputProps('lookupEnabled', { type: 'checkbox' })}
       />
     </Stack>
   );

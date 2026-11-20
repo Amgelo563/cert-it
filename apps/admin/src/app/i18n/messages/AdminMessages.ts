@@ -123,7 +123,6 @@ export type AdminMessages = {
     listedInLookup: string;
     hiddenFromLookup: string;
     revoked: string;
-    noParticipants: string;
     generalTitle: string;
     saveSubmit: string;
     discard: string;
@@ -148,6 +147,48 @@ export type AdminMessages = {
     added: string;
     saved: string;
     fieldRequired: string;
+  };
+  participants: {
+    /** With the number of participants in `{count}`. */
+    count: string;
+    /** With the number of search matches in `{count}`. */
+    matches: string;
+    empty: string;
+    noMatches: string;
+    searchPlaceholder: string;
+    name: string;
+    nameDescription: string;
+    email: string;
+    emailDescription: string;
+    addedAt: string;
+    certificate: string;
+    notIssued: string;
+    certificateActive: string;
+    certificateRevoked: string;
+    /** The certificate's template version, in `{version}`. */
+    templateVersion: string;
+    /** A certificate on an old template, with its `{version}` and the course's `{latest}`. */
+    olderTemplate: string;
+    openCertificate: string;
+    /** Accessible label of a row's open button, with the participant's `{name}`. */
+    openCertificateOf: string;
+    add: string;
+    addTitle: string;
+    addSubmit: string;
+    added: string;
+    edit: string;
+    editTitle: string;
+    editSubmit: string;
+    saved: string;
+    /** Accessible label of a row's actions menu, with the participant's `{name}`. */
+    actions: string;
+    delete: string;
+    deleteTitle: string;
+    /** With the participant's `{name}` and `{email}`. */
+    deleteText: string;
+    deleted: string;
+    fieldRequired: string;
+    invalidEmail: string;
   };
   users: {
     title: string;

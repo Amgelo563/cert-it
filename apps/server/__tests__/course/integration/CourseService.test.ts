@@ -73,10 +73,12 @@ describe('CourseService (list)', () => {
       active: true,
       createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
       participantCount: 4,
+      latestTemplateVersion: 1,
       certificateCounts: { active: 2, revoked: 1 },
     });
     expect(page.items.find((item) => item.name === 'Empty')).toMatchObject({
       participantCount: 0,
+      latestTemplateVersion: null,
       certificateCounts: { active: 0, revoked: 0 },
     });
   });

@@ -12,6 +12,7 @@ import { type Context, Hono } from 'hono';
 import type { AuthEnv } from '../auth/AuthEnv';
 import type { AuthGuard } from '../auth/AuthGuard';
 import type { CourseId } from '../course/Course';
+import type { ParticipantId } from '../participant/Participant';
 import type { DatabaseService } from '../database/DatabaseService';
 import { apiValidator } from '../http/api/apiValidator';
 import type { UserId } from '../user/User';
@@ -83,7 +84,8 @@ export class AuditLogService {
   }
 
   protected list(c: Context<AuthEnv>, query: PageQuery) {
-    const { auditLog, users, courses } = this.database.getRepositories();
+    const { auditLog, users, courses, participants } =
+      this.database.getRepositories();
     const page = auditLog.list(query);
     // a page shows few users, so one lookup per distinct ID is enough
     const emails = new Map<number, string | null>();
@@ -93,21 +95,31 @@ export class AuditLogService {
       }
       return emails.get(id) ?? null;
     };
-    const courseNames = new Map<number, string | null>();
-    const courseNameOf = (id: number): string | null => {
-      if (!courseNames.has(id)) {
-        courseNames.set(id, courses.findById(id as CourseId)?.name ?? null);
-      }
-      return courseNames.get(id) ?? null;
+    const names = new Map<string, string | null>();
+    const cachedName = (key: string, find: () => string | null) => {
+      if (!names.has(key)) names.set(key, find());
+      return names.get(key) ?? null;
     };
 
+    // deleted models keep their name in the entry's details
     const nameOf = (entry: AuditEntry): string | null => {
       const current =
         entry.entity === AuditEntityEnum.User
           ? emailOf(entry.entityId)
           : entry.entity === AuditEntityEnum.Course
-            ? courseNameOf(entry.entityId)
-            : null;
+            ? cachedName(
+                `course:${entry.entityId}`,
+                () =>
+                  courses.findById(entry.entityId as CourseId)?.name ?? null,
+              )
+            : entry.entity === AuditEntityEnum.Participant
+              ? cachedName(
+                  `participant:${entry.entityId}`,
+                  () =>
+                    participants.findById(entry.entityId as ParticipantId)?.name
+                    ?? null,
+                )
+              : null;
       const kept = entry.details['name'];
       return current ?? (typeof kept === 'string' ? kept : null);
     };

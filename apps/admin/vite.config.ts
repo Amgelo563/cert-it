@@ -116,7 +116,8 @@ export default defineConfig(({ command }) => ({
     },
   },
   server: {
-    proxy: { '/api': devApiProxy() },
+    // certificate files too, so their links open in dev
+    proxy: { '/api': devApiProxy(), '/c/': devApiProxy() },
   },
   build: {
     chunkSizeWarningLimit: 8000,

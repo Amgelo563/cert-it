@@ -13,5 +13,7 @@ export type CourseSummary = {
   /** ISO 8601 date and time. */
   readonly createdAt: string;
   readonly participantCount: number;
+  /** Number of the newest template version, or null if it has no template yet. */
+  readonly latestTemplateVersion: number | null;
   readonly certificateCounts: Readonly<Record<CertificateStatus, number>>;
 };

@@ -126,6 +126,46 @@ describe('SqliteParticipantRepository (listByCourse)', () => {
   });
 });
 
+describe('SqliteParticipantRepository (listByCourse search)', () => {
+  test('GIVEN a search WHEN listing THEN matches name or email, ignoring case', () => {
+    const course = seeder.course();
+    seeder.participant(course, {
+      name: 'Ada Lovelace',
+      email: 'ada@example.org',
+    });
+    seeder.participant(course, { name: 'Bob', email: 'bob@lovelace.org' });
+    seeder.participant(course, { name: 'Carol', email: 'carol@example.org' });
+
+    const page = repositories.participants.listByCourse(
+      course.id,
+      { page: 1, size: 10 },
+      ' LOVELACE ',
+    );
+
+    expect(page.items.map((participant) => participant.name)).toEqual([
+      'Ada Lovelace',
+      'Bob',
+    ]);
+    expect(page.total).toBe(2);
+  });
+
+  test('GIVEN a search with % WHEN listing THEN matches it literally', () => {
+    const course = seeder.course();
+    seeder.participant(course, { name: 'Ada' });
+    seeder.participant(course, { name: '100% Bob' });
+
+    const page = repositories.participants.listByCourse(
+      course.id,
+      { page: 1, size: 10 },
+      '%',
+    );
+
+    expect(page.items.map((participant) => participant.name)).toEqual([
+      '100% Bob',
+    ]);
+  });
+});
+
 describe('SqliteParticipantRepository (listWithoutCertificate)', () => {
   test('GIVEN participants with and without certificates WHEN listing those without THEN skips the ones with one', () => {
     const user = seeder.user();

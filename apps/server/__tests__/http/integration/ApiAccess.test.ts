@@ -29,6 +29,10 @@ const RouteAccessTable: Readonly<Record<string, RouteAccess>> = {
   'POST /courses': PermissionEnum.EditCourses,
   'PATCH /courses/:id': PermissionEnum.EditCourses,
   'DELETE /courses/:id': PermissionEnum.DeleteRecords,
+  'GET /courses/:courseId/participants': PermissionEnum.ViewRecords,
+  'POST /courses/:courseId/participants': PermissionEnum.EditParticipants,
+  'PATCH /courses/:courseId/participants/:id': PermissionEnum.EditParticipants,
+  'DELETE /courses/:courseId/participants/:id': PermissionEnum.DeleteRecords,
   'GET /audit': PermissionEnum.ViewAuditLog,
 };
 
@@ -126,7 +130,7 @@ describe('API access', () => {
           : undefined;
       const response = await harness.request(
         method,
-        path.replace(':id', String(target.id)),
+        path.replaceAll(/:\w+/g, String(target.id)),
         { cookie, body: method === 'GET' ? undefined : {} },
       );
 

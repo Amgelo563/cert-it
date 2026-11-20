@@ -58,6 +58,9 @@ export interface CertificateRepository {
   /** Deletes a certificate. */
   delete(id: CertificateId): Result<void, ModelNotFoundError>;
 
+  /** Returns the certificates of the given participants, skipping those without one. */
+  listByParticipants(participantIds: readonly ParticipantId[]): Certificate[];
+
   /** Returns a page of the certificates of a course, newest first. */
   listByCourse(courseId: CourseId, page: PageRequest): Page<Certificate>;
 

@@ -1,7 +1,14 @@
 import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { type Role, RoleEnum } from '@cert-it/shared';
+import {
+  CertificateStatusEnum,
+  CourseDateFormatter,
+  LocaleEnum,
+  type Role,
+  RoleEnum,
+} from '@cert-it/shared';
+import type { CertificateCode } from '../../certificate/code/CertificateCode';
 import { type Config, ConfigSchema } from '../../config/schema/ConfigSchema';
 import { DatabaseService } from '../../database/DatabaseService';
 import { normalizeEmail } from '../../util/email/NormalizedEmail';
@@ -98,6 +105,113 @@ export class DevAppService extends AppService {
         ),
       ].join('\n'),
     );
+
+    await this.seedSampleCourse();
+  }
+
+  // a course with certificates on two template versions, one revoked, until issuing exists
+  protected async seedSampleCourse(): Promise<void> {
+    const { users, courses, participants, templateVersions, certificates } =
+      this.database.getRepositories();
+    const admin = users.findByEmail(
+      normalizeEmail(DevAppService.Users[0]!.email),
+    )!;
+    const course = courses
+      .create({
+        name: 'Sample course',
+        locale: LocaleEnum.En,
+        dateFormat: CourseDateFormatter.DefaultFormats[LocaleEnum.En],
+      })
+      .unwrap();
+    const versions = [1, 2].map((version) =>
+      templateVersions
+        .create({
+          courseId: course.id,
+          version,
+          template: { schemas: [[]] },
+          basePdfPath: `templates/${course.id}/v${version}.pdf`,
+          createdBy: admin.id,
+        })
+        .unwrap(),
+    );
+    const samples = [
+      {
+        name: 'Ada Lovelace',
+        code: 'DEVA-AAAA-01',
+        version: 0,
+        revoked: false,
+      },
+      {
+        name: 'Grace Hopper',
+        code: 'DEVA-AAAA-02',
+        version: 1,
+        revoked: false,
+      },
+      { name: 'Alan Turing', code: 'DEVA-AAAA-03', version: 1, revoked: true },
+      { name: 'Edsger Dijkstra', code: null, version: 0, revoked: false },
+    ];
+
+    for (const sample of samples) {
+      const participant = participants
+        .create({
+          courseId: course.id,
+          name: sample.name,
+          email: normalizeEmail(
+            `${sample.name.split(' ')[0]!.toLowerCase()}@cert-it.test`,
+          ),
+        })
+        .unwrap();
+      if (sample.code === null) continue;
+
+      const code = sample.code as CertificateCode;
+      const certificate = certificates
+        .create({
+          code,
+          courseId: course.id,
+          participantId: participant.id,
+          templateVersionId: versions[sample.version]!.id,
+          issueDate: '2026-11-20',
+        })
+        .unwrap();
+      if (sample.revoked) {
+        certificates
+          .update(certificate.id, {
+            status: CertificateStatusEnum.Revoked,
+            revokedAt: new Date(),
+            revokedReason: 'Sample revocation',
+          })
+          .unwrap();
+      }
+      await this.dataDirectory.writeFile(
+        this.dataDirectory.getCertificatePath(course.id, code),
+        DevAppService.samplePdf(sample.name),
+      );
+    }
+  }
+
+  // one page with the name, so each sample file is recognizable
+  protected static samplePdf(name: string): string {
+    const text = `BT /F1 28 Tf 72 400 Td (Sample certificate: ${name}) Tj ET`;
+    const objects = [
+      '<< /Type /Catalog /Pages 2 0 R >>',
+      '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+      `<< /Length ${text.length} >>\nstream\n${text}\nendstream`,
+      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    ];
+    let pdf = '%PDF-1.4\n';
+    const offsets = objects.map((body, index) => {
+      const offset = pdf.length;
+      pdf += `${index + 1} 0 obj\n${body}\nendobj\n`;
+      return offset;
+    });
+    const xref = pdf.length;
+    pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+    pdf += offsets
+      .map((offset) => `${String(offset).padStart(10, '0')} 00000 n \n`)
+      .join('');
+    pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+    return pdf;
   }
 
   // the admin dev server serves the panel, with hot reload

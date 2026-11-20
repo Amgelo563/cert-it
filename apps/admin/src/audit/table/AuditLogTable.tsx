@@ -75,6 +75,9 @@ export function AuditLogTable({
     if (key === 'name' && typeof value === 'string') {
       return `${t('courses.name')}: ${value}`;
     }
+    if (key === 'email' && typeof value === 'string') {
+      return `${t('participants.email')}: ${value}`;
+    }
     if (key === 'role') {
       const role = Object.values(RoleEnum).find((r) => r === value);
       if (role) return `${t('auditLog.detailRole')}: ${t(`roles.${role}`)}`;

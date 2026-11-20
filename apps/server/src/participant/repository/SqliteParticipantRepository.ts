@@ -3,7 +3,7 @@ import {
   type Page,
   type PageRequest,
 } from '@cert-it/data';
-import { and, count, eq, inArray, notExists } from 'drizzle-orm';
+import { and, count, eq, inArray, notExists, or, sql } from 'drizzle-orm';
 import { certificateTable } from '../../certificate/repository/certificateTable';
 import type { CourseId } from '../../course/Course';
 import type { NormalizedEmail } from '../../util/email/NormalizedEmail';
@@ -32,9 +32,22 @@ export class SqliteParticipantRepository
   public listByCourse(
     courseId: CourseId,
     page: PageRequest,
+    search?: string,
   ): Page<Participant> {
+    const text = search?.trim();
+    // escaped with !, so % and _ in the search match themselves
+    const pattern = text ? `%${text.replace(/[!%_]/g, '!$&')}%` : null;
+
     return this.findPage(page, {
-      where: eq(participantTable.courseId, courseId),
+      where: and(
+        eq(participantTable.courseId, courseId),
+        pattern === null
+          ? undefined
+          : or(
+              sql`${participantTable.name} LIKE ${pattern} ESCAPE '!'`,
+              sql`${participantTable.email} LIKE ${pattern} ESCAPE '!'`,
+            ),
+      ),
       orderBy: [participantTable.name, participantTable.id],
     });
   }

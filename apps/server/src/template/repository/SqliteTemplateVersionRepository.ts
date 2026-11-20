@@ -1,5 +1,5 @@
 import { AbstractSqliteRepository } from '@cert-it/data';
-import { and, desc, eq, ne, notExists } from 'drizzle-orm';
+import { and, desc, eq, inArray, max, ne, notExists } from 'drizzle-orm';
 import { certificateTable } from '../../certificate/repository/certificateTable';
 import type { CourseId } from '../../course/Course';
 import type { FontId } from '../../font/Font';
@@ -19,6 +19,41 @@ export class SqliteTemplateVersionRepository
       where: eq(templateVersionTable.courseId, courseId),
       orderBy: [desc(templateVersionTable.version)],
     });
+  }
+
+  public findVersionNumbers(
+    ids: readonly TemplateVersionId[],
+  ): ReadonlyMap<TemplateVersionId, number> {
+    const rows = this.db
+      .select({
+        id: templateVersionTable.id,
+        version: templateVersionTable.version,
+      })
+      .from(templateVersionTable)
+      .where(inArray(templateVersionTable.id, [...ids]))
+      .all();
+
+    return new Map(rows.map(({ id, version }) => [id, version]));
+  }
+
+  public findLatestVersionNumbers(
+    courseIds: readonly CourseId[],
+  ): ReadonlyMap<CourseId, number> {
+    const rows = this.db
+      .select({
+        courseId: templateVersionTable.courseId,
+        latest: max(templateVersionTable.version),
+      })
+      .from(templateVersionTable)
+      .where(inArray(templateVersionTable.courseId, [...courseIds]))
+      .groupBy(templateVersionTable.courseId)
+      .all();
+
+    return new Map(
+      rows.flatMap(({ courseId, latest }) =>
+        latest === null ? [] : [[courseId, latest] as const],
+      ),
+    );
   }
 
   public listByCourse(courseId: CourseId): TemplateVersion[] {

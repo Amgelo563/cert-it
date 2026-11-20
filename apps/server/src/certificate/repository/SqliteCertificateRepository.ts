@@ -45,6 +45,14 @@ export class SqliteCertificateRepository
     });
   }
 
+  public listByParticipants(
+    participantIds: readonly ParticipantId[],
+  ): Certificate[] {
+    return this.findMany({
+      where: inArray(certificateTable.participantId, [...participantIds]),
+    });
+  }
+
   public findActiveByEmail(
     courseId: CourseId,
     email: NormalizedEmail,

@@ -197,12 +197,14 @@ export class CourseService {
     return this.database.getRepositories().courses.findById(id);
   }
 
-  // two queries for the whole page, not two per course
+  // three queries for the whole page, not three per course
   protected toSummaries(courses: readonly Course[]): CourseSummary[] {
-    const { participants, certificates } = this.database.getRepositories();
+    const { participants, certificates, templateVersions } =
+      this.database.getRepositories();
     const ids = courses.map((course) => course.id);
     const participantCounts = participants.countByCourses(ids);
     const certificateCounts = certificates.countByCourses(ids);
+    const latestVersions = templateVersions.findLatestVersionNumbers(ids);
 
     return courses.map((course) => ({
       id: course.id,
@@ -213,6 +215,7 @@ export class CourseService {
       active: course.active,
       createdAt: course.createdAt.toISOString(),
       participantCount: participantCounts.get(course.id) ?? 0,
+      latestTemplateVersion: latestVersions.get(course.id) ?? null,
       certificateCounts:
         certificateCounts.get(course.id) ?? CourseService.NoCertificates,
     }));

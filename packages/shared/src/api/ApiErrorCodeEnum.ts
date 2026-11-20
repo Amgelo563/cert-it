@@ -20,6 +20,8 @@ export const ApiErrorCodeEnum = {
   NotFound: 'not_found',
   /** Another user already has the email. */
   EmailTaken: 'email_taken',
+  /** Another participant of the course already has the email. */
+  ParticipantEmailTaken: 'participant_email_taken',
   /** The change would leave no active Admin. */
   LastAdmin: 'last_admin',
   /** Admins can't change their own role, status or password from user management. */
