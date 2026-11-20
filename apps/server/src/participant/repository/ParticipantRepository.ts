@@ -20,6 +20,12 @@ export interface ParticipantRepository {
   /** Returns the participant of a course with the given email, or null if there's none. */
   findByEmail(courseId: CourseId, email: NormalizedEmail): Participant | null;
 
+  /** Returns the participants of a course with any of the given emails. */
+  listByEmails(
+    courseId: CourseId,
+    emails: readonly NormalizedEmail[],
+  ): Participant[];
+
   /** Creates a participant, unless the course already has one with that email. */
   create(data: {
     courseId: CourseId;

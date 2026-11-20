@@ -176,6 +176,19 @@ describe('CourseService (add)', () => {
   );
 });
 
+describe('CourseService (body limit)', () => {
+  test('GIVEN a body over 16 KB WHEN adding a course THEN answers 413', async () => {
+    const { courses } = await setup();
+
+    const response = await courses('POST', '', {
+      name: 'Networks',
+      padding: 'x'.repeat(20 * 1024),
+    });
+
+    expect(response.status).toBe(413);
+  });
+});
+
 describe('CourseService (update)', () => {
   test('GIVEN new fields WHEN updating a course THEN changes and audits only those', async () => {
     const { auditEntries, courses, seeder } = await setup();

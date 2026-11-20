@@ -3,7 +3,10 @@ import type {
   AuditActionEnum,
   AuditEntityEnum,
   Role,
+  ImportRowStatus,
+  ImportSkipReasonEnum,
 } from '@cert-it/shared';
+import type { ColumnRole } from '../../../course/participants/import/ColumnRoleEnum';
 import type { CourseTab } from '../../../course/CourseTabEnum';
 
 /** Texts of the admin panel, in one language. Placeholders are written as `{key}`. */
@@ -189,6 +192,66 @@ export type AdminMessages = {
     deleted: string;
     fieldRequired: string;
     invalidEmail: string;
+  };
+  participantImport: {
+    /** Button on the participants tab. */
+    open: string;
+    title: string;
+    stepFile: string;
+    stepColumns: string;
+    stepPreview: string;
+    dropTitle: string;
+    /** With the most rows in `{max}`. */
+    dropDescription: string;
+    sampleText: string;
+    sampleLink: string;
+    emptyFile: string;
+    unreadableFile: string;
+    rejectedFile: string;
+    /** With the file's rows in `{count}` and the most allowed in `{max}`. */
+    tooManyRows: string;
+    /** With the file's `{file}` name and its rows in `{count}`. */
+    fileSummary: string;
+    column: string;
+    example: string;
+    use: string;
+    /** Accessible label of a column's picker, with the `{column}` header. */
+    useOf: string;
+    /** A column without a header, with its number in `{n}`. */
+    untitled: string;
+    /** What a column holds, keyed by ColumnRoleEnum value. */
+    roles: Record<ColumnRole, string>;
+    needNameAndEmail: string;
+    /** With the most extra columns in `{max}`. */
+    tooManyExtras: string;
+    modeLabel: string;
+    modeSkip: string;
+    modeSkipDescription: string;
+    modeUpdate: string;
+    modeUpdateDescription: string;
+    check: string;
+    back: string;
+    /** With the rows that would be saved in `{count}`. */
+    import: string;
+    filterAll: string;
+    /** Filter and audit labels, keyed by ImportRowStatusEnum value. */
+    groups: Record<ImportRowStatus, string>;
+    /** What happens to one row, keyed by ImportRowStatusEnum value. */
+    statuses: Record<ImportRowStatus, string>;
+    /** Keyed by the member names in ImportSkipReasonEnum, with the current `{name}` or the earlier `{line}`. */
+    reasons: Record<Uncapitalize<keyof typeof ImportSkipReasonEnum>, string>;
+    errors: {
+      nameRequired: string;
+      nameTooLong: string;
+      emailInvalid: string;
+    };
+    /** Under an update, with the current `{name}`. */
+    previousName: string;
+    line: string;
+    result: string;
+    noRows: string;
+    /** With the `{created}`, `{updated}` and `{skipped}` counts. */
+    done: string;
   };
   users: {
     title: string;

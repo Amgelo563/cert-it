@@ -3,6 +3,8 @@ import {
   AuditActionEnum,
   AuditEntityEnum,
   type AuditEntrySummary,
+  ImportModeEnum,
+  ImportRowStatusEnum,
   LocaleEnum,
   RoleEnum,
 } from '@cert-it/shared';
@@ -92,6 +94,16 @@ export function AuditLogTable({
     }
     if (isCourse && key === 'dateFormat' && typeof value === 'string') {
       return `${t('courses.dateFormat')}: ${value}`;
+    }
+    if (entry.action === AuditActionEnum.Import) {
+      const status = Object.values(ImportRowStatusEnum).find((s) => s === key);
+      if (status)
+        return `${t(`participantImport.groups.${status}`)}: ${String(value)}`;
+      if (key === 'mode') {
+        return value === ImportModeEnum.Update
+          ? t('participantImport.modeUpdate')
+          : t('participantImport.modeSkip');
+      }
     }
     if (isCourse && key === 'lookupEnabled' && typeof value === 'boolean') {
       return `${t('courses.lookup')}: ${

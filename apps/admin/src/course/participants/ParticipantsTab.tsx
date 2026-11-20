@@ -11,7 +11,12 @@ import {
 import { useDebouncedValue } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { IconAlertCircle, IconSearch, IconUserPlus } from '@tabler/icons-react';
+import {
+  IconAlertCircle,
+  IconFileImport,
+  IconSearch,
+  IconUserPlus,
+} from '@tabler/icons-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiRoutes } from '../../app/api/ApiClient';
@@ -22,6 +27,7 @@ import { Surface } from '../../app/layout/Surface';
 import { usePermissions } from '../../auth/usePermissions';
 import { useCourse } from '../useCourse';
 import { ParticipantFormModal } from './form/ParticipantFormModal';
+import { ImportParticipantsModal } from './import/ImportParticipantsModal';
 import { ParticipantsTable } from './table/ParticipantsTable';
 
 const PageSize = 25;
@@ -43,6 +49,7 @@ export function ParticipantsTab() {
   >();
   // the participant whose change is being sent, so their row can't send another
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const participants = useApiRequest(
     useCallback(
@@ -134,31 +141,35 @@ export function ParticipantsTab() {
               </Text>
             )}
           </Group>
-          <Group gap="sm" wrap="nowrap">
-            <TextInput
-              placeholder={t('participants.searchPlaceholder')}
-              aria-label={t('participants.searchPlaceholder')}
-              leftSection={<IconSearch size={16} stroke={1.5} />}
-              value={search}
-              onChange={(event) => {
-                setSearch(event.currentTarget.value);
-                setPage(1);
-              }}
-              flex={1}
-              miw={0}
-              w={{ sm: 260 }}
-            />
-            {can(PermissionEnum.EditParticipants) && (
+          {can(PermissionEnum.EditParticipants) && (
+            <Group gap="sm">
+              <Button
+                variant="default"
+                leftSection={<IconFileImport size={16} stroke={1.5} />}
+                onClick={() => setImporting(true)}
+              >
+                {t('participantImport.open')}
+              </Button>
               <Button
                 leftSection={<IconUserPlus size={16} stroke={1.5} />}
                 onClick={() => setEditing(null)}
-                flex="none"
               >
                 {t('participants.add')}
               </Button>
-            )}
-          </Group>
+            </Group>
+          )}
         </Flex>
+        <TextInput
+          placeholder={t('participants.searchPlaceholder')}
+          aria-label={t('participants.searchPlaceholder')}
+          leftSection={<IconSearch size={16} stroke={1.5} />}
+          value={search}
+          onChange={(event) => {
+            setSearch(event.currentTarget.value);
+            setPage(1);
+          }}
+          maw={360}
+        />
         {participants.error !== null && (
           <Alert
             color="red"
@@ -187,6 +198,12 @@ export function ParticipantsTab() {
         />
       </Stack>
 
+      <ImportParticipantsModal
+        opened={importing}
+        courseId={course.id}
+        onClose={() => setImporting(false)}
+        onImported={reloadAll}
+      />
       <ParticipantFormModal
         opened={editing !== undefined}
         courseId={course.id}

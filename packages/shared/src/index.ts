@@ -11,6 +11,8 @@ export * from './api/course/CourseSummary';
 export * from './api/course/CreateCourseRequest';
 export * from './api/course/UpdateCourseRequest';
 export * from './api/participant/CreateParticipantRequest';
+export * from './api/participant/ImportParticipantsRequest';
+export * from './api/participant/ImportParticipantsResponse';
 export * from './api/participant/ParticipantCertificate';
 export * from './api/participant/ParticipantFields';
 export * from './api/participant/ParticipantListQuery';

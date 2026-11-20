@@ -7,6 +7,9 @@ import {
   AuditActionEnum,
   AuditEntityEnum,
   type CreateParticipantRequest,
+  type ImportParticipantsRequest,
+  ImportParticipantsRequestSchema,
+  type ImportParticipantsResponse,
   CreateParticipantRequestSchema,
   type ParticipantListQuery,
   ParticipantListQuerySchema,
@@ -26,18 +29,24 @@ import { apiError } from '../http/api/apiError';
 import { apiValidator } from '../http/api/apiValidator';
 import { jsonBodyLimit } from '../http/api/jsonBodyLimit';
 import { normalizeEmail } from '../util/email/NormalizedEmail';
+import { ParticipantImporter } from './import/ParticipantImporter';
 import type { Participant, ParticipantId } from './Participant';
 
 type ParticipantServiceOptions = {
   database: DatabaseService;
   guard: AuthGuard;
   auditLog: AuditLogService;
+  /** @default a ParticipantImporter on the same database */
+  importer?: ParticipantImporter;
 };
 
 /** Serves a course's participant routes: anyone can read them, Editors change them and Admins delete them. */
 export class ParticipantService {
   /** Path of the routes, relative to the base path. */
   public static readonly Path = '/api/courses/:courseId/participants';
+
+  // a full import of MaxImportRows rows, with room for long names and extra columns
+  protected static readonly MaxImportBytes = 4 * 1024 * 1024;
 
   protected static readonly ErrorStatuses: Partial<
     Record<ApiErrorCode, ClientErrorStatusCode>
@@ -52,12 +61,17 @@ export class ParticipantService {
 
   protected readonly auditLog: AuditLogService;
 
+  protected readonly importer: ParticipantImporter;
+
   protected readonly app: ReturnType<ParticipantService['createApp']>;
 
   constructor(options: ParticipantServiceOptions) {
     this.database = options.database;
     this.guard = options.guard;
     this.auditLog = options.auditLog;
+    this.importer =
+      options.importer
+      ?? new ParticipantImporter({ database: options.database });
     this.app = this.createApp();
   }
 
@@ -86,7 +100,7 @@ export class ParticipantService {
     const { guard } = this;
 
     return new Hono<AuthEnv>({ strict: false })
-      .use(jsonBodyLimit(), guard.authenticate())
+      .use(guard.authenticate())
       .get(
         '/',
         guard.requirePermission(PermissionEnum.ViewRecords),
@@ -96,20 +110,52 @@ export class ParticipantService {
       .post(
         '/',
         guard.requirePermission(PermissionEnum.EditParticipants),
+        jsonBodyLimit(),
         apiValidator('json', CreateParticipantRequestSchema),
         (c) => this.add(c, c.req.valid('json')),
       )
       .patch(
         '/:id',
         guard.requirePermission(PermissionEnum.EditParticipants),
+        jsonBodyLimit(),
         apiValidator('json', UpdateParticipantRequestSchema),
         (c) => this.update(c, c.req.valid('json')),
+      )
+      .post(
+        '/import',
+        guard.requirePermission(PermissionEnum.EditParticipants),
+        jsonBodyLimit(ParticipantService.MaxImportBytes),
+        apiValidator('json', ImportParticipantsRequestSchema),
+        (c) => this.import(c, c.req.valid('json')),
       )
       .delete(
         '/:id',
         guard.requirePermission(PermissionEnum.DeleteRecords),
         (c) => this.remove(c),
       );
+  }
+
+  // one audit entry for the whole import, and none for a dry run
+  protected import(c: Context<AuthEnv>, body: ImportParticipantsRequest) {
+    const course = this.findCourse(c);
+    if (!course) return this.error(c, ApiErrorCodeEnum.NotFound);
+
+    const result = this.importer.run({
+      courseId: course.id,
+      rows: body.rows,
+      mode: body.mode,
+      dryRun: body.dryRun,
+    });
+    if (!body.dryRun) {
+      this.auditLog.record({
+        userId: c.get('user').id,
+        action: AuditActionEnum.Import,
+        entity: AuditEntityEnum.Course,
+        entityId: course.id,
+        details: { mode: body.mode, ...result.totals },
+      });
+    }
+    return c.json<ImportParticipantsResponse, 200>(result, 200);
   }
 
   protected list(c: Context<AuthEnv>, query: ParticipantListQuery) {

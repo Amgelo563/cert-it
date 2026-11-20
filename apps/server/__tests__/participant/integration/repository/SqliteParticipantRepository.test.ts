@@ -166,6 +166,24 @@ describe('SqliteParticipantRepository (listByCourse search)', () => {
   });
 });
 
+describe('SqliteParticipantRepository (listByEmails)', () => {
+  test('GIVEN more emails than one chunk WHEN listing THEN finds only matches in the course', () => {
+    const course = seeder.course();
+    const ada = seeder.participant(course, { email: 'ada@example.org' });
+    seeder.participant(course, { email: 'bob@example.org' });
+    seeder.participant(seeder.course(), { email: 'carol@example.org' });
+    const emails = [
+      ...Array.from({ length: 600 }, (_, i) => `nobody${i}@example.org`),
+      'ada@example.org',
+      'carol@example.org',
+    ].map(normalizeEmail);
+
+    expect(repositories.participants.listByEmails(course.id, emails)).toEqual([
+      ada,
+    ]);
+  });
+});
+
 describe('SqliteParticipantRepository (listWithoutCertificate)', () => {
   test('GIVEN participants with and without certificates WHEN listing those without THEN skips the ones with one', () => {
     const user = seeder.user();

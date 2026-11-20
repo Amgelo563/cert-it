@@ -29,6 +29,25 @@ export class SqliteParticipantRepository
     });
   }
 
+  public listByEmails(
+    courseId: CourseId,
+    emails: readonly NormalizedEmail[],
+  ): Participant[] {
+    const found: Participant[] = [];
+    // in chunks, under SQLite's limit of bound parameters
+    for (let start = 0; start < emails.length; start += 500) {
+      found.push(
+        ...this.findMany({
+          where: and(
+            eq(participantTable.courseId, courseId),
+            inArray(participantTable.email, emails.slice(start, start + 500)),
+          ),
+        }),
+      );
+    }
+    return found;
+  }
+
   public listByCourse(
     courseId: CourseId,
     page: PageRequest,

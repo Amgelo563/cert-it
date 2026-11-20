@@ -99,34 +99,39 @@ export class CourseService {
   protected createApp() {
     const { guard } = this;
 
-    return new Hono<AuthEnv>({ strict: false })
-      .use(jsonBodyLimit(), guard.authenticate())
-      .get(
-        '/',
-        guard.requirePermission(PermissionEnum.ViewRecords),
-        apiValidator('query', PageQuerySchema),
-        (c) => this.list(c, c.req.valid('query')),
-      )
-      .get('/:id', guard.requirePermission(PermissionEnum.ViewRecords), (c) =>
-        this.get(c),
-      )
-      .post(
-        '/',
-        guard.requirePermission(PermissionEnum.EditCourses),
-        apiValidator('json', CreateCourseRequestSchema),
-        (c) => this.add(c, c.req.valid('json')),
-      )
-      .patch(
-        '/:id',
-        guard.requirePermission(PermissionEnum.EditCourses),
-        apiValidator('json', UpdateCourseRequestSchema),
-        (c) => this.update(c, c.req.valid('json')),
-      )
-      .delete(
-        '/:id',
-        guard.requirePermission(PermissionEnum.DeleteRecords),
-        (c) => this.remove(c),
-      );
+    return (
+      new Hono<AuthEnv>({ strict: false })
+        // not jsonBodyLimit here: it would reach the participant routes under this path
+        .use(guard.authenticate())
+        .get(
+          '/',
+          guard.requirePermission(PermissionEnum.ViewRecords),
+          apiValidator('query', PageQuerySchema),
+          (c) => this.list(c, c.req.valid('query')),
+        )
+        .get('/:id', guard.requirePermission(PermissionEnum.ViewRecords), (c) =>
+          this.get(c),
+        )
+        .post(
+          '/',
+          guard.requirePermission(PermissionEnum.EditCourses),
+          jsonBodyLimit(),
+          apiValidator('json', CreateCourseRequestSchema),
+          (c) => this.add(c, c.req.valid('json')),
+        )
+        .patch(
+          '/:id',
+          guard.requirePermission(PermissionEnum.EditCourses),
+          jsonBodyLimit(),
+          apiValidator('json', UpdateCourseRequestSchema),
+          (c) => this.update(c, c.req.valid('json')),
+        )
+        .delete(
+          '/:id',
+          guard.requirePermission(PermissionEnum.DeleteRecords),
+          (c) => this.remove(c),
+        )
+    );
   }
 
   protected list(c: Context<AuthEnv>, query: PageQuery) {
