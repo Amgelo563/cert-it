@@ -187,6 +187,75 @@ describe('AbstractSqliteRepository (delete)', () => {
   });
 });
 
+describe('AbstractSqliteRepository (findByIds)', () => {
+  test('GIVEN existing and missing IDs WHEN finding them THEN returns the existing ones ordered by ID', () => {
+    const first = createItem('a', 1);
+    const second = createItem('b', 2);
+
+    const found = items.findByIds([second.id, MissingId, first.id]);
+
+    expect(found).toEqual([first, second]);
+  });
+
+  test('GIVEN no IDs WHEN finding them THEN returns an empty array', () => {
+    createItem('a', 1);
+
+    expect(items.findByIds([])).toEqual([]);
+  });
+});
+
+describe('AbstractSqliteRepository (findOne)', () => {
+  test('GIVEN a matching item WHEN finding one THEN returns it', () => {
+    createItem('a', 1);
+    const created = createItem('b', 2);
+
+    expect(items.findBySlug('b')).toEqual(created);
+  });
+
+  test('GIVEN no matching item WHEN finding one THEN returns null', () => {
+    expect(items.findBySlug('missing')).toBeNull();
+  });
+
+  test('GIVEN several matches and an order WHEN finding one THEN returns the first in that order', () => {
+    createItem('a', 1);
+    const last = createItem('c', 3);
+    createItem('b', 2);
+
+    expect(items.findLastInGroup(1)).toEqual(last);
+  });
+});
+
+describe('AbstractSqliteRepository (findMany)', () => {
+  test('GIVEN no filter WHEN finding many THEN returns every item ordered by ID', () => {
+    createItem('b', 2);
+    createItem('a', 1);
+
+    expect(items.listAll().map((item) => item.slug)).toEqual(['b', 'a']);
+  });
+
+  test('GIVEN a filter and an order WHEN finding many THEN returns the matches in that order', () => {
+    createItem('c', 3);
+    createItem('a', 1);
+    createItem('other', 1, 2);
+
+    expect(items.listAllByGroup(1).map((item) => item.slug)).toEqual([
+      'a',
+      'c',
+    ]);
+  });
+});
+
+describe('AbstractSqliteRepository (count)', () => {
+  test('GIVEN items in two groups WHEN counting THEN counts all or only the filtered ones', () => {
+    createItem('a', 1);
+    createItem('b', 2);
+    createItem('other', 1, 2);
+
+    expect(items.countAll()).toBe(3);
+    expect(items.countByGroup(1)).toBe(2);
+  });
+});
+
 describe('AbstractSqliteRepository (findPage)', () => {
   test('GIVEN items in two groups WHEN listing a page of one group THEN returns that page in order with the group total', () => {
     createItem('c', 3);

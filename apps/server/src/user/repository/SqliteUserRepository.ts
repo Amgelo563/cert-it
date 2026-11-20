@@ -4,7 +4,7 @@ import {
   type PageRequest,
 } from '@cert-it/data';
 import { RoleEnum } from '@cert-it/shared';
-import { and, count, eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { NormalizedEmail } from '../../util/email/NormalizedEmail';
 import type { User, UserId } from '../User';
 import { userTable } from './userTable';
@@ -17,13 +17,7 @@ export class SqliteUserRepository
   protected readonly table = userTable;
 
   public findByEmail(email: NormalizedEmail): User | null {
-    const row = this.db
-      .select()
-      .from(userTable)
-      .where(eq(userTable.email, email))
-      .get();
-
-    return row ? this.toModel(row) : null;
+    return this.findOne({ where: eq(userTable.email, email) });
   }
 
   public findPasswordHash(id: UserId): string | null {
@@ -40,20 +34,14 @@ export class SqliteUserRepository
     return this.findPage(page, { orderBy: [userTable.email] });
   }
 
-  public count(): number {
-    return this.db.select({ total: count() }).from(userTable).get()?.total ?? 0;
+  public override count(): number {
+    return super.count();
   }
 
   public countActiveAdmins(): number {
-    const row = this.db
-      .select({ total: count() })
-      .from(userTable)
-      .where(
-        and(eq(userTable.role, RoleEnum.Admin), eq(userTable.active, true)),
-      )
-      .get();
-
-    return row?.total ?? 0;
+    return super.count(
+      and(eq(userTable.role, RoleEnum.Admin), eq(userTable.active, true)),
+    );
   }
 
   // the password hash is left out, and only read through findPasswordHash

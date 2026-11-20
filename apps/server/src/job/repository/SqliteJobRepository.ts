@@ -17,15 +17,7 @@ export class SqliteJobRepository
   protected readonly table = jobTable;
 
   public findNextPending(): Job | null {
-    const row = this.db
-      .select()
-      .from(jobTable)
-      .where(eq(jobTable.status, JobStatusEnum.Pending))
-      .orderBy(jobTable.id)
-      .limit(1)
-      .get();
-
-    return row ? this.toModel(row) : null;
+    return this.findOne({ where: eq(jobTable.status, JobStatusEnum.Pending) });
   }
 
   public listByCourse(courseId: CourseId, page: PageRequest): Page<Job> {

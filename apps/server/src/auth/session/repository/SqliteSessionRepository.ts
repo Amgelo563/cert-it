@@ -12,13 +12,7 @@ export class SqliteSessionRepository
   protected readonly table = sessionTable;
 
   public findByTokenHash(tokenHash: string): Session | null {
-    const row = this.db
-      .select()
-      .from(sessionTable)
-      .where(eq(sessionTable.tokenHash, tokenHash))
-      .get();
-
-    return row ? this.toModel(row) : null;
+    return this.findOne({ where: eq(sessionTable.tokenHash, tokenHash) });
   }
 
   public deleteByUser(userId: UserId): number {

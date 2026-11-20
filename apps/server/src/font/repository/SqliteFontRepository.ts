@@ -12,39 +12,22 @@ export class SqliteFontRepository
   protected readonly table = fontTable;
 
   public findBySha256(sha256: string): Font | null {
-    const row = this.db
-      .select()
-      .from(fontTable)
-      .where(eq(fontTable.sha256, sha256))
-      .get();
-
-    return row ? this.toModel(row) : null;
+    return this.findOne({ where: eq(fontTable.sha256, sha256) });
   }
 
   public list(): Font[] {
-    return this.db
-      .select()
-      .from(fontTable)
-      .orderBy(fontTable.family, fontTable.style)
-      .all()
-      .map((row) => this.toModel(row));
+    return this.findMany({ orderBy: [fontTable.family, fontTable.style] });
   }
 
   public listUnused(): Font[] {
-    return this.db
-      .select()
-      .from(fontTable)
-      .where(
-        notExists(
-          this.db
-            .select({ fontId: templateVersionFontTable.fontId })
-            .from(templateVersionFontTable)
-            .where(eq(templateVersionFontTable.fontId, fontTable.id)),
-        ),
-      )
-      .orderBy(fontTable.id)
-      .all()
-      .map((row) => this.toModel(row));
+    return this.findMany({
+      where: notExists(
+        this.db
+          .select({ fontId: templateVersionFontTable.fontId })
+          .from(templateVersionFontTable)
+          .where(eq(templateVersionFontTable.fontId, fontTable.id)),
+      ),
+    });
   }
 
   protected toModel(row: typeof fontTable.$inferSelect): Font {

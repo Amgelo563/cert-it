@@ -15,51 +15,38 @@ export class SqliteTemplateVersionRepository
   protected readonly table = templateVersionTable;
 
   public findLatest(courseId: CourseId): TemplateVersion | null {
-    const row = this.db
-      .select()
-      .from(templateVersionTable)
-      .where(eq(templateVersionTable.courseId, courseId))
-      .orderBy(desc(templateVersionTable.version))
-      .limit(1)
-      .get();
-
-    return row ? this.toModel(row) : null;
+    return this.findOne({
+      where: eq(templateVersionTable.courseId, courseId),
+      orderBy: [desc(templateVersionTable.version)],
+    });
   }
 
   public listByCourse(courseId: CourseId): TemplateVersion[] {
-    return this.db
-      .select()
-      .from(templateVersionTable)
-      .where(eq(templateVersionTable.courseId, courseId))
-      .orderBy(desc(templateVersionTable.version))
-      .all()
-      .map((row) => this.toModel(row));
+    return this.findMany({
+      where: eq(templateVersionTable.courseId, courseId),
+      orderBy: [desc(templateVersionTable.version)],
+    });
   }
 
   public listUnused(courseId: CourseId): TemplateVersion[] {
     const latest = this.findLatest(courseId);
     if (!latest) return [];
 
-    return this.db
-      .select()
-      .from(templateVersionTable)
-      .where(
-        and(
-          eq(templateVersionTable.courseId, courseId),
-          ne(templateVersionTable.id, latest.id),
-          notExists(
-            this.db
-              .select({ id: certificateTable.id })
-              .from(certificateTable)
-              .where(
-                eq(certificateTable.templateVersionId, templateVersionTable.id),
-              ),
-          ),
+    return this.findMany({
+      where: and(
+        eq(templateVersionTable.courseId, courseId),
+        ne(templateVersionTable.id, latest.id),
+        notExists(
+          this.db
+            .select({ id: certificateTable.id })
+            .from(certificateTable)
+            .where(
+              eq(certificateTable.templateVersionId, templateVersionTable.id),
+            ),
         ),
-      )
-      .orderBy(templateVersionTable.version)
-      .all()
-      .map((row) => this.toModel(row));
+      ),
+      orderBy: [templateVersionTable.version],
+    });
   }
 
   public listFontIds(id: TemplateVersionId): FontId[] {

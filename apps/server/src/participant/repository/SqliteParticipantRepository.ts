@@ -7,7 +7,7 @@ import { and, count, eq, inArray, notExists } from 'drizzle-orm';
 import { certificateTable } from '../../certificate/repository/certificateTable';
 import type { CourseId } from '../../course/Course';
 import type { NormalizedEmail } from '../../util/email/NormalizedEmail';
-import type { Participant, ParticipantId } from '../Participant';
+import type { Participant } from '../Participant';
 import { participantTable } from './participantTable';
 import type { ParticipantRepository } from './ParticipantRepository';
 
@@ -17,32 +17,16 @@ export class SqliteParticipantRepository
 {
   protected readonly table = participantTable;
 
-  public findByIds(ids: readonly ParticipantId[]): Participant[] {
-    return this.db
-      .select()
-      .from(participantTable)
-      .where(inArray(participantTable.id, [...ids]))
-      .orderBy(participantTable.id)
-      .all()
-      .map((row) => this.toModel(row));
-  }
-
   public findByEmail(
     courseId: CourseId,
     email: NormalizedEmail,
   ): Participant | null {
-    const row = this.db
-      .select()
-      .from(participantTable)
-      .where(
-        and(
-          eq(participantTable.courseId, courseId),
-          eq(participantTable.email, email),
-        ),
-      )
-      .get();
-
-    return row ? this.toModel(row) : null;
+    return this.findOne({
+      where: and(
+        eq(participantTable.courseId, courseId),
+        eq(participantTable.email, email),
+      ),
+    });
   }
 
   public listByCourse(
@@ -56,23 +40,18 @@ export class SqliteParticipantRepository
   }
 
   public listWithoutCertificate(courseId: CourseId): Participant[] {
-    return this.db
-      .select()
-      .from(participantTable)
-      .where(
-        and(
-          eq(participantTable.courseId, courseId),
-          notExists(
-            this.db
-              .select({ id: certificateTable.id })
-              .from(certificateTable)
-              .where(eq(certificateTable.participantId, participantTable.id)),
-          ),
+    return this.findMany({
+      where: and(
+        eq(participantTable.courseId, courseId),
+        notExists(
+          this.db
+            .select({ id: certificateTable.id })
+            .from(certificateTable)
+            .where(eq(certificateTable.participantId, participantTable.id)),
         ),
-      )
-      .orderBy(participantTable.name, participantTable.id)
-      .all()
-      .map((row) => this.toModel(row));
+      ),
+      orderBy: [participantTable.name, participantTable.id],
+    });
   }
 
   public countByCourses(

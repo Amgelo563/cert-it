@@ -1,5 +1,5 @@
 import { Result } from 'better-result';
-import { eq, sql } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import type { DuplicateModelError } from '../../../src/shared/errors/DuplicateModelError';
 import type { Page } from '../../../src/shared/page/Page';
 import type { PageRequest } from '../../../src/shared/page/PageRequest';
@@ -18,6 +18,36 @@ export class SqliteItemRepository extends AbstractSqliteRepository<
       where: eq(itemTable.groupId, groupId),
       orderBy: [itemTable.position],
     });
+  }
+
+  public findBySlug(slug: string): Item | null {
+    return this.findOne({ where: eq(itemTable.slug, slug) });
+  }
+
+  public findLastInGroup(groupId: number): Item | null {
+    return this.findOne({
+      where: eq(itemTable.groupId, groupId),
+      orderBy: [desc(itemTable.position)],
+    });
+  }
+
+  public listAll(): Item[] {
+    return this.findMany();
+  }
+
+  public listAllByGroup(groupId: number): Item[] {
+    return this.findMany({
+      where: eq(itemTable.groupId, groupId),
+      orderBy: [itemTable.position],
+    });
+  }
+
+  public countAll(): number {
+    return this.count();
+  }
+
+  public countByGroup(groupId: number): number {
+    return this.count(eq(itemTable.groupId, groupId));
   }
 
   public renameSlugWithRawSql(

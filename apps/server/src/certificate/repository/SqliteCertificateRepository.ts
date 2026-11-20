@@ -19,7 +19,7 @@ import { participantTable } from '../../participant/repository/participantTable'
 import type { TemplateVersionId } from '../../template/TemplateVersion';
 import type { NormalizedEmail } from '../../util/email/NormalizedEmail';
 import type { CertificateCode } from '../code/CertificateCode';
-import type { Certificate, CertificateId } from '../Certificate';
+import type { Certificate } from '../Certificate';
 import type { CertificateCounts } from '../CertificateCounts';
 import type { CertificateRepository } from './CertificateRepository';
 import { certificateTable } from './certificateTable';
@@ -35,34 +35,14 @@ export class SqliteCertificateRepository
 
   protected readonly table = certificateTable;
 
-  public findByIds(ids: readonly CertificateId[]): Certificate[] {
-    return this.db
-      .select()
-      .from(certificateTable)
-      .where(inArray(certificateTable.id, [...ids]))
-      .orderBy(certificateTable.id)
-      .all()
-      .map((row) => this.toModel(row));
-  }
-
   public findByCode(code: CertificateCode): Certificate | null {
-    const row = this.db
-      .select()
-      .from(certificateTable)
-      .where(eq(certificateTable.code, code))
-      .get();
-
-    return row ? this.toModel(row) : null;
+    return this.findOne({ where: eq(certificateTable.code, code) });
   }
 
   public findByParticipant(participantId: ParticipantId): Certificate | null {
-    const row = this.db
-      .select()
-      .from(certificateTable)
-      .where(eq(certificateTable.participantId, participantId))
-      .get();
-
-    return row ? this.toModel(row) : null;
+    return this.findOne({
+      where: eq(certificateTable.participantId, participantId),
+    });
   }
 
   public findActiveByEmail(
@@ -99,31 +79,19 @@ export class SqliteCertificateRepository
   }
 
   public listAllByCourse(courseId: CourseId): Certificate[] {
-    return this.db
-      .select()
-      .from(certificateTable)
-      .where(eq(certificateTable.courseId, courseId))
-      .orderBy(certificateTable.id)
-      .all()
-      .map((row) => this.toModel(row));
+    return this.findMany({ where: eq(certificateTable.courseId, courseId) });
   }
 
   public listWithOtherVersion(
     courseId: CourseId,
     templateVersionId: TemplateVersionId,
   ): Certificate[] {
-    return this.db
-      .select()
-      .from(certificateTable)
-      .where(
-        and(
-          eq(certificateTable.courseId, courseId),
-          ne(certificateTable.templateVersionId, templateVersionId),
-        ),
-      )
-      .orderBy(certificateTable.id)
-      .all()
-      .map((row) => this.toModel(row));
+    return this.findMany({
+      where: and(
+        eq(certificateTable.courseId, courseId),
+        ne(certificateTable.templateVersionId, templateVersionId),
+      ),
+    });
   }
 
   public countByCourses(

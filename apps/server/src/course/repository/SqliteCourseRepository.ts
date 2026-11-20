@@ -19,15 +19,13 @@ export class SqliteCourseRepository
   }
 
   public listForLookup(): Course[] {
-    return this.db
-      .select()
-      .from(courseTable)
-      .where(
-        and(eq(courseTable.active, true), eq(courseTable.lookupEnabled, true)),
-      )
-      .orderBy(courseTable.name)
-      .all()
-      .map((row) => this.toModel(row));
+    return this.findMany({
+      where: and(
+        eq(courseTable.active, true),
+        eq(courseTable.lookupEnabled, true),
+      ),
+      orderBy: [courseTable.name],
+    });
   }
 
   protected toModel(row: typeof courseTable.$inferSelect): Course {

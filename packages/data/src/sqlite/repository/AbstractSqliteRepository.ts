@@ -6,6 +6,7 @@ import {
   eq,
   getTableColumns,
   getTableName,
+  inArray,
   type InferInsertModel,
   type InferSelectModel,
   type SQL,
@@ -23,7 +24,7 @@ type IdTable = SQLiteTable & { id: SQLiteColumn };
 
 type AbstractSqliteRepositoryOptions = { db: SqliteExecutor };
 
-type FindPageOptions = {
+type FindOptions = {
   where?: SQL;
   /** @default the ID column, ascending */
   orderBy?: (SQLiteColumn | SQL)[];
@@ -51,13 +52,12 @@ export abstract class AbstractSqliteRepository<
 
   /** Returns the model with the given ID, or null if there's none. */
   public findById(id: ModelId<Model>): Model | null {
-    const row = this.db
-      .select()
-      .from(this.table as SQLiteTable)
-      .where(eq(this.table.id, id))
-      .get();
+    return this.findOne({ where: eq(this.table.id, id) });
+  }
 
-    return row ? this.toModel(row as InferSelectModel<Table>) : null;
+  /** Returns the models with the given IDs, ordered by ID and skipping IDs that don't exist. */
+  public findByIds(ids: readonly ModelId<Model>[]): Model[] {
+    return this.findMany({ where: inArray(this.table.id, [...ids]) });
   }
 
   /** Creates a model from the given values. */
@@ -114,34 +114,58 @@ export abstract class AbstractSqliteRepository<
     return changes > 0 ? Result.ok(undefined) : Result.err(this.notFound(id));
   }
 
+  /** Returns the first model matching the given filter, or null if there's none. */
+  protected findOne(options: FindOptions = {}): Model | null {
+    const row = this.select(options).limit(1).get();
+
+    return row ? this.toModel(row as InferSelectModel<Table>) : null;
+  }
+
+  /** Returns every model matching the given filter. */
+  protected findMany(options: FindOptions = {}): Model[] {
+    return this.select(options)
+      .all()
+      .map((row) => this.toModel(row as InferSelectModel<Table>));
+  }
+
   /** Returns one page of the models matching the given filter. */
   protected findPage(
     request: PageRequest,
-    options: FindPageOptions = {},
+    options: FindOptions = {},
   ): Page<Model> {
-    const { where, orderBy = [this.table.id] } = options;
-
-    const rows = this.db
-      .select()
-      .from(this.table as SQLiteTable)
-      .where(where)
-      .orderBy(...orderBy)
+    const rows = this.select(options)
       .limit(request.size)
       .offset((request.page - 1) * request.size)
       .all();
 
-    const totalRow = this.db
+    return {
+      items: rows.map((row) => this.toModel(row as InferSelectModel<Table>)),
+      total: this.count(options.where),
+      page: request.page,
+      size: request.size,
+    };
+  }
+
+  /** Returns the number of models matching the given filter, or of all models without one. */
+  protected count(where?: SQL): number {
+    const row = this.db
       .select({ total: count() })
       .from(this.table as SQLiteTable)
       .where(where)
       .get();
 
-    return {
-      items: rows.map((row) => this.toModel(row as InferSelectModel<Table>)),
-      total: totalRow?.total ?? 0,
-      page: request.page,
-      size: request.size,
-    };
+    return row?.total ?? 0;
+  }
+
+  protected select(options: FindOptions) {
+    const { where, orderBy = [this.table.id] } = options;
+
+    return this.db
+      .select()
+      .from(this.table as SQLiteTable)
+      .where(where)
+      .orderBy(...orderBy)
+      .$dynamic();
   }
 
   protected notFound(id: ModelId<Model>): ModelNotFoundError {
