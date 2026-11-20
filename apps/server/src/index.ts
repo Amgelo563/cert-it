@@ -1,3 +1,4 @@
+import { SiteUrl } from '@cert-it/hono';
 import { AdminPanelService } from './admin/AdminPanelService';
 import { AuthGuard } from './auth/AuthGuard';
 import { AuthService } from './auth/AuthService';
@@ -7,7 +8,6 @@ import { CertificateFileService } from './certificate/file/CertificateFileServic
 import { ConfigService } from './config/file/ConfigService';
 import { DatabaseService } from './database/DatabaseService';
 import { HttpService } from './http/HttpService';
-import { SiteUrl } from './http/url/SiteUrl';
 import { DataDirectoryService } from './storage/DataDirectoryService';
 import { UserService } from './user/UserService';
 

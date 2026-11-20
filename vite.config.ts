@@ -9,6 +9,7 @@ const Ignored = [
   'packages/shared/src/index.ts',
   'packages/data/src/index.ts',
   'packages/file/src/index.ts',
+  'packages/hono/src/index.ts',
 ];
 
 export default defineConfig({

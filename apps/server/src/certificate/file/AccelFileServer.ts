@@ -1,4 +1,6 @@
-import type { SiteUrl } from '../../http/url/SiteUrl';
+import type { SiteUrl } from '@cert-it/hono';
+import { Result } from 'better-result';
+import type { Context } from 'hono';
 import { AbstractFileServer } from './AbstractFileServer';
 import type { ServedFile } from './FileServer';
 
@@ -22,9 +24,9 @@ export class AccelFileServer extends AbstractFileServer {
 
   // nginx answers Range and HEAD requests itself
   public override serve(
-    _request: Request,
+    _c: Context,
     file: ServedFile,
-  ): Promise<Response> {
+  ): Promise<Result<Response, never>> {
     const headers = this.createHeaders(file);
     const name = `${encodeURIComponent(file.code)}.pdf`;
     headers.set(
@@ -34,6 +36,6 @@ export class AccelFileServer extends AbstractFileServer {
       ),
     );
 
-    return Promise.resolve(new Response(null, { headers }));
+    return Promise.resolve(Result.ok(new Response(null, { headers })));
   }
 }

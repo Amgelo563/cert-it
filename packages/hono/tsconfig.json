@@ -1,0 +1,10 @@
+{
+  "extends": "@repo/typescript-config/tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["es2023", "dom"],
+    "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "moduleDetection": "force"
+  },
+  "include": ["src", "__tests__", "vite.config.ts"]
+}

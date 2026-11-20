@@ -1,11 +1,11 @@
+import { SiteUrl } from '@cert-it/hono';
 import { PermissionEnum } from '@cert-it/shared';
 import { Hono } from 'hono';
 import type { AuthEnv } from '../../../src/auth/AuthEnv';
 import { AuthGuard } from '../../../src/auth/AuthGuard';
-import { CsrfGuard } from '../../../src/auth/csrf/CsrfGuard';
+import { createCsrfGuard } from '../../../src/auth/csrf/createCsrfGuard';
 import { SessionService } from '../../../src/auth/session/SessionService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
-import { SiteUrl } from '../../../src/http/url/SiteUrl';
 import type { UserId } from '../../../src/user/User';
 
 /** A small app with login, logout and guarded routes, for testing sessions and guards. */
@@ -18,7 +18,7 @@ export function createAuthApp(
   });
   const sessions = new SessionService({ database, siteUrl, now: options.now });
   const guard = new AuthGuard({ sessions });
-  const csrf = new CsrfGuard({ siteUrl });
+  const csrf = createCsrfGuard(siteUrl);
   const app = new Hono<AuthEnv>();
 
   app.use(csrf.middleware());

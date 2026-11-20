@@ -1,12 +1,12 @@
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { SiteUrl } from '@cert-it/hono';
 import type { Locale } from '@cert-it/shared';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { type Context, Hono, type MiddlewareHandler } from 'hono';
 import type { Config } from '../config/schema/ConfigSchema';
 import { StartupError } from '../error/StartupError';
 import type { HttpEnv } from '../http/HttpEnv';
-import { SiteUrl } from '../http/url/SiteUrl';
 
 type AdminPanelServiceOptions = {
   /** Directory of the admin panel's build (`apps/admin/dist`), absolute or relative to the working directory. */

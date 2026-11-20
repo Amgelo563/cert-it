@@ -1,3 +1,10 @@
+import {
+  ClientIpResolver,
+  ResponseCompressor,
+  ResponseRevalidator,
+  SiteUrl,
+} from '@cert-it/hono';
+import { getConnInfo } from '@hono/node-server/conninfo';
 import { createServer, type Server } from 'node:net';
 import { once } from 'node:events';
 import { LocaleEnum } from '@cert-it/shared';
@@ -7,11 +14,7 @@ import { AccelFileServer } from '../../../src/certificate/file/AccelFileServer';
 import { CertificateFileService } from '../../../src/certificate/file/CertificateFileService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { StartupError } from '../../../src/error/StartupError';
-import { ClientIpResolver } from '../../../src/http/clientIp/ClientIpResolver';
-import { ResponseCompressor } from '../../../src/http/compression/ResponseCompressor';
 import { HttpService } from '../../../src/http/HttpService';
-import { ResponseRevalidator } from '../../../src/http/revalidation/ResponseRevalidator';
-import { SiteUrl } from '../../../src/http/url/SiteUrl';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
 import { MessagesService } from '../../../src/i18n/MessagesService';
 import { createAuthOptions } from '../../auth/mocks/createAuthOptions';
@@ -48,7 +51,10 @@ function createHttp(
   return new HttpService({
     port: 0,
     siteUrl,
-    clientIps: new ClientIpResolver({ trustedProxies: ['127.0.0.0/8'] }),
+    clientIps: new ClientIpResolver({
+      trustedProxies: ['127.0.0.0/8'],
+      getConnInfo,
+    }),
     database,
     locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
     messages: new MessagesService(),
@@ -299,7 +305,7 @@ describe('HttpService (start)', () => {
     const http = new HttpService({
       port,
       siteUrl,
-      clientIps: new ClientIpResolver({ trustedProxies: [] }),
+      clientIps: new ClientIpResolver({ trustedProxies: [], getConnInfo }),
       database,
       locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
       messages: new MessagesService(),

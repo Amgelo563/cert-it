@@ -1,4 +1,11 @@
 import { once } from 'node:events';
+import {
+  ClientIpResolver,
+  type CsrfGuard,
+  ResponseCompressor,
+  ResponseRevalidator,
+  SiteUrl,
+} from '@cert-it/hono';
 import { LocaleCookieName } from '@cert-it/shared';
 import { serve, type ServerType } from '@hono/node-server';
 import { getConnInfo } from '@hono/node-server/conninfo';
@@ -7,7 +14,7 @@ import { getCookie, setCookie } from 'hono/cookie';
 import { secureHeaders } from 'hono/secure-headers';
 import { AdminPanelService } from '../admin/AdminPanelService';
 import { AuthService } from '../auth/AuthService';
-import { CsrfGuard } from '../auth/csrf/CsrfGuard';
+import { createCsrfGuard } from '../auth/csrf/createCsrfGuard';
 import type { CertificateFileService } from '../certificate/file/CertificateFileService';
 import type { Config } from '../config/schema/ConfigSchema';
 import type { DatabaseService } from '../database/DatabaseService';
@@ -15,11 +22,7 @@ import { StartupError } from '../error/StartupError';
 import { LocaleResolver } from '../i18n/LocaleResolver';
 import { MessagesService } from '../i18n/MessagesService';
 import { UserService } from '../user/UserService';
-import { ClientIpResolver } from './clientIp/ClientIpResolver';
-import { ResponseCompressor } from './compression/ResponseCompressor';
 import type { HttpEnv } from './HttpEnv';
-import { ResponseRevalidator } from './revalidation/ResponseRevalidator';
-import { SiteUrl } from './url/SiteUrl';
 
 type HttpServiceOptions = {
   port: number;
@@ -127,6 +130,7 @@ export class HttpService {
       siteUrl,
       clientIps: new ClientIpResolver({
         trustedProxies: config.server.trustedProxies,
+        getConnInfo,
       }),
       database,
       locales: new LocaleResolver({ defaultLocale: config.site.defaultLocale }),
@@ -135,7 +139,7 @@ export class HttpService {
       certificateFiles,
       auth,
       users,
-      csrf: new CsrfGuard({ siteUrl }),
+      csrf: createCsrfGuard(siteUrl),
       compressor: new ResponseCompressor(),
       revalidator: new ResponseRevalidator(),
     });
@@ -182,7 +186,7 @@ export class HttpService {
     const app = root.basePath(this.siteUrl.getBasePath());
 
     root.use(
-      this.resolveClientIp(),
+      this.clientIps.middleware(),
       this.logRequests(),
       this.secureHeaders(),
       this.compressor.middleware(),
@@ -205,14 +209,6 @@ export class HttpService {
     app.route('/', this.certificateFiles.getApp());
 
     return root;
-  }
-
-  protected resolveClientIp(): MiddlewareHandler<HttpEnv> {
-    return async (c, next) => {
-      const address = getConnInfo(c).remote.address ?? '';
-      c.set('clientIp', this.clientIps.resolve(address, c.req.raw.headers));
-      await next();
-    };
   }
 
   // logs the path without the query, which may hold emails or tokens

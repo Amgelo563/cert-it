@@ -8,9 +8,11 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vite-plus/test';
-import { DoesntExistFileError } from '../../../src/shared/io/errors/generic/DoesntExistFileError';
-import { SyntaxFileReadError } from '../../../src/shared/io/errors/read/SyntaxFileReadError';
-import { AlreadyExistsFileWriteError } from '../../../src/shared/io/errors/write/AlreadyExistsFileWriteError';
+import {
+  AlreadyExistsFileWriteError,
+  DoesntExistFileError,
+  SyntaxFileReadError,
+} from '@cert-it/shared';
 import { YamlIO } from '../../../src/yaml/io/YamlIO';
 
 let directory: string;

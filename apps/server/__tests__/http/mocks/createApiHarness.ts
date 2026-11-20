@@ -1,14 +1,17 @@
+import {
+  ClientIpResolver,
+  ResponseCompressor,
+  ResponseRevalidator,
+  SiteUrl,
+} from '@cert-it/hono';
+import { getConnInfo } from '@hono/node-server/conninfo';
 import { LocaleEnum, type Role, RoleEnum } from '@cert-it/shared';
 import { AdminPanelService } from '../../../src/admin/AdminPanelService';
 import { PasswordHasher } from '../../../src/auth/password/PasswordHasher';
 import { AccelFileServer } from '../../../src/certificate/file/AccelFileServer';
 import { CertificateFileService } from '../../../src/certificate/file/CertificateFileService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
-import { ClientIpResolver } from '../../../src/http/clientIp/ClientIpResolver';
-import { ResponseCompressor } from '../../../src/http/compression/ResponseCompressor';
 import { HttpService } from '../../../src/http/HttpService';
-import { ResponseRevalidator } from '../../../src/http/revalidation/ResponseRevalidator';
-import { SiteUrl } from '../../../src/http/url/SiteUrl';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
 import { MessagesService } from '../../../src/i18n/MessagesService';
 import type { User } from '../../../src/user/User';
@@ -40,7 +43,10 @@ export function createApiHarness(
   const http = new HttpService({
     port: 0,
     siteUrl,
-    clientIps: new ClientIpResolver({ trustedProxies: ['127.0.0.0/8'] }),
+    clientIps: new ClientIpResolver({
+      trustedProxies: ['127.0.0.0/8'],
+      getConnInfo,
+    }),
     database,
     locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
     messages: new MessagesService(),

@@ -1,8 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
+import type { SiteUrl } from '@cert-it/hono';
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { DatabaseService } from '../../database/DatabaseService';
-import type { SiteUrl } from '../../http/url/SiteUrl';
 import type { User, UserId } from '../../user/User';
 import type { Session } from './Session';
 

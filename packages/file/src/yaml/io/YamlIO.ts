@@ -1,13 +1,13 @@
 import { Result } from 'better-result';
-import { DoesntExistFileError } from '../../shared/io/errors/generic/DoesntExistFileError';
-import { FileSystemError } from '../../shared/io/errors/generic/FileSystemError';
-import type {
-  FileReadError,
-  FileWriteError,
-} from '../../shared/io/errors/IOError';
-import { SyntaxFileReadError } from '../../shared/io/errors/read/SyntaxFileReadError';
-import { AlreadyExistsFileWriteError } from '../../shared/io/errors/write/AlreadyExistsFileWriteError';
-import { SerializationFileWriteError } from '../../shared/io/errors/write/SerializationFileWriteError';
+import {
+  AlreadyExistsFileWriteError,
+  DoesntExistFileError,
+  type FileReadError,
+  FileSystemError,
+  type FileWriteError,
+  SerializationFileWriteError,
+  SyntaxFileReadError,
+} from '@cert-it/shared';
 import type { FileIO } from '../../shared/io/FileIO';
 import { parse, stringify } from 'yaml';
 import { readFile, writeFile } from 'node:fs/promises';

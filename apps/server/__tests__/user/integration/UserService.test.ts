@@ -1,3 +1,4 @@
+import { SiteUrl } from '@cert-it/hono';
 import {
   type ApiPage,
   type CreatedUserResponse,
@@ -11,7 +12,6 @@ import { AuthGuard } from '../../../src/auth/AuthGuard';
 import { PasswordHasher } from '../../../src/auth/password/PasswordHasher';
 import { SessionService } from '../../../src/auth/session/SessionService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
-import { SiteUrl } from '../../../src/http/url/SiteUrl';
 import { UserService } from '../../../src/user/UserService';
 import type { NormalizedEmail } from '../../../src/util/email/NormalizedEmail';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';

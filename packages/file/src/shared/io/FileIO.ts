@@ -1,5 +1,5 @@
 import type { Result } from 'better-result';
-import type { FileReadError, FileWriteError } from './errors/IOError.js';
+import type { FileReadError, FileWriteError } from '@cert-it/shared';
 
 /** An object that implements a specific format that can be stored/read to/from a file */
 export interface FileIO {

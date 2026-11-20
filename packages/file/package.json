@@ -27,6 +27,7 @@
     "barrel": "barrelsby --directory ./src --delete --singleQuotes --noHeader"
   },
   "dependencies": {
+    "@cert-it/shared": "workspace:^",
     "better-result": "^3.0.1"
   },
   "devDependencies": {

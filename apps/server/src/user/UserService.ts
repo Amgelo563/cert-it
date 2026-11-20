@@ -1,4 +1,5 @@
 import { ModelNotFoundError } from '@cert-it/data';
+import { parseJson } from '@cert-it/hono';
 import {
   type ApiErrorCode,
   ApiErrorCodeEnum,
@@ -26,7 +27,6 @@ import type { Config } from '../config/schema/ConfigSchema';
 import type { DatabaseService } from '../database/DatabaseService';
 import { apiError } from '../http/api/apiError';
 import { jsonBodyLimit } from '../http/api/jsonBodyLimit';
-import { parseJson } from '../http/api/parseJson';
 import { normalizeEmail } from '../util/email/NormalizedEmail';
 import type { User, UserId } from './User';
 

@@ -1,4 +1,5 @@
-import { CertificateStatusEnum } from '@cert-it/shared';
+import { SiteUrl } from '@cert-it/hono';
+import { CertificateStatusEnum, FileSystemError } from '@cert-it/shared';
 import { type Context, Hono } from 'hono';
 import type { Config } from '../../config/schema/ConfigSchema';
 import {
@@ -7,11 +8,9 @@ import {
 } from '../../config/schema/enums/FileServeModeEnum';
 import type { DatabaseService } from '../../database/DatabaseService';
 import type { HttpEnv } from '../../http/HttpEnv';
-import { SiteUrl } from '../../http/url/SiteUrl';
 import type { DataDirectoryService } from '../../storage/DataDirectoryService';
 import type { CertificateCode } from '../code/CertificateCode';
 import { AccelFileServer } from './AccelFileServer';
-import { CertificateFileNotFoundError } from './errors/CertificateFileNotFoundError';
 import type { FileServer } from './FileServer';
 import { StreamFileServer } from './StreamFileServer';
 
@@ -88,18 +87,19 @@ export class CertificateFileService {
       return this.notFound(c);
     }
 
-    try {
-      return await this.fileServer.serve(c.req.raw, {
-        courseId: certificate.courseId,
-        code: certificate.code,
-        download: c.req.query(CertificateFileService.DownloadParam) === '1',
-      });
-    } catch (error) {
-      if (!(error instanceof CertificateFileNotFoundError)) throw error;
+    const result = await this.fileServer.serve(c, {
+      courseId: certificate.courseId,
+      code: certificate.code,
+      download: c.req.query(CertificateFileService.DownloadParam) === '1',
+    });
 
-      this.logError(error.message);
-      return this.notFound(c);
-    }
+    if (result.isOk()) return result.value;
+
+    // other read failures go to the 500 handler
+    if (FileSystemError.is(result.error)) throw result.error.cause;
+
+    this.logError(`The PDF of certificate ${certificate.code} is missing.`);
+    return this.notFound(c);
   }
 
   protected notFound(c: Context<HttpEnv>): Response {

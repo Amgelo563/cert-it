@@ -363,6 +363,9 @@ importers:
       '@cert-it/file':
         specifier: workspace:^
         version: link:../../packages/file
+      '@cert-it/hono':
+        specifier: workspace:^
+        version: link:../../packages/hono
       '@cert-it/shared':
         specifier: workspace:^
         version: link:../../packages/shared
@@ -423,6 +426,9 @@ importers:
 
   packages/file:
     dependencies:
+      '@cert-it/shared':
+        specifier: workspace:^
+        version: link:../shared
       better-result:
         specifier: ^3.0.1
         version: 3.0.1
@@ -446,8 +452,45 @@ importers:
         specifier: 4.6.7
         version: 4.6.7
 
+  packages/hono:
+    dependencies:
+      '@cert-it/shared':
+        specifier: workspace:^
+        version: link:../shared
+      '@standard-schema/spec':
+        specifier: 1.1.0
+        version: 1.1.0
+      better-result:
+        specifier: ^3.0.1
+        version: 3.0.1
+      ipaddr.js:
+        specifier: 2.5.0
+        version: 2.5.0
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../../configs/typescript
+      '@types/node':
+        specifier: 24.12.0
+        version: 24.12.0
+      barrelsby:
+        specifier: 2.8.1
+        version: 2.8.1
+      hono:
+        specifier: 4.13.19
+        version: 4.13.19
+      vite-plus:
+        specifier: 'catalog:'
+        version: 1.7.0(@types/node@24.12.0)(@vitest/ui@5.1.0)(esbuild@0.28.2)(jiti@2.7.0)(sugarss@5.0.2(postcss@8.5.33))(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.1)
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+
   packages/shared:
     dependencies:
+      better-result:
+        specifier: ^3.0.1
+        version: 3.0.1
       dayjs:
         specifier: 1.11.23
         version: 1.11.23

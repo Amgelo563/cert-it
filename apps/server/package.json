@@ -31,6 +31,7 @@
   "devDependencies": {
     "@cert-it/data": "workspace:^",
     "@cert-it/file": "workspace:^",
+    "@cert-it/hono": "workspace:^",
     "@cert-it/shared": "workspace:^",
     "@repo/typescript-config": "workspace:*",
     "@types/better-sqlite3": "7.6.13",

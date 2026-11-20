@@ -1,11 +1,10 @@
+import { RateLimiter, type SiteUrl } from '@cert-it/hono';
 import { AuthGuard } from '../../../src/auth/AuthGuard';
 import { AuthService } from '../../../src/auth/AuthService';
-import { CsrfGuard } from '../../../src/auth/csrf/CsrfGuard';
+import { createCsrfGuard } from '../../../src/auth/csrf/createCsrfGuard';
 import { PasswordHasher } from '../../../src/auth/password/PasswordHasher';
-import { RateLimiter } from '../../../src/auth/rateLimit/RateLimiter';
 import { SessionService } from '../../../src/auth/session/SessionService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
-import type { SiteUrl } from '../../../src/http/url/SiteUrl';
 import { UserService } from '../../../src/user/UserService';
 
 /** Returns the auth and user options of HttpService, with rate limits that tests can reach. */
@@ -41,5 +40,5 @@ export function createAuthOptions(
     log: () => {},
   });
 
-  return { auth, users, csrf: new CsrfGuard({ siteUrl }) };
+  return { auth, users, csrf: createCsrfGuard(siteUrl) };
 }

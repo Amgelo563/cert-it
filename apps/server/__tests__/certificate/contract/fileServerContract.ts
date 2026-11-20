@@ -2,6 +2,7 @@ import { expect, test } from 'vite-plus/test';
 import type { CertificateCode } from '../../../src/certificate/code/CertificateCode';
 import type { FileServer } from '../../../src/certificate/file/FileServer';
 import type { CourseId } from '../../../src/course/Course';
+import { serveFile } from '../mocks/serveFile';
 
 /** Certificate every factory's server must be able to serve. */
 export const ContractFile = {
@@ -11,13 +12,13 @@ export const ContractFile = {
 
 /** Checks the headers every {@link FileServer} sends, which nginx keeps through X-Accel-Redirect. */
 export function fileServerContract(createServer: () => FileServer): void {
-  const get = new Request('https://certs.example.org/c/ABCD-EFGH-JK/pdf');
-
   test('GIVEN a file WHEN serving it THEN sends it as a PDF that is revalidated on every use', async () => {
-    const response = await createServer().serve(get, {
-      ...ContractFile,
-      download: false,
-    });
+    const response = (
+      await serveFile(createServer(), {
+        ...ContractFile,
+        download: false,
+      })
+    ).unwrap();
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toBe('application/pdf');
@@ -25,10 +26,12 @@ export function fileServerContract(createServer: () => FileServer): void {
   });
 
   test('GIVEN a file WHEN serving it for viewing THEN sends it inline', async () => {
-    const response = await createServer().serve(get, {
-      ...ContractFile,
-      download: false,
-    });
+    const response = (
+      await serveFile(createServer(), {
+        ...ContractFile,
+        download: false,
+      })
+    ).unwrap();
 
     expect(response.headers.get('content-disposition')).toBe(
       'inline; filename="certificate-ABCD-EFGH-JK.pdf"',
@@ -36,10 +39,12 @@ export function fileServerContract(createServer: () => FileServer): void {
   });
 
   test('GIVEN a file WHEN serving it for download THEN sends it as an attachment', async () => {
-    const response = await createServer().serve(get, {
-      ...ContractFile,
-      download: true,
-    });
+    const response = (
+      await serveFile(createServer(), {
+        ...ContractFile,
+        download: true,
+      })
+    ).unwrap();
 
     expect(response.headers.get('content-disposition')).toBe(
       'attachment; filename="certificate-ABCD-EFGH-JK.pdf"',

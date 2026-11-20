@@ -1,5 +1,5 @@
 import { Result } from 'better-result';
-import type { FileReadError, FileWriteError } from '../io/errors/IOError.js';
+import type { FileReadError, FileWriteError } from '@cert-it/shared';
 import type { FileIO } from '../io/FileIO.js';
 import { ValidationError } from '../validation/errors/ValidationError.js';
 import type { Validator } from '../validation/Validator.js';

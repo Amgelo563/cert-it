@@ -1,3 +1,4 @@
+import { parseJson, RateLimiter } from '@cert-it/hono';
 import {
   ApiErrorCodeEnum,
   ChangePasswordRequestSchema,
@@ -11,13 +12,11 @@ import type { Config } from '../config/schema/ConfigSchema';
 import type { DatabaseService } from '../database/DatabaseService';
 import { apiError } from '../http/api/apiError';
 import { jsonBodyLimit } from '../http/api/jsonBodyLimit';
-import { parseJson } from '../http/api/parseJson';
 import type { User } from '../user/User';
 import { normalizeEmail } from '../util/email/NormalizedEmail';
 import type { AuthEnv } from './AuthEnv';
 import type { AuthGuard } from './AuthGuard';
 import type { PasswordHasher } from './password/PasswordHasher';
-import { RateLimiter } from './rateLimit/RateLimiter';
 import type { SessionService } from './session/SessionService';
 
 type AuthServiceOptions = {

@@ -2,11 +2,12 @@
 
 Project-agnostic API to read, validate, cache and write files, with YAML and Zod implementations.
 
-- `shared/`: format-agnostic contracts (`FileIO`, `Validator`, `FileProcessor`) and their errors.
+- `shared/`: format-agnostic contracts (`FileIO`, `Validator`, `FileProcessor`) and `ValidationError`.
 - `yaml/`: `YamlIO`, a `FileIO` for `.yml` files, optionally turning `snake_case` keys into `camelCase`.
 - `zod/`: `ZodValidator`, and the `ZodYamlFileProcessor` util.
 
-`yaml` and `zod` are peer dependencies, so the app picks their versions.
+`yaml` and `zod` are peer dependencies, so the app picks their versions. The read and write errors come from
+`@cert-it/shared`, so packages that only need the errors don't load `yaml` or `zod`.
 
 ## Usage
 
@@ -89,13 +90,8 @@ await settings.write({ data: { ...result.value, debug: true } });
 Since `FileProcessor` takes any `FileIO` and `Validator`, a new format or validation library only needs that one piece.
 
 ```ts
-import {
-  type FileIO,
-  type FileReadError,
-  type FileWriteError,
-  FileProcessor,
-  type Validator,
-} from '@cert-it/file';
+import { type FileIO, FileProcessor, type Validator } from '@cert-it/file';
+import type { FileReadError, FileWriteError } from '@cert-it/shared';
 import type { Result } from 'better-result';
 
 /** A `FileIO` for JSON files. */
@@ -131,7 +127,8 @@ A `Validator` returns the parsed value, or a readable message that the processor
 
 ### 4. Handling errors
 
-Every error is a `TaggedError`, any other error is thrown.
+Every error is a `TaggedError`, any other error is thrown. `ValidationError` comes from `@cert-it/file`, the rest from
+`@cert-it/shared`.
 
 - Reading: `DoesntExistFileError`, `SyntaxFileReadError`, `FileSystemError` (`FileReadError`), plus `ValidationError` from a processor.
 - Writing: `AlreadyExistsFileWriteError`, `SerializationFileWriteError`, `FileSystemError` (`FileWriteError`).

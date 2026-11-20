@@ -27,6 +27,7 @@
     "barrel": "barrelsby --directory ./src --delete --singleQuotes --noHeader"
   },
   "dependencies": {
+    "better-result": "^3.0.1",
     "dayjs": "1.11.23",
     "zod": "4.6.7"
   },
