@@ -1,11 +1,36 @@
+import type { ComponentType } from 'react';
 import { Outlet, type RouteObject } from 'react-router';
 import { AuthProvider } from '../../auth/AuthProvider';
 import { RequireAuth } from '../../auth/guard/RequireAuth';
 import { RequireGuest } from '../../auth/guard/RequireGuest';
+import { RequirePermission } from '../../auth/guard/RequirePermission';
 import { RouteErrorPage } from '../error/RouteErrorPage';
 import { AdminLayout } from '../layout/AdminLayout';
 import { PageLoader } from '../layout/PageLoader';
-import { AdminPathEnum } from './AdminPathEnum';
+import { AdminPagePermissions } from './AdminPagePermissions';
+import { type AdminPath, AdminPathEnum } from './AdminPathEnum';
+
+// a lazy page inside the shell, behind the permission AdminPagePermissions gives it
+function page(
+  path: AdminPath,
+  load: () => Promise<ComponentType>,
+): RouteObject {
+  const route: RouteObject = {
+    path: path.slice(1),
+    lazy: async () => ({ Component: await load() }),
+  };
+  const permission = AdminPagePermissions[path];
+  if (!permission) return route;
+
+  return {
+    element: (
+      <RequirePermission permission={permission}>
+        <Outlet />
+      </RequirePermission>
+    ),
+    children: [route],
+  };
+}
 
 // each page is its own chunk; the Designer's (pdfme + antd, several MB) only loads on its page
 export const AdminRoutes: RouteObject[] = [
@@ -64,14 +89,20 @@ export const AdminRoutes: RouteObject[] = [
               Component: (await import('../../home/HomePage')).HomePage,
             }),
           },
-          {
-            path: AdminPathEnum.TemplateDesigner.slice(1),
-            lazy: async () => ({
-              Component: (
-                await import('../../template/designer/TemplateDesignerPage')
-              ).TemplateDesignerPage,
-            }),
-          },
+          page(
+            AdminPathEnum.TemplateDesigner,
+            async () =>
+              (await import('../../template/designer/TemplateDesignerPage'))
+                .TemplateDesignerPage,
+          ),
+          page(
+            AdminPathEnum.Users,
+            async () => (await import('../../user/UsersPage')).UsersPage,
+          ),
+          page(
+            AdminPathEnum.AuditLog,
+            async () => (await import('../../audit/AuditLogPage')).AuditLogPage,
+          ),
           {
             path: '*',
             lazy: async () => ({

@@ -1,7 +1,10 @@
 import { ActionIcon, Box, ScrollArea, Text } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router';
+import { usePermissions } from '../../../auth/usePermissions';
+import { AdminPagePermissions } from '../../router/AdminPagePermissions';
 import { AdminLogo } from '../AdminLogo';
 import { AdminNavigation } from './AdminNavigation';
 import classes from './AdminSidebar.module.css';
@@ -11,9 +14,19 @@ type AdminSidebarProps = {
   onClose: () => void;
 };
 
-/** Logo and navigation sections of the admin panel. */
+/** Logo and the navigation sections the user's role can open. */
 export function AdminSidebar({ onClose }: AdminSidebarProps) {
   const { t } = useTranslation();
+  const can = usePermissions();
+  // sections left without links are hidden too
+  const sections = useMemo(
+    () =>
+      AdminNavigation.map((section) => ({
+        ...section,
+        links: section.links.filter(({ to }) => can(AdminPagePermissions[to])),
+      })).filter((section) => section.links.length > 0),
+    [can],
+  );
 
   return (
     <div className={classes.sidebar}>
@@ -30,7 +43,7 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
 
       <ScrollArea component="nav" aria-label={t('layout.navigationLabel')}>
         <div className={classes.sections}>
-          {AdminNavigation.map((section) => (
+          {sections.map((section) => (
             <Box key={section.title} className={classes.section}>
               <Text className={classes.sectionTitle}>
                 {t(`navigation.${section.title}`)}

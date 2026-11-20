@@ -20,6 +20,9 @@ export const EsAdminMessages = {
     home: 'Inicio',
     templates: 'Plantillas',
     templateDesigner: 'Diseñador de plantillas',
+    administration: 'Administración',
+    users: 'Usuarios',
+    auditLog: 'Registro de auditoría',
   },
   auth: {
     loginTitle: 'Iniciar sesión',
@@ -63,9 +66,21 @@ export const EsAdminMessages = {
     description:
       'Ubica el nombre del participante, la fecha y el código QR en el certificado.',
   },
+  users: {
+    title: 'Usuarios',
+    description: 'Quién puede usar el panel y qué puede hacer cada persona.',
+  },
+  auditLog: {
+    title: 'Registro de auditoría',
+    description:
+      'Cada cambio hecho en el panel, del más reciente al más antiguo.',
+  },
   errors: {
     notFoundTitle: 'Página no encontrada',
     notFoundDescription: 'La página que buscas no existe.',
+    forbiddenTitle: 'No puedes abrir esta página',
+    forbiddenDescription:
+      'Tu rol no incluye esta página. Si la necesitas, pídesela a un administrador.',
     unexpectedTitle: 'Algo salió mal',
     unexpectedDescription:
       'No se pudo cargar esta página. Intenta recargarla; si sigue pasando, avisa a un administrador.',

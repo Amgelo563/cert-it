@@ -20,6 +20,9 @@ export const EnAdminMessages = {
     home: 'Home',
     templates: 'Templates',
     templateDesigner: 'Template designer',
+    administration: 'Administration',
+    users: 'Users',
+    auditLog: 'Audit log',
   },
   auth: {
     loginTitle: 'Log in',
@@ -64,9 +67,20 @@ export const EnAdminMessages = {
     description:
       'Place the participant name, date and QR code on the certificate.',
   },
+  users: {
+    title: 'Users',
+    description: 'Who can use the panel, and what each person can do.',
+  },
+  auditLog: {
+    title: 'Audit log',
+    description: 'Every change made in the panel, newest first.',
+  },
   errors: {
     notFoundTitle: 'Page not found',
     notFoundDescription: "The page you're looking for doesn't exist.",
+    forbiddenTitle: "You can't open this page",
+    forbiddenDescription:
+      "Your role doesn't include this page. If you need it, ask an administrator.",
     unexpectedTitle: 'Something went wrong',
     unexpectedDescription:
       "This page couldn't be loaded. Try reloading; if it keeps happening, tell an administrator.",

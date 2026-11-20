@@ -1,13 +1,19 @@
-import { type Icon, IconHome, IconTemplate } from '@tabler/icons-react';
+import {
+  type Icon,
+  IconHistory,
+  IconHome,
+  IconTemplate,
+  IconUsers,
+} from '@tabler/icons-react';
 import type { AdminMessages } from '../../i18n/messages/AdminMessages';
-import { AdminPathEnum } from '../../router/AdminPathEnum';
+import { type AdminPath, AdminPathEnum } from '../../router/AdminPathEnum';
 
 type NavigationKey = keyof AdminMessages['navigation'];
 
-/** A sidebar section: a title and its links. */
+/** A sidebar section: a title and its links, each shown only if the user may open its page. */
 export type AdminNavigationSection = {
   title: NavigationKey;
-  links: { label: NavigationKey; icon: Icon; to: string }[];
+  links: { label: NavigationKey; icon: Icon; to: AdminPath }[];
 };
 
 /** Sections of the sidebar, in order. */
@@ -24,6 +30,13 @@ export const AdminNavigation: AdminNavigationSection[] = [
         icon: IconTemplate,
         to: AdminPathEnum.TemplateDesigner,
       },
+    ],
+  },
+  {
+    title: 'administration',
+    links: [
+      { label: 'users', icon: IconUsers, to: AdminPathEnum.Users },
+      { label: 'auditLog', icon: IconHistory, to: AdminPathEnum.AuditLog },
     ],
   },
 ];

@@ -25,6 +25,9 @@ export type AdminMessages = {
     home: string;
     templates: string;
     templateDesigner: string;
+    administration: string;
+    users: string;
+    auditLog: string;
   };
   auth: {
     loginTitle: string;
@@ -66,9 +69,19 @@ export type AdminMessages = {
     title: string;
     description: string;
   };
+  users: {
+    title: string;
+    description: string;
+  };
+  auditLog: {
+    title: string;
+    description: string;
+  };
   errors: {
     notFoundTitle: string;
     notFoundDescription: string;
+    forbiddenTitle: string;
+    forbiddenDescription: string;
     unexpectedTitle: string;
     unexpectedDescription: string;
     backHome: string;
