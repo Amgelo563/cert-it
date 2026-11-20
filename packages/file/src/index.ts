@@ -1,3 +1,4 @@
+export * from './shared/directory/ManagedDirectory';
 export * from './shared/io/FileIO';
 export * from './shared/process/FileProcessor';
 export * from './shared/validation/Validator';

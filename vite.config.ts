@@ -10,6 +10,8 @@ const Ignored = [
   'packages/data/src/index.ts',
   'packages/file/src/index.ts',
   'packages/hono/src/index.ts',
+  'packages/fonts/src/index.ts',
+  'packages/fonts/src/node/index.ts',
   'packages/jobs/src/index.ts',
 ];
 
