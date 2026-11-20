@@ -19,8 +19,12 @@ function setup() {
 
   const { app } = createAuthApp(database);
   const seeder = new MockSeeder(database.getRepositories());
-  const loginAs = async (role: Role) => {
+  const loginAs = async (role: Role, mustChangePassword = false) => {
     const user = seeder.user({ role });
+    database
+      .getRepositories()
+      .users.update(user.id, { mustChangePassword })
+      .unwrap();
     const response = await app.request(`/login/${user.id}`, {
       method: 'POST',
       headers: { origin: SiteOrigin },
@@ -47,6 +51,18 @@ describe('AuthGuard (requirePermission)', () => {
       expect(response.status).toBe(status);
     },
   );
+
+  test('GIVEN a user who must change their password WHEN opening a guarded route THEN answers 403', async () => {
+    const { app, loginAs } = setup();
+    const cookie = await loginAs(RoleEnum.Admin, true);
+
+    const response = await app.request('/audit', { headers: { cookie } });
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      error: 'password_change_required',
+    });
+  });
 
   test('GIVEN no session WHEN opening a guarded route THEN answers 401 before checking the role', async () => {
     const { app } = setup();

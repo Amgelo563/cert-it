@@ -1,4 +1,6 @@
 import { AdminPanelService } from './admin/AdminPanelService';
+import { AuthGuard } from './auth/AuthGuard';
+import { AuthService } from './auth/AuthService';
 import { PasswordHasher } from './auth/password/PasswordHasher';
 import { SessionService } from './auth/session/SessionService';
 import { CertificateFileService } from './certificate/file/CertificateFileService';
@@ -12,14 +14,18 @@ import { UserService } from './user/UserService';
 const config = await ConfigService.create().readOrExit();
 const dataDirectory = new DataDirectoryService({ root: config.server.dataDir });
 const database = new DatabaseService({ path: dataDirectory.getDatabasePath() });
-const users = UserService.create({
-  config,
-  database,
-  passwords: new PasswordHasher(),
-});
+const passwords = new PasswordHasher();
+const users = UserService.create({ config, database, passwords });
 const sessions = new SessionService({
   database,
   siteUrl: new SiteUrl({ baseUrl: config.site.baseUrl }),
+});
+const auth = AuthService.create({
+  config,
+  database,
+  sessions,
+  passwords,
+  guard: new AuthGuard({ sessions }),
 });
 const adminPanel = AdminPanelService.create({ config });
 const certificateFiles = CertificateFileService.create({
@@ -32,6 +38,7 @@ const http = HttpService.create({
   database,
   adminPanel,
   certificateFiles,
+  auth,
 });
 
 try {

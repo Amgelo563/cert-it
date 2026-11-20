@@ -1,4 +1,6 @@
+import { ApiErrorCodeEnum } from '@cert-it/shared';
 import type { MiddlewareHandler } from 'hono';
+import { apiError } from '../../http/api/apiError';
 import type { HttpEnv } from '../../http/HttpEnv';
 import type { SiteUrl } from '../../http/url/SiteUrl';
 
@@ -8,8 +10,6 @@ type CsrfGuardOptions = {
 
 /** Rejects state-changing requests from other origins, on top of the SameSite cookie. */
 export class CsrfGuard {
-  public static readonly ForbiddenCode = 'cross_origin';
-
   protected static readonly SafeMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
 
   protected readonly origin: string;
@@ -26,12 +26,10 @@ export class CsrfGuard {
         CsrfGuard.SafeMethods.has(c.req.method)
         || this.isSameOrigin(c.req.raw.headers)
       ) {
-        await next();
-        return;
+        return next();
       }
 
-      c.header('Cache-Control', 'no-store');
-      return c.json({ error: CsrfGuard.ForbiddenCode }, 403);
+      return apiError(c, 403, ApiErrorCodeEnum.CrossOrigin);
     };
   }
 

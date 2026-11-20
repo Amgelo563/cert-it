@@ -1,5 +1,10 @@
-import { hasPermission, type Permission } from '@cert-it/shared';
-import type { Context, MiddlewareHandler } from 'hono';
+import {
+  ApiErrorCodeEnum,
+  hasPermission,
+  type Permission,
+} from '@cert-it/shared';
+import type { MiddlewareHandler } from 'hono';
+import { apiError } from '../http/api/apiError';
 import type { AuthEnv } from './AuthEnv';
 import type { SessionService } from './session/SessionService';
 
@@ -9,22 +14,26 @@ type AuthGuardOptions = {
 
 /** Middleware that requires a logged-in user and checks their role. */
 export class AuthGuard {
-  public static readonly UnauthorizedCode = 'unauthorized';
-
-  public static readonly ForbiddenCode = 'forbidden';
-
   protected readonly sessions: SessionService;
 
   constructor(options: AuthGuardOptions) {
     this.sessions = options.sessions;
   }
 
-  /** Answers 401 unless the request has a valid session, which it then exposes. */
-  public authenticate(): MiddlewareHandler<AuthEnv> {
+  /** Answers 401 without a valid session, and 403 while the user must change their password unless allowed. */
+  public authenticate(
+    options: { allowPendingPasswordChange?: boolean } = {},
+  ): MiddlewareHandler<AuthEnv> {
     return async (c, next) => {
       const active = this.sessions.resolve(c);
       if (!active) {
-        return AuthGuard.error(c, 401, AuthGuard.UnauthorizedCode);
+        return apiError(c, 401, ApiErrorCodeEnum.Unauthorized);
+      }
+      if (
+        active.user.mustChangePassword
+        && !options.allowPendingPasswordChange
+      ) {
+        return apiError(c, 403, ApiErrorCodeEnum.PasswordChangeRequired);
       }
 
       c.set('user', active.user);
@@ -37,18 +46,9 @@ export class AuthGuard {
   public requirePermission(permission: Permission): MiddlewareHandler<AuthEnv> {
     return async (c, next) => {
       if (!hasPermission(c.get('user').role, permission)) {
-        return AuthGuard.error(c, 403, AuthGuard.ForbiddenCode);
+        return apiError(c, 403, ApiErrorCodeEnum.Forbidden);
       }
       return next();
     };
-  }
-
-  protected static error(
-    c: Context<AuthEnv>,
-    status: 401 | 403,
-    code: string,
-  ): Response {
-    c.header('Cache-Control', 'no-store');
-    return c.json({ error: code }, status);
   }
 }

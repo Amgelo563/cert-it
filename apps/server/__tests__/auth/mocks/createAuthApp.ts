@@ -30,7 +30,11 @@ export function createAuthApp(
     sessions.end(c);
     return c.body(null, 204);
   });
-  app.get('/me', guard.authenticate(), (c) => c.json(c.get('user')));
+  app.get(
+    '/me',
+    guard.authenticate({ allowPendingPasswordChange: true }),
+    (c) => c.json(c.get('user')),
+  );
   app.get(
     '/audit',
     guard.authenticate(),

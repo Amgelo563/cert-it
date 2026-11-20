@@ -14,6 +14,7 @@ import { ResponseRevalidator } from '../../../src/http/revalidation/ResponseReva
 import { SiteUrl } from '../../../src/http/url/SiteUrl';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
 import { MessagesService } from '../../../src/i18n/MessagesService';
+import { createAuthOptions } from '../../auth/mocks/createAuthOptions';
 import { createAdminBuild } from '../../admin/mocks/createAdminBuild';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
 import { MockSeeder } from '../../database/mocks/MockSeeder';
@@ -56,6 +57,7 @@ function createHttp(
       database,
       fileServer: new AccelFileServer({ siteUrl }),
     }),
+    ...createAuthOptions(database, siteUrl),
     compressor: new ResponseCompressor(),
     revalidator: new ResponseRevalidator(),
     log: (line) => lines.push(line),
@@ -306,6 +308,7 @@ describe('HttpService (start)', () => {
         database,
         fileServer: new AccelFileServer({ siteUrl }),
       }),
+      ...createAuthOptions(database, siteUrl),
       compressor: new ResponseCompressor(),
       revalidator: new ResponseRevalidator(),
       log: () => {},

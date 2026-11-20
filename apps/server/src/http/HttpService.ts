@@ -6,6 +6,8 @@ import { type Context, Hono, type MiddlewareHandler } from 'hono';
 import { getCookie, setCookie } from 'hono/cookie';
 import { secureHeaders } from 'hono/secure-headers';
 import { AdminPanelService } from '../admin/AdminPanelService';
+import { AuthService } from '../auth/AuthService';
+import { CsrfGuard } from '../auth/csrf/CsrfGuard';
 import type { CertificateFileService } from '../certificate/file/CertificateFileService';
 import type { Config } from '../config/schema/ConfigSchema';
 import type { DatabaseService } from '../database/DatabaseService';
@@ -27,6 +29,8 @@ type HttpServiceOptions = {
   messages: MessagesService;
   adminPanel: AdminPanelService;
   certificateFiles: CertificateFileService;
+  auth: AuthService;
+  csrf: CsrfGuard;
   compressor: ResponseCompressor;
   revalidator: ResponseRevalidator;
   /** @default console.log */
@@ -46,6 +50,8 @@ export class HttpService {
   protected static readonly HstsMaxAgeSeconds = 31_536_000;
 
   protected static readonly HealthPath = '/healthz';
+
+  protected static readonly ApiPath = '/api';
 
   /** Query parameter the language switcher links set. */
   protected static readonly LocaleParam = 'lang';
@@ -68,6 +74,10 @@ export class HttpService {
 
   protected readonly certificateFiles: CertificateFileService;
 
+  protected readonly auth: AuthService;
+
+  protected readonly csrf: CsrfGuard;
+
   protected readonly compressor: ResponseCompressor;
 
   protected readonly revalidator: ResponseRevalidator;
@@ -87,6 +97,8 @@ export class HttpService {
     this.messages = options.messages;
     this.adminPanel = options.adminPanel;
     this.certificateFiles = options.certificateFiles;
+    this.auth = options.auth;
+    this.csrf = options.csrf;
     this.compressor = options.compressor;
     this.revalidator = options.revalidator;
     this.log = options.log ?? console.log;
@@ -98,12 +110,14 @@ export class HttpService {
     database: DatabaseService;
     adminPanel: AdminPanelService;
     certificateFiles: CertificateFileService;
+    auth: AuthService;
   }): HttpService {
-    const { config, database, adminPanel, certificateFiles } = options;
+    const { config, database, adminPanel, certificateFiles, auth } = options;
+    const siteUrl = new SiteUrl({ baseUrl: config.site.baseUrl });
 
     return new HttpService({
       port: config.server.port,
-      siteUrl: new SiteUrl({ baseUrl: config.site.baseUrl }),
+      siteUrl,
       clientIps: new ClientIpResolver({
         trustedProxies: config.server.trustedProxies,
       }),
@@ -112,6 +126,8 @@ export class HttpService {
       messages: new MessagesService(),
       adminPanel,
       certificateFiles,
+      auth,
+      csrf: new CsrfGuard({ siteUrl }),
       compressor: new ResponseCompressor(),
       revalidator: new ResponseRevalidator(),
     });
@@ -171,6 +187,9 @@ export class HttpService {
     if (this.siteUrl.getBasePath() !== '/') {
       app.get(HttpService.HealthPath, (c) => this.healthz(c));
     }
+
+    app.use(`${HttpService.ApiPath}/*`, this.csrf.middleware(), this.noStore());
+    app.route(AuthService.Path, this.auth.getApp());
 
     app.get('/', (c) => c.text('Hello Hono!'));
     app.route(AdminPanelService.Path, this.adminPanel.getApp());
@@ -252,6 +271,14 @@ export class HttpService {
         'Content-Security-Policy',
         isAdmin ? HttpService.AdminCsp : HttpService.PublicCsp,
       );
+    };
+  }
+
+  // API answers are per user and change with every write
+  protected noStore(): MiddlewareHandler<HttpEnv> {
+    return async (c, next) => {
+      await next();
+      c.header('Cache-Control', 'no-store');
     };
   }
 
