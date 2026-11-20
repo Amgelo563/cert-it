@@ -30,6 +30,12 @@ export const EsAppMessages = {
     nextPage: 'Página siguiente',
     lastPage: 'Última página',
   },
+  leaveGuard: {
+    title: '¿Salir sin guardar?',
+    text: 'Se perderán los cambios de esta página.',
+    leave: 'Salir',
+    stay: 'Quedarme',
+  },
   errors: {
     notFoundTitle: 'Página no encontrada',
     notFoundDescription: 'La página que buscas no existe',

@@ -20,6 +20,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { describeApiError } from '../../../app/api/describeApiError';
 import { useApiClient } from '../../../app/api/useApiClient';
+import { LeaveGuard } from '../../../app/router/LeaveGuard';
 import {
   TemplateDesigner,
   type TemplateDesignerHandle,
@@ -248,6 +249,7 @@ export function TemplateEditor({
 
   return (
     <Stack gap="md">
+      <LeaveGuard when={changed} />
       <Group justify="space-between" gap="sm">
         <Text size="sm" c="dimmed">
           {version === null

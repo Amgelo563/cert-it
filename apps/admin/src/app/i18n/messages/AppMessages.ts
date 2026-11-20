@@ -37,6 +37,13 @@ export type AppMessages = {
     nextPage: string;
     lastPage: string;
   };
+  /** The prompt before leaving a page with unsaved changes. */
+  leaveGuard: {
+    title: string;
+    text: string;
+    leave: string;
+    stay: string;
+  };
   errors: {
     notFoundTitle: string;
     notFoundDescription: string;

@@ -1,5 +1,7 @@
+/* its own stacking context, so pdfme's high z-indexes stay below the panel's modals */
 .designer {
   overflow: hidden;
+  isolation: isolate;
 }
 
 /* fills the window below the header, the course title and its tabs */

@@ -30,6 +30,12 @@ export const EnAppMessages = {
     nextPage: 'Next page',
     lastPage: 'Last page',
   },
+  leaveGuard: {
+    title: 'Leave without saving?',
+    text: 'Your changes on this page will be lost.',
+    leave: 'Leave',
+    stay: 'Stay',
+  },
   errors: {
     notFoundTitle: 'Page not found',
     notFoundDescription: "The page you're looking for doesn't exist",
