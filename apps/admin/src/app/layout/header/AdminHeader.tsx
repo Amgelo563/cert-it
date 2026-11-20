@@ -21,7 +21,7 @@ export function AdminHeader({ onToggleNavigation }: AdminHeaderProps) {
           onClick={onToggleNavigation}
           aria-label={t('layout.toggleNavigation')}
         >
-          <IconLayoutSidebar size={20} stroke={1.6} />
+          <IconLayoutSidebar size={18} stroke={1.5} />
         </ActionIcon>
       </Tooltip>
 

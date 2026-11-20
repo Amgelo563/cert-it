@@ -21,7 +21,7 @@ export function ColorSchemeToggle() {
         onClick={() => setColorScheme(computed === 'dark' ? 'light' : 'dark')}
         aria-label={t('layout.toggleColorScheme')}
       >
-        <Icon size={20} stroke={1.6} />
+        <Icon size={18} stroke={1.5} />
       </ActionIcon>
     </Tooltip>
   );

@@ -37,7 +37,6 @@ export function AdminLayout() {
         <Progress
           className={classes.progress}
           value={100}
-          animated
           size={3}
           radius={0}
         />

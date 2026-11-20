@@ -5,29 +5,31 @@ import {
   type AuditEntrySummary,
   RoleEnum,
 } from '@cert-it/shared';
-import { Badge, type MantineColor, Stack, Text } from '@mantine/core';
+import { type MantineColor, Stack, Text } from '@mantine/core';
 import { DataTable } from 'mantine-datatable';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { enumMessageKeys } from '../../app/i18n/enumMessageKeys';
+import { MonoFigure } from '../../app/layout/MonoFigure';
+import { StatusLabel } from '../../app/layout/StatusLabel';
 
 const ActionKeys = enumMessageKeys(AuditActionEnum);
 
 const EntityKeys = enumMessageKeys(AuditEntityEnum);
 
-// green for additions, red for removals, the brand color for the rest
-const ActionColors: Record<AuditAction, MantineColor | undefined> = {
+// green for additions, red for removals, gray for the rest
+const ActionColors: Record<AuditAction, MantineColor> = {
   [AuditActionEnum.Create]: 'teal',
   [AuditActionEnum.Import]: 'teal',
   [AuditActionEnum.Issue]: 'teal',
   [AuditActionEnum.Reinstate]: 'teal',
   [AuditActionEnum.Delete]: 'red',
   [AuditActionEnum.Revoke]: 'red',
-  [AuditActionEnum.Update]: undefined,
-  [AuditActionEnum.Regenerate]: undefined,
+  [AuditActionEnum.Update]: 'gray',
+  [AuditActionEnum.Regenerate]: 'gray',
   [AuditActionEnum.Login]: 'gray',
-  [AuditActionEnum.ChangePassword]: undefined,
-  [AuditActionEnum.ResetPassword]: undefined,
+  [AuditActionEnum.ChangePassword]: 'gray',
+  [AuditActionEnum.ResetPassword]: 'gray',
 };
 
 type AuditLogTableProps = {
@@ -98,9 +100,7 @@ export function AuditLogTable({
           title: t('auditLog.when'),
           noWrap: true,
           render: (entry) => (
-            <Text size="sm" c="dimmed">
-              {dates.format(new Date(entry.createdAt))}
-            </Text>
+            <MonoFigure>{dates.format(new Date(entry.createdAt))}</MonoFigure>
           ),
         },
         {
@@ -121,9 +121,9 @@ export function AuditLogTable({
           title: t('auditLog.action'),
           noWrap: true,
           render: (entry) => (
-            <Badge variant="light" color={ActionColors[entry.action]}>
+            <StatusLabel color={ActionColors[entry.action]}>
               {t(`auditLog.actions.${ActionKeys[entry.action]}`)}
-            </Badge>
+            </StatusLabel>
           ),
         },
         {
@@ -135,7 +135,11 @@ export function AuditLogTable({
               <Text size="xs" c="dimmed">
                 {t(`auditLog.entities.${EntityKeys[entry.entity]}`)}
               </Text>
-              <Text size="sm">{entry.entityName ?? `#${entry.entityId}`}</Text>
+              {entry.entityName === null ? (
+                <MonoFigure>#{entry.entityId}</MonoFigure>
+              ) : (
+                <Text size="sm">{entry.entityName}</Text>
+              )}
             </Stack>
           ),
         },

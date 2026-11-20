@@ -140,7 +140,7 @@ export function UsersPage() {
         description={t('users.description')}
         actions={
           <Button
-            leftSection={<IconUserPlus size={16} stroke={1.6} />}
+            leftSection={<IconUserPlus size={16} stroke={1.5} />}
             onClick={openAdd}
           >
             {t('users.add')}
@@ -151,7 +151,7 @@ export function UsersPage() {
       <Surface p="lg">
         <Stack gap="md">
           <Group justify="space-between">
-            <Text fw={600} size="lg">
+            <Text fw={500} size="lg">
               {t('users.listTitle')}
             </Text>
             {users.data && (
@@ -164,7 +164,7 @@ export function UsersPage() {
             <Alert
               color="red"
               variant="light"
-              icon={<IconAlertCircle size={20} stroke={1.6} />}
+              icon={<IconAlertCircle size={18} stroke={1.5} />}
             >
               {describeApiError(users.error, i18n)}
             </Alert>

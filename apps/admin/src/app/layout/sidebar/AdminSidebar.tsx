@@ -37,7 +37,7 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
           onClick={onClose}
           aria-label={t('layout.toggleNavigation')}
         >
-          <IconX size={18} />
+          <IconX size={18} stroke={1.5} />
         </ActionIcon>
       </div>
 
@@ -56,7 +56,7 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
                   className={classes.link}
                   onClick={onClose}
                 >
-                  <Icon size={20} stroke={1.6} />
+                  <Icon size={18} stroke={1.5} />
                   {t(`navigation.${label}`)}
                 </NavLink>
               ))}

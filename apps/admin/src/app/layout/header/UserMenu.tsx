@@ -35,7 +35,7 @@ export function UserMenu() {
       </Menu.Target>
       <Menu.Dropdown>
         <Stack gap={6} px="sm" py="xs">
-          <Text size="sm" fw={600} truncate="end">
+          <Text size="sm" fw={500} truncate="end">
             {user.email}
           </Text>
           <Badge size="sm" w="fit-content">
@@ -45,13 +45,13 @@ export function UserMenu() {
         <Menu.Item
           component={Link}
           to={AdminPathEnum.ChangePassword}
-          leftSection={<IconKey size={16} stroke={1.6} />}
+          leftSection={<IconKey size={16} stroke={1.5} />}
         >
           {t('auth.changePassword')}
         </Menu.Item>
         <Menu.Item
           color="red"
-          leftSection={<IconLogout size={16} stroke={1.6} />}
+          leftSection={<IconLogout size={16} stroke={1.5} />}
           onClick={() => void signOut()}
         >
           {t('auth.logout')}

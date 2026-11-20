@@ -14,7 +14,7 @@ export function LanguagePicker() {
           variant="subtle"
           color="gray"
           px="sm"
-          leftSection={<IconLanguage size={18} stroke={1.6} />}
+          leftSection={<IconLanguage size={18} stroke={1.5} />}
           aria-label={t('language.switcherLabel')}
         >
           {i18n.language.toUpperCase()}
@@ -27,7 +27,9 @@ export function LanguagePicker() {
             key={locale}
             lang={locale}
             rightSection={
-              i18n.language === locale ? <IconCheck size={16} /> : null
+              i18n.language === locale ? (
+                <IconCheck size={16} stroke={1.5} />
+              ) : null
             }
             onClick={() => void i18n.changeLanguage(locale)}
           >

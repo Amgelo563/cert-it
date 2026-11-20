@@ -51,7 +51,8 @@ export const AdminTheme = createTheme({
   fontFamilyMonospace: ThemeValues.monospaceFontFamily,
   headings: {
     fontFamily: ThemeValues.fontFamily,
-    fontWeight: '700',
+    // hierarchy comes from size, not weight
+    fontWeight: '600',
   },
   spacing: { xs: rem(8), sm: rem(12), md: rem(16), lg: rem(24), xl: rem(32) },
   cursorType: 'pointer',
@@ -63,8 +64,12 @@ export const AdminTheme = createTheme({
     }),
     Badge: Badge.extend({
       defaultProps: { variant: 'light', radius: 'sm' },
-      // a hidden overflow lets tables squeeze badges down to an ellipsis
-      styles: { label: { overflow: 'visible' } },
+      styles: {
+        // sentence case, not Mantine's uppercase tracked labels
+        root: { textTransform: 'none', letterSpacing: 0, fontWeight: 500 },
+        // a hidden overflow lets tables squeeze badges down to an ellipsis
+        label: { overflow: 'visible' },
+      },
     }),
     Button: Button.extend({ defaultProps: { radius: 'md' } }),
     Card: Card.extend({

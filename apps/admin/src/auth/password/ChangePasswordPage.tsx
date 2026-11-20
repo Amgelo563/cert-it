@@ -84,7 +84,7 @@ export function ChangePasswordPage() {
             <Alert
               color="red"
               variant="light"
-              icon={<IconAlertCircle size={20} stroke={1.6} />}
+              icon={<IconAlertCircle size={18} stroke={1.5} />}
             >
               {describeApiError(error, i18n)}
             </Alert>

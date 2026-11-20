@@ -1,0 +1,8 @@
+/* a step smaller than body text, since mono runs wider */
+.figure {
+  font-family: var(--mantine-font-family-monospace);
+  font-size: rem(13px);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--mantine-color-dimmed);
+}

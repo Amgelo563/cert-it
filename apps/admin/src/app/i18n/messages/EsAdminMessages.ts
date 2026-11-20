@@ -26,7 +26,7 @@ export const EsAdminMessages = {
   },
   auth: {
     loginTitle: 'Iniciar sesión',
-    loginDescription: 'Usa la cuenta que te creó un administrador.',
+    loginDescription: 'Usa la cuenta que te creó un administrador',
     email: 'Correo',
     password: 'Contraseña',
     login: 'Iniciar sesión',
@@ -36,7 +36,7 @@ export const EsAdminMessages = {
     changePasswordRequired:
       'Tu contraseña es temporal. Elige una propia para continuar.',
     changePasswordDescription:
-      'Elige una nueva contraseña de al menos {min} caracteres.',
+      'Elige una nueva contraseña de al menos {min} caracteres',
     currentPassword: 'Contraseña actual',
     newPassword: 'Nueva contraseña',
     confirmPassword: 'Repite la nueva contraseña',
@@ -70,20 +70,21 @@ export const EsAdminMessages = {
   },
   home: {
     title: 'Inicio',
-    description: 'Desde aquí se gestionarán los cursos, participantes y certs.',
+    description:
+      'Desde aquí se gestionarán los cursos, participantes y certificados',
     designerCardTitle: 'Diseñador de plantillas',
     designerCardDescription:
-      'Ubica el nombre del participante, la fecha y el código QR en una plantilla de certificado.',
+      'Ubica el nombre del participante, la fecha y el código QR en una plantilla de certificado',
     designerCardAction: 'Abrir el diseñador',
   },
   templateDesigner: {
     title: 'Diseñador de plantillas',
     description:
-      'Ubica el nombre del participante, la fecha y el código QR en el certificado.',
+      'Ubica el nombre del participante, la fecha y el código QR en el certificado',
   },
   users: {
     title: 'Usuarios',
-    description: 'Quién puede usar el panel y qué puede hacer cada persona.',
+    description: 'Quién puede usar el panel y qué puede hacer cada persona',
     add: 'Agregar usuario',
     listTitle: 'Cuentas',
     count: '{count} en total',
@@ -131,7 +132,7 @@ export const EsAdminMessages = {
   auditLog: {
     title: 'Registro de auditoría',
     description:
-      'Cada cambio hecho en el panel, del más reciente al más antiguo.',
+      'Cada cambio hecho en el panel, del más reciente al más antiguo',
     listTitle: 'Cambios',
     count: '{count} en total',
     empty: 'Aún no hay nada registrado.',
@@ -169,7 +170,7 @@ export const EsAdminMessages = {
   },
   errors: {
     notFoundTitle: 'Página no encontrada',
-    notFoundDescription: 'La página que buscas no existe.',
+    notFoundDescription: 'La página que buscas no existe',
     forbiddenTitle: 'No puedes abrir esta página',
     forbiddenDescription:
       'Tu rol no incluye esta página. Si la necesitas, pídesela a un administrador.',

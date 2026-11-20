@@ -61,9 +61,9 @@ export function OneTimePasswordModal({
                   color={copied ? 'teal' : undefined}
                   leftSection={
                     copied ? (
-                      <IconCheck size={16} stroke={1.6} />
+                      <IconCheck size={16} stroke={1.5} />
                     ) : (
-                      <IconCopy size={16} stroke={1.6} />
+                      <IconCopy size={16} stroke={1.5} />
                     )
                   }
                   onClick={copy}
@@ -75,7 +75,7 @@ export function OneTimePasswordModal({
           </Group>
           <Alert
             variant="light"
-            icon={<IconInfoCircle size={20} stroke={1.6} />}
+            icon={<IconInfoCircle size={18} stroke={1.5} />}
           >
             {t('users.passwordOnce')}
           </Alert>

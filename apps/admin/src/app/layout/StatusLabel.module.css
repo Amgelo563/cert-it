@@ -1,0 +1,15 @@
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: rem(8px);
+  font-size: var(--mantine-font-size-sm);
+  white-space: nowrap;
+  color: var(--mantine-color-text);
+}
+
+.dot {
+  flex: 0 0 auto;
+  width: rem(8px);
+  height: rem(8px);
+  border-radius: 50%;
+}

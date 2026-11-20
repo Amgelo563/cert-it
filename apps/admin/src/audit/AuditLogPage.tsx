@@ -36,7 +36,7 @@ export function AuditLogPage() {
       <Surface p="lg">
         <Stack gap="md">
           <Group justify="space-between">
-            <Text fw={600} size="lg">
+            <Text fw={500} size="lg">
               {t('auditLog.listTitle')}
             </Text>
             {entries.data && (
@@ -49,7 +49,7 @@ export function AuditLogPage() {
             <Alert
               color="red"
               variant="light"
-              icon={<IconAlertCircle size={20} stroke={1.6} />}
+              icon={<IconAlertCircle size={18} stroke={1.5} />}
             >
               {describeApiError(entries.error, i18n)}
             </Alert>

@@ -15,7 +15,7 @@ export function AdminLogo({ onClick }: AdminLogoProps) {
   return (
     <NavLink to={AdminPathEnum.Home} className={classes.logo} onClick={onClick}>
       <span className={classes.logoMark}>
-        <IconCertificate size={20} stroke={1.8} />
+        <IconCertificate size={18} stroke={1.5} />
       </span>
       <span>{t('app.name')}</span>
     </NavLink>

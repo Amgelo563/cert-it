@@ -1,5 +1,5 @@
 import { type Role, RoleEnum, type UserSummary } from '@cert-it/shared';
-import { ActionIcon, Badge, Group, Menu, Select, Text } from '@mantine/core';
+import { ActionIcon, Group, Menu, Select, Text } from '@mantine/core';
 import {
   IconDots,
   IconKey,
@@ -9,6 +9,8 @@ import {
 import { DataTable } from 'mantine-datatable';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { MonoFigure } from '../../app/layout/MonoFigure';
+import { StatusLabel } from '../../app/layout/StatusLabel';
 import { useAuth } from '../../auth/useAuth';
 
 type UsersTableProps = {
@@ -85,9 +87,9 @@ export function UsersTable({
                 {user.email}
               </Text>
               {user.id === me?.id && (
-                <Badge size="sm" variant="light" color="gray">
+                <Text size="xs" c="dimmed">
                   {t('users.you')}
-                </Badge>
+                </Text>
               )}
             </Group>
           ),
@@ -118,11 +120,13 @@ export function UsersTable({
           // a temporary password only matters while the account is active
           render: (user) =>
             !user.active ? (
-              <Badge color="gray">{t('users.inactive')}</Badge>
+              <StatusLabel>{t('users.inactive')}</StatusLabel>
             ) : user.mustChangePassword ? (
-              <Badge color="orange">{t('users.temporaryPassword')}</Badge>
+              <StatusLabel color="orange">
+                {t('users.temporaryPassword')}
+              </StatusLabel>
             ) : (
-              <Badge color="teal">{t('users.active')}</Badge>
+              <StatusLabel color="teal">{t('users.active')}</StatusLabel>
             ),
         },
         {
@@ -130,9 +134,7 @@ export function UsersTable({
           noWrap: true,
           title: t('users.createdAt'),
           render: (user) => (
-            <Text size="sm" c="dimmed">
-              {dates.format(new Date(user.createdAt))}
-            </Text>
+            <MonoFigure>{dates.format(new Date(user.createdAt))}</MonoFigure>
           ),
         },
         {
@@ -148,12 +150,12 @@ export function UsersTable({
                     disabled={user.id === busyId}
                     aria-label={t('users.actions', { email: user.email })}
                   >
-                    <IconDots size={18} stroke={1.6} />
+                    <IconDots size={18} stroke={1.5} />
                   </ActionIcon>
                 </Menu.Target>
                 <Menu.Dropdown>
                   <Menu.Item
-                    leftSection={<IconKey size={16} stroke={1.6} />}
+                    leftSection={<IconKey size={16} stroke={1.5} />}
                     onClick={() => onResetPassword(user)}
                   >
                     {t('users.resetPassword')}
@@ -161,14 +163,14 @@ export function UsersTable({
                   {user.active ? (
                     <Menu.Item
                       color="red"
-                      leftSection={<IconUserOff size={16} stroke={1.6} />}
+                      leftSection={<IconUserOff size={16} stroke={1.5} />}
                       onClick={() => onSetActive(user, false)}
                     >
                       {t('users.deactivate')}
                     </Menu.Item>
                   ) : (
                     <Menu.Item
-                      leftSection={<IconUserCheck size={16} stroke={1.6} />}
+                      leftSection={<IconUserCheck size={16} stroke={1.5} />}
                       onClick={() => onSetActive(user, true)}
                     >
                       {t('users.reactivate')}

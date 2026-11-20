@@ -1,12 +1,5 @@
-import {
-  Button,
-  Group,
-  SimpleGrid,
-  Stack,
-  Text,
-  ThemeIcon,
-} from '@mantine/core';
-import { IconArrowRight, IconTemplate } from '@tabler/icons-react';
+import { Button, Group, SimpleGrid, Stack, Text } from '@mantine/core';
+import { IconArrowRight } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { usePermissions } from '../auth/usePermissions';
@@ -28,11 +21,8 @@ export function HomePage() {
         {can(AdminPagePermissions[AdminPathEnum.TemplateDesigner]) && (
           <Surface p="lg">
             <Stack gap="md" h="100%">
-              <ThemeIcon variant="light" size={44} radius="md">
-                <IconTemplate size={24} stroke={1.6} />
-              </ThemeIcon>
               <Stack gap={4}>
-                <Text fw={600} size="lg">
+                <Text fw={500} size="lg">
                   {t('home.designerCardTitle')}
                 </Text>
                 <Text c="dimmed" size="sm">
@@ -44,7 +34,7 @@ export function HomePage() {
                   component={Link}
                   to={AdminPathEnum.TemplateDesigner}
                   variant="light"
-                  rightSection={<IconArrowRight size={16} />}
+                  rightSection={<IconArrowRight size={16} stroke={1.5} />}
                 >
                   {t('home.designerCardAction')}
                 </Button>

@@ -26,7 +26,7 @@ export const EnAdminMessages = {
   },
   auth: {
     loginTitle: 'Log in',
-    loginDescription: 'Use the account an administrator created for you.',
+    loginDescription: 'Use the account an administrator created for you',
     email: 'Email',
     password: 'Password',
     login: 'Log in',
@@ -36,7 +36,7 @@ export const EnAdminMessages = {
     changePasswordRequired:
       'Your password is temporary. Choose one of your own to continue.',
     changePasswordDescription:
-      'Choose a new password of at least {min} characters.',
+      'Choose a new password of at least {min} characters',
     currentPassword: 'Current password',
     newPassword: 'New password',
     confirmPassword: 'Repeat the new password',
@@ -71,20 +71,20 @@ export const EnAdminMessages = {
   home: {
     title: 'Home',
     description:
-      'Courses, participants and certificates will be managed from here.',
+      'Courses, participants and certificates will be managed from here',
     designerCardTitle: 'Template designer',
     designerCardDescription:
-      'Place the participant name, date and QR code on a certificate template.',
+      'Place the participant name, date and QR code on a certificate template',
     designerCardAction: 'Open the designer',
   },
   templateDesigner: {
     title: 'Template designer',
     description:
-      'Place the participant name, date and QR code on the certificate.',
+      'Place the participant name, date and QR code on the certificate',
   },
   users: {
     title: 'Users',
-    description: 'Who can use the panel, and what each person can do.',
+    description: 'Who can use the panel, and what each person can do',
     add: 'Add user',
     listTitle: 'Accounts',
     count: '{count} in total',
@@ -131,7 +131,7 @@ export const EnAdminMessages = {
   },
   auditLog: {
     title: 'Audit log',
-    description: 'Every change made in the panel, newest first.',
+    description: 'Every change made in the panel, newest first',
     listTitle: 'Changes',
     count: '{count} in total',
     empty: 'Nothing has been recorded yet.',
@@ -169,7 +169,7 @@ export const EnAdminMessages = {
   },
   errors: {
     notFoundTitle: 'Page not found',
-    notFoundDescription: "The page you're looking for doesn't exist.",
+    notFoundDescription: "The page you're looking for doesn't exist",
     forbiddenTitle: "You can't open this page",
     forbiddenDescription:
       "Your role doesn't include this page. If you need it, ask an administrator.",
