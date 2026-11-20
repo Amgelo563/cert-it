@@ -119,5 +119,15 @@ export function createApiHarness(
     return { user, cookie: sessionCookie(response) };
   };
 
-  return { createUser, loginAs, request };
+  /** The API's routes as `METHOD /path`, relative to /certs/api, without middleware entries. */
+  const listRoutes = (): string[] => [
+    ...new Set(
+      http
+        .getApi()
+        .routes.filter(({ method }) => method !== 'ALL')
+        .map(({ method, path }) => `${method} ${path.replace(/^\/api/, '')}`),
+    ),
+  ];
+
+  return { createUser, listRoutes, loginAs, request };
 }
