@@ -1,0 +1,42 @@
+import type { AuditLogMessages } from './AuditLogMessages';
+
+export const EnAuditLogMessages = {
+  auditLog: {
+    title: 'Audit log',
+    description: 'Every change made in the panel, newest first',
+    listTitle: 'Changes',
+    count: '{count} in total',
+    empty: 'Nothing has been recorded yet.',
+    when: 'When',
+    who: 'Who',
+    action: 'Action',
+    target: 'On',
+    details: 'Details',
+    system: 'The app',
+    removedUser: 'User #{id}',
+    detailRole: 'Role',
+    detailStatus: 'Status',
+    actions: {
+      create: 'Created',
+      update: 'Updated',
+      delete: 'Deleted',
+      import: 'Imported',
+      issue: 'Issued',
+      regenerate: 'Regenerated',
+      revoke: 'Revoked',
+      reinstate: 'Reinstated',
+      login: 'Logged in',
+      changePassword: 'Changed password',
+      resetPassword: 'Reset password',
+    },
+    entities: {
+      user: 'User',
+      course: 'Course',
+      participant: 'Participant',
+      font: 'Font',
+      templateVersion: 'Template',
+      certificate: 'Certificate',
+      job: 'Job',
+    },
+  },
+} satisfies AuditLogMessages;

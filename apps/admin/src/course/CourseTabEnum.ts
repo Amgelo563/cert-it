@@ -3,6 +3,7 @@ import { AdminPathEnum } from '../app/router/AdminPathEnum';
 /** The tabs of a course's page, as the last segment of their path. */
 export const CourseTabEnum = {
   Participants: 'participants',
+  Template: 'template',
   Settings: 'settings',
 } as const;
 

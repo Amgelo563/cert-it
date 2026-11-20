@@ -79,6 +79,29 @@ export class ApiClient {
     return (await response.json()) as ApiSuccess<R>;
   }
 
+  /**
+   * Sends the request built from the routes, returning the bytes of its successful answer, such as a font or PDF.
+   *
+   * @throws {ApiRequestError} If the request fails or the answer isn't successful.
+   */
+  public async requestBytes(
+    send: (routes: ApiRoutes) => Promise<ClientResponse<unknown>>,
+  ): Promise<ArrayBuffer> {
+    let response: ClientResponse<unknown>;
+    try {
+      response = await send(this.routes);
+    } catch (cause) {
+      throw this.fail(new ApiRequestError({ status: 0, code: null, cause }));
+    }
+
+    if (!response.ok) throw this.fail(await this.toError(response));
+    try {
+      return await response.arrayBuffer();
+    } catch (cause) {
+      throw this.fail(new ApiRequestError({ status: 0, code: null, cause }));
+    }
+  }
+
   /** Adds a listener for failed requests, returning a function that removes it. */
   public onError(listener: ApiErrorListener): () => void {
     this.listeners.add(listener);

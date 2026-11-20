@@ -37,7 +37,7 @@ function page(
   };
 }
 
-// a course's tabs, each its own chunk; settings only for roles that can change it
+// a course's tabs, each its own chunk; template and settings only for roles that can change them
 const CourseTabRoutes: RouteObject[] = [
   {
     index: true,
@@ -56,6 +56,14 @@ const CourseTabRoutes: RouteObject[] = [
     ),
     children: [
       {
+        // pdfme and antd, several MB, only load on this tab
+        path: CourseTabEnum.Template,
+        lazy: async () => ({
+          Component: (await import('../../course/template/TemplateTab'))
+            .TemplateTab,
+        }),
+      },
+      {
         path: CourseTabEnum.Settings,
         lazy: async () => ({
           Component: (await import('../../course/settings/SettingsTab'))
@@ -66,7 +74,7 @@ const CourseTabRoutes: RouteObject[] = [
   },
 ];
 
-// each page is its own chunk; the Designer's (pdfme + antd, several MB) only loads on its page
+// each page is its own chunk
 export const AdminRoutes: RouteObject[] = [
   {
     path: AdminPathEnum.Home,
@@ -131,12 +139,6 @@ export const AdminRoutes: RouteObject[] = [
             AdminPathEnum.Course,
             async () => (await import('../../course/CoursePage')).CoursePage,
             CourseTabRoutes,
-          ),
-          page(
-            AdminPathEnum.TemplateDesigner,
-            async () =>
-              (await import('../../template/designer/TemplateDesignerPage'))
-                .TemplateDesignerPage,
           ),
           page(
             AdminPathEnum.Users,

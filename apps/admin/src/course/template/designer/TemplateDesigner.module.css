@@ -1,0 +1,9 @@
+.designer {
+  overflow: hidden;
+}
+
+/* fills the window below the header, the course title and its tabs */
+.container {
+  height: calc(100dvh - rem(360px));
+  min-height: rem(480px);
+}

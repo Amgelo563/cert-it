@@ -7,7 +7,6 @@ export const AdminPagePermissions: Readonly<
 > = {
   [AdminPathEnum.Courses]: PermissionEnum.ViewRecords,
   [AdminPathEnum.Course]: PermissionEnum.ViewRecords,
-  [AdminPathEnum.TemplateDesigner]: PermissionEnum.EditCourses,
   [AdminPathEnum.Users]: PermissionEnum.ManageUsers,
   [AdminPathEnum.AuditLog]: PermissionEnum.ViewAuditLog,
 };

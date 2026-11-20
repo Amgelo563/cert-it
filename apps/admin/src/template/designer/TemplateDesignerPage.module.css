@@ -1,9 +1,0 @@
-.designer {
-  overflow: hidden;
-}
-
-/* fills the window below the header and the page title */
-.container {
-  height: calc(100dvh - rem(250px));
-  min-height: rem(480px);
-}

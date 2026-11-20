@@ -4,6 +4,7 @@ import {
   IconAlertCircle,
   IconArrowLeft,
   IconSettings,
+  IconTemplate,
   IconUsers,
 } from '@tabler/icons-react';
 import { useCallback, useMemo } from 'react';
@@ -60,6 +61,11 @@ export function CoursePage() {
 
   const tabs = [
     { value: CourseTabEnum.Participants, icon: IconUsers, show: true },
+    {
+      value: CourseTabEnum.Template,
+      icon: IconTemplate,
+      show: can(PermissionEnum.EditCourses),
+    },
     {
       value: CourseTabEnum.Settings,
       icon: IconSettings,

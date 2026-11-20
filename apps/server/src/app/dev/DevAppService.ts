@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -123,13 +124,23 @@ export class DevAppService extends AppService {
         dateFormat: CourseDateFormatter.DefaultFormats[LocaleEnum.En],
       })
       .unwrap();
+    // both versions share one base PDF, named by its hash as uploads are
+    const basePdf = DevAppService.samplePdf('Base template');
+    const basePdfPath = this.dataDirectory.getTemplateFile(
+      course.id,
+      createHash('sha256').update(basePdf).digest('hex'),
+    );
+    await this.dataDirectory.writeFile(
+      this.dataDirectory.resolve(basePdfPath),
+      basePdf,
+    );
     const versions = [1, 2].map((version) =>
       templateVersions
         .create({
           courseId: course.id,
           version,
           template: { schemas: [[]] },
-          basePdfPath: `templates/${course.id}/v${version}.pdf`,
+          basePdfPath,
           createdBy: admin.id,
         })
         .unwrap(),

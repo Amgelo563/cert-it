@@ -6,7 +6,6 @@ export const AdminPathEnum = {
   Courses: '/courses',
   /** A course's page, whose tabs are in CourseTabEnum. */
   Course: '/courses/:courseId',
-  TemplateDesigner: '/template-designer',
   Users: '/users',
   AuditLog: '/audit-log',
 } as const;
