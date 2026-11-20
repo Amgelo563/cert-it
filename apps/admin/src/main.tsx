@@ -1,6 +1,7 @@
 import '@fontsource-variable/inter/wght.css';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
+import 'mantine-datatable/styles.css';
 import { MantineProvider } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
