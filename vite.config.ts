@@ -10,6 +10,7 @@ const Ignored = [
   'packages/data/src/index.ts',
   'packages/file/src/index.ts',
   'packages/hono/src/index.ts',
+  'packages/jobs/src/index.ts',
 ];
 
 export default defineConfig({

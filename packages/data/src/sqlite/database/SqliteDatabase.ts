@@ -5,6 +5,7 @@ import {
 } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import type { UnitOfWork } from '../../shared/transaction/UnitOfWork';
+import type { SqliteExecutor } from './SqliteExecutor';
 import { ForeignKeyViolationError } from '../errors/ForeignKeyViolationError';
 import type { SqliteRepositoriesFactory } from '../repository/SqliteRepositoriesFactory';
 import { SqliteUnitOfWork } from '../transaction/SqliteUnitOfWork';
@@ -99,6 +100,14 @@ export class SqliteDatabase<Repositories> {
 
   public getUnitOfWork(): UnitOfWork<Repositories> {
     return this.unitOfWork;
+  }
+
+  /**
+   * Returns the connection's executor, for objects that run their own queries outside the repositories.
+   * Use this carefully, prefer using a repository.
+   */
+  public getExecutor(): SqliteExecutor {
+    return this.db;
   }
 
   protected configure(): void {

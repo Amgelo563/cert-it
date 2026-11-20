@@ -2,12 +2,16 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import BetterSqlite3 from 'better-sqlite3';
+import { Result } from 'better-result';
 import { sql } from 'drizzle-orm';
 import { describe, expect, test } from 'vite-plus/test';
 import { SqliteDatabase } from '../../../../src/sqlite/database/SqliteDatabase';
 import type { SqliteExecutor } from '../../../../src/sqlite/database/SqliteExecutor';
 import { ForeignKeyViolationError } from '../../../../src/sqlite/errors/ForeignKeyViolationError';
-import { ItemMigrationsFolder } from '../../mocks/createItemDatabase';
+import {
+  createItemDatabase,
+  ItemMigrationsFolder,
+} from '../../mocks/createItemDatabase';
 import { SqliteItemRepository } from '../../mocks/SqliteItemRepository';
 
 const CascadeMigrationsFolder = join(
@@ -208,5 +212,23 @@ describe('SqliteDatabase (ping)', () => {
     database.close();
 
     expect(() => database.ping()).toThrow(/not open/);
+  });
+});
+
+describe('SqliteDatabase (getExecutor)', () => {
+  test('GIVEN a transaction WHEN writing through the executor inside it THEN the write rolls back with it', () => {
+    const database = createItemDatabase();
+    const outside = new SqliteItemRepository({ db: database.getExecutor() });
+
+    const result = database.getUnitOfWork().transaction(() => {
+      outside
+        .create({ name: 'A', slug: 'a', groupId: 1, position: 1 })
+        .unwrap();
+      return Result.err('rolled back');
+    });
+
+    expect(result.isErr()).toBe(true);
+    expect(outside.findBySlug('a')).toBeNull();
+    database.close();
   });
 });

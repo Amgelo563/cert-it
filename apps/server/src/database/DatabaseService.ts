@@ -102,6 +102,15 @@ export class DatabaseService {
     return this.getDatabase().getUnitOfWork();
   }
 
+  /**
+   * Returns the connection's executor, for objects that run their own queries outside the repositories. Queries run inside any open transaction.
+   *
+   * @throws {DatabaseNotStartedError} If the database isn't open.
+   */
+  public getExecutor(): SqliteExecutor {
+    return this.getDatabase().getExecutor();
+  }
+
   protected findMigrationsFolder(): string {
     let directory = import.meta.dirname;
 

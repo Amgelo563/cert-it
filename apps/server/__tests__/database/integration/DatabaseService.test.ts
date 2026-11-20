@@ -63,6 +63,14 @@ describe('DatabaseService (getRepositories)', () => {
   });
 });
 
+describe('DatabaseService (getExecutor)', () => {
+  test('GIVEN a database that was not started WHEN getting the executor THEN throws a DatabaseNotStartedError', () => {
+    const database = new DatabaseService({ path: ':memory:' });
+
+    expect(() => database.getExecutor()).toThrow(DatabaseNotStartedError);
+  });
+});
+
 describe('DatabaseService (ping)', () => {
   test('GIVEN a database that was not started WHEN pinging THEN throws a DatabaseNotStartedError', () => {
     const database = new DatabaseService({ path: ':memory:' });
