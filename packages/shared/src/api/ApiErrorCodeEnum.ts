@@ -16,6 +16,14 @@ export const ApiErrorCodeEnum = {
   WrongPassword: 'wrong_password',
   /** The new password is the same as the current one. */
   SamePassword: 'same_password',
+  /** No model with the ID in the path. */
+  NotFound: 'not_found',
+  /** Another user already has the email. */
+  EmailTaken: 'email_taken',
+  /** The change would leave no active Admin. */
+  LastAdmin: 'last_admin',
+  /** Admins can't change their own role, status or password from user management. */
+  OwnAccount: 'own_account',
 } as const;
 
 /** The code in the body of an API error response. */

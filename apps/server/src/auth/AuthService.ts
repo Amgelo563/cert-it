@@ -5,13 +5,13 @@ import {
   LoginRequestSchema,
 } from '@cert-it/shared';
 import { type Context, Hono } from 'hono';
-import { bodyLimit } from 'hono/body-limit';
-import type { ZodType } from 'zod';
 import { AuditActionEnum, type AuditAction } from '../audit/AuditActionEnum';
 import { AuditEntityEnum } from '../audit/AuditEntityEnum';
 import type { Config } from '../config/schema/ConfigSchema';
 import type { DatabaseService } from '../database/DatabaseService';
 import { apiError } from '../http/api/apiError';
+import { jsonBodyLimit } from '../http/api/jsonBodyLimit';
+import { parseJson } from '../http/api/parseJson';
 import type { User } from '../user/User';
 import { normalizeEmail } from '../util/email/NormalizedEmail';
 import type { AuthEnv } from './AuthEnv';
@@ -35,8 +35,6 @@ type AuthServiceOptions = {
 export class AuthService {
   /** Path of the routes, relative to the base path. */
   public static readonly Path = '/api/auth';
-
-  protected static readonly MaxBodyBytes = 16 * 1024;
 
   protected readonly database: DatabaseService;
 
@@ -102,12 +100,7 @@ export class AuthService {
       allowPendingPasswordChange: true,
     });
 
-    app.use(
-      bodyLimit({
-        maxSize: AuthService.MaxBodyBytes,
-        onError: (c) => apiError(c, 413, ApiErrorCodeEnum.InvalidRequest),
-      }),
-    );
+    app.use(jsonBodyLimit());
     app.post('/login', (c) => this.login(c));
     app.post('/logout', (c) => this.logout(c));
     app.get('/me', loggedIn, (c) =>
@@ -120,7 +113,7 @@ export class AuthService {
 
   // unknown emails, wrong passwords and deactivated accounts answer alike
   protected async login(c: Context<AuthEnv>): Promise<Response> {
-    const body = await AuthService.parse(c, LoginRequestSchema);
+    const body = await parseJson(c, LoginRequestSchema);
     if (!body) return apiError(c, 400, ApiErrorCodeEnum.InvalidRequest);
 
     const email = normalizeEmail(body.email);
@@ -155,7 +148,7 @@ export class AuthService {
 
   // ends every session of the user, then starts a fresh one for this browser
   protected async changePassword(c: Context<AuthEnv>): Promise<Response> {
-    const body = await AuthService.parse(c, ChangePasswordRequestSchema);
+    const body = await parseJson(c, ChangePasswordRequestSchema);
     if (!body) return apiError(c, 400, ApiErrorCodeEnum.InvalidRequest);
 
     const user = c.get('user');
@@ -197,15 +190,6 @@ export class AuthService {
   protected getDummyHash(): Promise<string> {
     this.dummyHash ??= this.passwords.hash(this.passwords.generate());
     return this.dummyHash;
-  }
-
-  protected static async parse<T>(
-    c: Context,
-    schema: ZodType<T>,
-  ): Promise<T | null> {
-    const json: unknown = await c.req.json().catch(() => null);
-    const result = schema.safeParse(json);
-    return result.success ? result.data : null;
   }
 
   protected static tooManyAttempts(c: Context, seconds: number): Response {

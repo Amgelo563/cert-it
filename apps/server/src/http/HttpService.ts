@@ -14,6 +14,7 @@ import type { DatabaseService } from '../database/DatabaseService';
 import { StartupError } from '../error/StartupError';
 import { LocaleResolver } from '../i18n/LocaleResolver';
 import { MessagesService } from '../i18n/MessagesService';
+import { UserService } from '../user/UserService';
 import { ClientIpResolver } from './clientIp/ClientIpResolver';
 import { ResponseCompressor } from './compression/ResponseCompressor';
 import type { HttpEnv } from './HttpEnv';
@@ -30,6 +31,7 @@ type HttpServiceOptions = {
   adminPanel: AdminPanelService;
   certificateFiles: CertificateFileService;
   auth: AuthService;
+  users: UserService;
   csrf: CsrfGuard;
   compressor: ResponseCompressor;
   revalidator: ResponseRevalidator;
@@ -76,6 +78,8 @@ export class HttpService {
 
   protected readonly auth: AuthService;
 
+  protected readonly users: UserService;
+
   protected readonly csrf: CsrfGuard;
 
   protected readonly compressor: ResponseCompressor;
@@ -98,6 +102,7 @@ export class HttpService {
     this.adminPanel = options.adminPanel;
     this.certificateFiles = options.certificateFiles;
     this.auth = options.auth;
+    this.users = options.users;
     this.csrf = options.csrf;
     this.compressor = options.compressor;
     this.revalidator = options.revalidator;
@@ -111,8 +116,10 @@ export class HttpService {
     adminPanel: AdminPanelService;
     certificateFiles: CertificateFileService;
     auth: AuthService;
+    users: UserService;
   }): HttpService {
-    const { config, database, adminPanel, certificateFiles, auth } = options;
+    const { config, database, adminPanel, certificateFiles, auth, users } =
+      options;
     const siteUrl = new SiteUrl({ baseUrl: config.site.baseUrl });
 
     return new HttpService({
@@ -127,6 +134,7 @@ export class HttpService {
       adminPanel,
       certificateFiles,
       auth,
+      users,
       csrf: new CsrfGuard({ siteUrl }),
       compressor: new ResponseCompressor(),
       revalidator: new ResponseRevalidator(),
@@ -190,6 +198,7 @@ export class HttpService {
 
     app.use(`${HttpService.ApiPath}/*`, this.csrf.middleware(), this.noStore());
     app.route(AuthService.Path, this.auth.getApp());
+    app.route(UserService.Path, this.users.getApp());
 
     app.get('/', (c) => c.text('Hello Hono!'));
     app.route(AdminPanelService.Path, this.adminPanel.getApp());

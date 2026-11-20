@@ -15,17 +15,24 @@ const config = await ConfigService.create().readOrExit();
 const dataDirectory = new DataDirectoryService({ root: config.server.dataDir });
 const database = new DatabaseService({ path: dataDirectory.getDatabasePath() });
 const passwords = new PasswordHasher();
-const users = UserService.create({ config, database, passwords });
 const sessions = new SessionService({
   database,
   siteUrl: new SiteUrl({ baseUrl: config.site.baseUrl }),
+});
+const guard = new AuthGuard({ sessions });
+const users = UserService.create({
+  config,
+  database,
+  passwords,
+  sessions,
+  guard,
 });
 const auth = AuthService.create({
   config,
   database,
   sessions,
   passwords,
-  guard: new AuthGuard({ sessions }),
+  guard,
 });
 const adminPanel = AdminPanelService.create({ config });
 const certificateFiles = CertificateFileService.create({
@@ -39,6 +46,7 @@ const http = HttpService.create({
   adminPanel,
   certificateFiles,
   auth,
+  users,
 });
 
 try {

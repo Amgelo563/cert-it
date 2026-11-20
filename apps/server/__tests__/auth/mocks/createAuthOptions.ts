@@ -6,8 +6,9 @@ import { RateLimiter } from '../../../src/auth/rateLimit/RateLimiter';
 import { SessionService } from '../../../src/auth/session/SessionService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import type { SiteUrl } from '../../../src/http/url/SiteUrl';
+import { UserService } from '../../../src/user/UserService';
 
-/** Returns the auth options of HttpService, with rate limits that tests can reach. */
+/** Returns the auth and user options of HttpService, with rate limits that tests can reach. */
 export function createAuthOptions(
   database: DatabaseService,
   siteUrl: SiteUrl,
@@ -20,14 +21,25 @@ export function createAuthOptions(
       windowMs: 60_000,
       now: options.now,
     });
+  const passwords = new PasswordHasher();
+  const guard = new AuthGuard({ sessions });
   const auth = new AuthService({
     database,
     sessions,
-    passwords: new PasswordHasher(),
-    guard: new AuthGuard({ sessions }),
+    passwords,
+    guard,
     ipLimiter: limiter(),
     accountLimiter: limiter(),
   });
 
-  return { auth, csrf: new CsrfGuard({ siteUrl }) };
+  const users = new UserService({
+    database,
+    passwords,
+    sessions,
+    guard,
+    firstAdminEmail: 'admin@example.org',
+    log: () => {},
+  });
+
+  return { auth, users, csrf: new CsrfGuard({ siteUrl }) };
 }

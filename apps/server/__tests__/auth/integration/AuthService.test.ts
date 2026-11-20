@@ -1,27 +1,15 @@
-import { LocaleEnum, type Role, RoleEnum } from '@cert-it/shared';
+import { RoleEnum } from '@cert-it/shared';
 import { afterEach, describe, expect, test } from 'vite-plus/test';
-import { AdminPanelService } from '../../../src/admin/AdminPanelService';
 import { AuditActionEnum } from '../../../src/audit/AuditActionEnum';
-import { PasswordHasher } from '../../../src/auth/password/PasswordHasher';
-import { AccelFileServer } from '../../../src/certificate/file/AccelFileServer';
-import { CertificateFileService } from '../../../src/certificate/file/CertificateFileService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
-import { ClientIpResolver } from '../../../src/http/clientIp/ClientIpResolver';
-import { ResponseCompressor } from '../../../src/http/compression/ResponseCompressor';
-import { HttpService } from '../../../src/http/HttpService';
-import { ResponseRevalidator } from '../../../src/http/revalidation/ResponseRevalidator';
-import { SiteUrl } from '../../../src/http/url/SiteUrl';
-import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
-import { MessagesService } from '../../../src/i18n/MessagesService';
-import type { User } from '../../../src/user/User';
-import { normalizeEmail } from '../../../src/util/email/NormalizedEmail';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
-import { createAuthOptions } from '../mocks/createAuthOptions';
+import {
+  type ApiRequestInit,
+  ApiHarnessPassword as Password,
+  createApiHarness,
+} from '../../http/mocks/createApiHarness';
 import { sessionCookie } from '../mocks/createAuthApp';
 
-const Origin = 'https://example.org';
-const Password = 'correct horse battery';
-const passwords = new PasswordHasher();
 const databases: DatabaseService[] = [];
 
 afterEach(() => {
@@ -33,79 +21,13 @@ function setup(options: { maxAttempts?: number } = {}) {
   const database = createTestDatabase();
   databases.push(database);
 
-  const siteUrl = new SiteUrl({ baseUrl: `${Origin}/certs` });
-  const http = new HttpService({
-    port: 0,
-    siteUrl,
-    clientIps: new ClientIpResolver({ trustedProxies: ['127.0.0.0/8'] }),
-    database,
-    locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
-    messages: new MessagesService(),
-    adminPanel: new AdminPanelService({
-      directory: '.',
-      siteUrl,
-      defaultLocale: LocaleEnum.En,
-    }),
-    certificateFiles: new CertificateFileService({
-      database,
-      fileServer: new AccelFileServer({ siteUrl }),
-    }),
-    ...createAuthOptions(database, siteUrl, options),
-    compressor: new ResponseCompressor(),
-    revalidator: new ResponseRevalidator(),
-    log: () => {},
-  });
-
-  const request = (
-    method: string,
-    path: string,
-    init: {
-      body?: unknown;
-      cookie?: string;
-      ip?: string;
-      origin?: string;
-    } = {},
-  ) => {
-    const headers: Record<string, string> = {
-      origin: init.origin ?? Origin,
-      'x-real-ip': init.ip ?? '198.51.100.1',
-    };
-    if (init.cookie) headers['cookie'] = init.cookie;
-    if (init.body !== undefined) headers['content-type'] = 'application/json';
-
-    return Promise.resolve(
-      http.getApp().request(
-        `/certs/api/auth${path}`,
-        {
-          method,
-          headers,
-          body:
-            typeof init.body === 'string' || init.body === undefined
-              ? init.body
-              : JSON.stringify(init.body),
-        },
-        { incoming: { socket: { remoteAddress: '127.0.0.1' } } },
-      ),
-    );
-  };
-
-  const createUser = async (
-    data: { email?: string; role?: Role; mustChangePassword?: boolean } = {},
-  ): Promise<User> =>
-    database
-      .getRepositories()
-      .users.create({
-        email: normalizeEmail(data.email ?? 'ana@example.org'),
-        passwordHash: await passwords.hash(Password),
-        role: data.role ?? RoleEnum.Editor,
-        mustChangePassword: data.mustChangePassword ?? false,
-      })
-      .unwrap();
-
+  const harness = createApiHarness(database, options);
+  const request = (method: string, path: string, init?: ApiRequestInit) =>
+    harness.request(method, `/auth${path}`, init);
   const login = (body: unknown, ip?: string) =>
     request('POST', '/login', { body, ip });
 
-  return { createUser, database, login, request };
+  return { createUser: harness.createUser, database, login, request };
 }
 
 describe('AuthService (login)', () => {
