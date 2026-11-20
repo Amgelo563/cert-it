@@ -1,5 +1,6 @@
 export * from './api/ApiErrorCodeEnum';
 export * from './api/ApiPage';
+export * from './api/audit/AuditEntrySummary';
 export * from './api/auth/ChangePasswordRequest';
 export * from './api/auth/CurrentUser';
 export * from './api/auth/LoginRequest';
@@ -10,6 +11,8 @@ export * from './api/user/CreateUserRequest';
 export * from './api/user/ResetPasswordResponse';
 export * from './api/user/UpdateUserRequest';
 export * from './api/user/UserSummary';
+export * from './audit/AuditActionEnum';
+export * from './audit/AuditEntityEnum';
 export * from './certificate/CertificateStatusEnum';
 export * from './file/errors/IOError';
 export * from './file/errors/generic/DoesntExistFileError';

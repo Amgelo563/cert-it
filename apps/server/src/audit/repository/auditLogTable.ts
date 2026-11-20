@@ -1,8 +1,7 @@
+import type { AuditAction, AuditEntity } from '@cert-it/shared';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { UserId } from '../../user/User';
 import { userTable } from '../../user/repository/userTable';
-import type { AuditAction } from '../AuditActionEnum';
-import type { AuditEntity } from '../AuditEntityEnum';
 import type { AuditEntryId } from '../AuditEntry';
 
 export const auditLogTable = sqliteTable('audit_log', {

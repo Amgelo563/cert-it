@@ -1,5 +1,6 @@
 import { SiteUrl } from '@cert-it/hono';
 import { AdminPanelService } from './admin/AdminPanelService';
+import { AuditLogService } from './audit/AuditLogService';
 import { AuthGuard } from './auth/AuthGuard';
 import { AuthService } from './auth/AuthService';
 import { PasswordHasher } from './auth/password/PasswordHasher';
@@ -20,12 +21,14 @@ const sessions = new SessionService({
   siteUrl: new SiteUrl({ baseUrl: config.site.baseUrl }),
 });
 const guard = new AuthGuard({ sessions });
+const auditLog = new AuditLogService({ database, guard });
 const users = UserService.create({
   config,
   database,
   passwords,
   sessions,
   guard,
+  auditLog,
 });
 const auth = AuthService.create({
   config,
@@ -33,6 +36,7 @@ const auth = AuthService.create({
   sessions,
   passwords,
   guard,
+  auditLog,
 });
 const adminPanel = AdminPanelService.create({ config });
 const certificateFiles = CertificateFileService.create({
@@ -47,6 +51,7 @@ const http = HttpService.create({
   certificateFiles,
   auth,
   users,
+  auditLog,
 });
 
 try {

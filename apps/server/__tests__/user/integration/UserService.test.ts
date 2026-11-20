@@ -1,13 +1,14 @@
 import { SiteUrl } from '@cert-it/hono';
 import {
   type ApiPage,
+  AuditActionEnum,
   type CreatedUserResponse,
   type ResetPasswordResponse,
   RoleEnum,
   type UserSummary,
 } from '@cert-it/shared';
 import { afterEach, describe, expect, test } from 'vite-plus/test';
-import { AuditActionEnum } from '../../../src/audit/AuditActionEnum';
+import { AuditLogService } from '../../../src/audit/AuditLogService';
 import { AuthGuard } from '../../../src/auth/AuthGuard';
 import { PasswordHasher } from '../../../src/auth/password/PasswordHasher';
 import { SessionService } from '../../../src/auth/session/SessionService';
@@ -38,11 +39,13 @@ function setupStart() {
     database,
     siteUrl: new SiteUrl({ baseUrl: 'https://certs.example.org' }),
   });
+  const guard = new AuthGuard({ sessions });
   const service = new UserService({
     database,
     passwords,
     sessions,
-    guard: new AuthGuard({ sessions }),
+    guard,
+    auditLog: new AuditLogService({ database, guard }),
     firstAdminEmail: ' Admin@Example.org ',
     log: (line) => lines.push(line),
   });

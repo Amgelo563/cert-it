@@ -1,13 +1,15 @@
 import { parseJson, RateLimiter } from '@cert-it/hono';
 import {
   ApiErrorCodeEnum,
+  AuditActionEnum,
+  type AuditAction,
+  AuditEntityEnum,
   ChangePasswordRequestSchema,
   type CurrentUser,
   LoginRequestSchema,
 } from '@cert-it/shared';
 import { type Context, Hono } from 'hono';
-import { AuditActionEnum, type AuditAction } from '../audit/AuditActionEnum';
-import { AuditEntityEnum } from '../audit/AuditEntityEnum';
+import type { AuditLogService } from '../audit/AuditLogService';
 import type { Config } from '../config/schema/ConfigSchema';
 import type { DatabaseService } from '../database/DatabaseService';
 import { apiError } from '../http/api/apiError';
@@ -24,6 +26,7 @@ type AuthServiceOptions = {
   sessions: SessionService;
   passwords: PasswordHasher;
   guard: AuthGuard;
+  auditLog: AuditLogService;
   /** Limits login attempts per client IP. */
   ipLimiter: RateLimiter;
   /** Limits password checks per account. */
@@ -43,6 +46,8 @@ export class AuthService {
 
   protected readonly guard: AuthGuard;
 
+  protected readonly auditLog: AuditLogService;
+
   protected readonly ipLimiter: RateLimiter;
 
   protected readonly accountLimiter: RateLimiter;
@@ -57,6 +62,7 @@ export class AuthService {
     this.sessions = options.sessions;
     this.passwords = options.passwords;
     this.guard = options.guard;
+    this.auditLog = options.auditLog;
     this.ipLimiter = options.ipLimiter;
     this.accountLimiter = options.accountLimiter;
     this.app = this.createApp();
@@ -68,6 +74,7 @@ export class AuthService {
     sessions: SessionService;
     passwords: PasswordHasher;
     guard: AuthGuard;
+    auditLog: AuditLogService;
     injections?: Partial<AuthServiceOptions>;
   }): AuthService {
     const { config, injections } = options;
@@ -83,6 +90,7 @@ export class AuthService {
       sessions: injections?.sessions ?? options.sessions,
       passwords: injections?.passwords ?? options.passwords,
       guard: injections?.guard ?? options.guard,
+      auditLog: injections?.auditLog ?? options.auditLog,
       ipLimiter: injections?.ipLimiter ?? limiter(),
       accountLimiter: injections?.accountLimiter ?? limiter(),
     });
@@ -175,15 +183,12 @@ export class AuthService {
   }
 
   protected audit(user: User, action: AuditAction): void {
-    this.database
-      .getRepositories()
-      .auditLog.create({
-        userId: user.id,
-        action,
-        entity: AuditEntityEnum.User,
-        entityId: user.id,
-      })
-      .unwrap();
+    this.auditLog.record({
+      userId: user.id,
+      action,
+      entity: AuditEntityEnum.User,
+      entityId: user.id,
+    });
   }
 
   protected getDummyHash(): Promise<string> {

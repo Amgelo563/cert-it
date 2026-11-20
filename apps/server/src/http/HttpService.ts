@@ -13,6 +13,7 @@ import { type Context, Hono, type MiddlewareHandler } from 'hono';
 import { getCookie, setCookie } from 'hono/cookie';
 import { secureHeaders } from 'hono/secure-headers';
 import { AdminPanelService } from '../admin/AdminPanelService';
+import { AuditLogService } from '../audit/AuditLogService';
 import { AuthService } from '../auth/AuthService';
 import { createCsrfGuard } from '../auth/csrf/createCsrfGuard';
 import type { CertificateFileService } from '../certificate/file/CertificateFileService';
@@ -35,6 +36,7 @@ type HttpServiceOptions = {
   certificateFiles: CertificateFileService;
   auth: AuthService;
   users: UserService;
+  auditLog: AuditLogService;
   csrf: CsrfGuard;
   compressor: ResponseCompressor;
   revalidator: ResponseRevalidator;
@@ -83,6 +85,8 @@ export class HttpService {
 
   protected readonly users: UserService;
 
+  protected readonly auditLog: AuditLogService;
+
   protected readonly csrf: CsrfGuard;
 
   protected readonly compressor: ResponseCompressor;
@@ -106,6 +110,7 @@ export class HttpService {
     this.certificateFiles = options.certificateFiles;
     this.auth = options.auth;
     this.users = options.users;
+    this.auditLog = options.auditLog;
     this.csrf = options.csrf;
     this.compressor = options.compressor;
     this.revalidator = options.revalidator;
@@ -120,9 +125,17 @@ export class HttpService {
     certificateFiles: CertificateFileService;
     auth: AuthService;
     users: UserService;
+    auditLog: AuditLogService;
   }): HttpService {
-    const { config, database, adminPanel, certificateFiles, auth, users } =
-      options;
+    const {
+      config,
+      database,
+      adminPanel,
+      certificateFiles,
+      auth,
+      users,
+      auditLog,
+    } = options;
     const siteUrl = new SiteUrl({ baseUrl: config.site.baseUrl });
 
     return new HttpService({
@@ -139,6 +152,7 @@ export class HttpService {
       certificateFiles,
       auth,
       users,
+      auditLog,
       csrf: createCsrfGuard(siteUrl),
       compressor: new ResponseCompressor(),
       revalidator: new ResponseRevalidator(),
@@ -203,6 +217,7 @@ export class HttpService {
     app.use(`${HttpService.ApiPath}/*`, this.csrf.middleware(), this.noStore());
     app.route(AuthService.Path, this.auth.getApp());
     app.route(UserService.Path, this.users.getApp());
+    app.route(AuditLogService.Path, this.auditLog.getApp());
 
     app.get('/', (c) => c.text('Hello Hono!'));
     app.route(AdminPanelService.Path, this.adminPanel.getApp());

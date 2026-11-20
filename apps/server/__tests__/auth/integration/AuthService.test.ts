@@ -1,6 +1,5 @@
-import { RoleEnum } from '@cert-it/shared';
+import { AuditActionEnum, RoleEnum } from '@cert-it/shared';
 import { afterEach, describe, expect, test } from 'vite-plus/test';
-import { AuditActionEnum } from '../../../src/audit/AuditActionEnum';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
 import {

@@ -4,6 +4,9 @@ import {
   type ApiErrorCode,
   ApiErrorCodeEnum,
   type ApiPage,
+  type AuditAction,
+  AuditActionEnum,
+  AuditEntityEnum,
   type CreatedUserResponse,
   CreateUserRequestSchema,
   PageQuerySchema,
@@ -17,8 +20,7 @@ import {
 import { Result } from 'better-result';
 import { type Context, Hono } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import { type AuditAction, AuditActionEnum } from '../audit/AuditActionEnum';
-import { AuditEntityEnum } from '../audit/AuditEntityEnum';
+import type { AuditLogService } from '../audit/AuditLogService';
 import type { AuthEnv } from '../auth/AuthEnv';
 import type { AuthGuard } from '../auth/AuthGuard';
 import type { PasswordHasher } from '../auth/password/PasswordHasher';
@@ -35,6 +37,7 @@ type UserServiceOptions = {
   passwords: PasswordHasher;
   sessions: SessionService;
   guard: AuthGuard;
+  auditLog: AuditLogService;
   /** Email of the first Admin, as in admin.email. */
   firstAdminEmail: string;
   /** @default console.log */
@@ -63,6 +66,8 @@ export class UserService {
 
   protected readonly guard: AuthGuard;
 
+  protected readonly auditLog: AuditLogService;
+
   protected readonly firstAdminEmail: string;
 
   protected readonly log: (line: string) => void;
@@ -74,6 +79,7 @@ export class UserService {
     this.passwords = options.passwords;
     this.sessions = options.sessions;
     this.guard = options.guard;
+    this.auditLog = options.auditLog;
     this.firstAdminEmail = options.firstAdminEmail;
     this.log = options.log ?? console.log;
     this.app = this.createApp();
@@ -85,6 +91,7 @@ export class UserService {
     passwords: PasswordHasher;
     sessions: SessionService;
     guard: AuthGuard;
+    auditLog: AuditLogService;
     injections?: Partial<UserServiceOptions>;
   }): UserService {
     const { config, injections } = options;
@@ -94,6 +101,7 @@ export class UserService {
       passwords: injections?.passwords ?? options.passwords,
       sessions: injections?.sessions ?? options.sessions,
       guard: injections?.guard ?? options.guard,
+      auditLog: injections?.auditLog ?? options.auditLog,
       firstAdminEmail: injections?.firstAdminEmail ?? config.admin.email,
       log: injections?.log,
     });
@@ -242,16 +250,13 @@ export class UserService {
     action: AuditAction,
     details?: Readonly<Record<string, unknown>>,
   ): void {
-    this.database
-      .getRepositories()
-      .auditLog.create({
-        userId: c.get('user').id,
-        action,
-        entity: AuditEntityEnum.User,
-        entityId: target.id,
-        details,
-      })
-      .unwrap();
+    this.auditLog.record({
+      userId: c.get('user').id,
+      action,
+      entity: AuditEntityEnum.User,
+      entityId: target.id,
+      details,
+    });
   }
 
   protected error(c: Context<AuthEnv>, code: ApiErrorCode): Response {

@@ -1,7 +1,5 @@
-import type { Brand } from '@cert-it/shared';
 import type { UserId } from '../user/User';
-import type { AuditAction } from './AuditActionEnum';
-import type { AuditEntity } from './AuditEntityEnum';
+import type { AuditAction, AuditEntity, Brand } from '@cert-it/shared';
 
 export type AuditEntryId = Brand<number, 'AuditEntryId'>;
 
