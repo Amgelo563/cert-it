@@ -9,7 +9,8 @@
     }
   },
   "scripts": {
-    "dev": "vpx --watch src/index.ts",
+    "dev": "vpx --conditions=@cert-it/source --watch src/dev.ts",
+    "dev:config": "vpx --conditions=@cert-it/source --watch src/index.ts",
     "build": "vp pack",
     "start": "node dist/index.mjs",
     "test": "vp test",

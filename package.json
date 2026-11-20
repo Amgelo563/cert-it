@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "prepare": "vp config",
+    "dev": "pnpm --parallel --filter @cert-it/server --filter @cert-it/admin dev",
     "check": "vp check",
     "fix": "vp check --fix",
     "test": "vp test",

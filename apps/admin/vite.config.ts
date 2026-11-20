@@ -5,9 +5,19 @@ import { brotliCompress, constants, gzip } from 'node:zlib';
 import react from '@vitejs/plugin-react';
 import postcssPresetMantine from 'postcss-preset-mantine';
 import postcssSimpleVars from 'postcss-simple-vars';
-import { defineConfig, lazyPlugins, type Plugin } from 'vite-plus';
+import {
+  defineConfig,
+  lazyPlugins,
+  type Plugin,
+  type ProxyOptions,
+} from 'vite-plus';
 
 const DevBasePath = '/admin/';
+
+// base_url of the app server the dev server sends API requests to, pnpm dev's by default
+const DevServerUrl = new URL(
+  process.env['CERT_IT_BASE_URL'] ?? 'http://localhost:3000',
+);
 
 const CompressibleFile = /\.(js|mjs|css|svg|json|wasm|txt)$/;
 
@@ -23,6 +33,27 @@ function devBaseTag(): Plugin {
     transformIndexHtml: () => [
       { tag: 'base', attrs: { href: DevBasePath }, injectTo: 'head-prepend' },
     ],
+  };
+}
+
+// dev only: /api goes to the app server as if the panel were served by it
+function devApiProxy(): ProxyOptions {
+  const basePath = DevServerUrl.pathname.replace(/\/+$/, '');
+
+  return {
+    target: DevServerUrl.origin,
+    changeOrigin: true,
+    rewrite: (path) => `${basePath}${path}`,
+    // the session cookie is scoped to the base path, which /api isn't under here
+    cookiePathRewrite: { '*': '/' },
+    // the server only accepts writes from its own origin
+    configure: (proxy) => {
+      proxy.on('proxyReq', (request) => {
+        if (request.getHeader('origin')) {
+          request.setHeader('origin', DevServerUrl.origin);
+        }
+      });
+    },
   };
 }
 
@@ -83,6 +114,9 @@ export default defineConfig(({ command }) => ({
         }),
       ],
     },
+  },
+  server: {
+    proxy: { '/api': devApiProxy() },
   },
   build: {
     chunkSizeWarningLimit: 8000,

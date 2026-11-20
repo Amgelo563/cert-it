@@ -139,11 +139,17 @@ Requires Node 24 and pnpm 12.
 
 ```bash
 pnpm install      # install dependencies and the Git hooks
+pnpm dev          # run the server and the admin panel, with reload on changes
 pnpm check        # format, lint and type check
 pnpm fix          # fix formatting and lint issues
 pnpm test         # run every package's tests
 pnpm build        # build all packages
 ```
+
+`pnpm dev` needs no config file. Open the admin panel at http://localhost:5173/admin/ and log in as `admin@cert-it.test`,
+`editor@cert-it.test`, `viewer@cert-it.test` or `new@cert-it.test` (which must change its password first), all with
+the password `cert-it-dev`. To run the server with your own `config/config.yml` instead, use `pnpm --filter @cert-it/server dev:config`
+and set `CERT_IT_BASE_URL` to its `base_url` for the admin dev server.
 
 To run the app behind an nginx set up like a real server (under `/certs/` with a strict CSP, and on its own host with `X-Accel-Redirect`), see [`deploy/dev/compose.yml`](deploy/dev/compose.yml):
 
