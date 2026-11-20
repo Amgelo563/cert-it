@@ -6,6 +6,7 @@ import type {
   FileWriteError,
 } from '../../shared/io/errors/IOError';
 import { SyntaxFileReadError } from '../../shared/io/errors/read/SyntaxFileReadError';
+import { AlreadyExistsFileWriteError } from '../../shared/io/errors/write/AlreadyExistsFileWriteError';
 import { SerializationFileWriteError } from '../../shared/io/errors/write/SerializationFileWriteError';
 import type { FileIO } from '../../shared/io/FileIO';
 import { existsSync, statSync } from 'node:fs';
@@ -33,13 +34,35 @@ export class YamlIO implements FileIO {
 
   /** Recursively turns `snake_case` object keys into `camelCase`. */
   protected static camelizeKeys(this: void, value: unknown): unknown {
-    if (Array.isArray(value)) return value.map(YamlIO.camelizeKeys);
+    return YamlIO.mapKeys(value, (key) =>
+      key.replace(/_([a-z0-9])/g, (_, char: string) => char.toUpperCase()),
+    );
+  }
+
+  /** Recursively turns `camelCase` object keys into `snake_case`, so a camelized read writes back the same keys. */
+  protected static snakifyKeys(this: void, value: unknown): unknown {
+    return YamlIO.mapKeys(value, (key) =>
+      key.replace(/[A-Z]/g, (char) => `_${char.toLowerCase()}`),
+    );
+  }
+
+  protected static mapKeys(
+    value: unknown,
+    map: (key: string) => string,
+  ): unknown {
+    if (Array.isArray(value)) {
+      return value.map((inner: unknown) => YamlIO.mapKeys(inner, map));
+    }
     if (value === null || typeof value !== 'object') return value;
+
+    // dates and other class instances are values, not key maps
+    const prototype: unknown = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null) return value;
 
     return Object.fromEntries(
       Object.entries(value).map(([key, inner]) => [
-        key.replace(/_([a-z0-9])/g, (_, char: string) => char.toUpperCase()),
-        YamlIO.camelizeKeys(inner),
+        map(key),
+        YamlIO.mapKeys(inner, map),
       ]),
     );
   }
@@ -90,24 +113,35 @@ export class YamlIO implements FileIO {
     path: string;
     overwriteIfPresent?: boolean;
   }): Promise<Result<void, FileWriteError>> {
-    const { data, path } = options;
+    const { data, overwriteIfPresent = false } = options;
+    const path = YamlIO.buildName(options.path);
+
     let serialized: string;
     try {
-      serialized = stringify(data);
-    } catch (_e) {
+      serialized = stringify(
+        this.camelizeKeys ? YamlIO.snakifyKeys(data) : data,
+      );
+    } catch (e) {
       return Result.err(
         new SerializationFileWriteError({
           input: data,
           format: 'YAML',
-          cause: _e as Error,
+          cause: e as Error,
         }),
       );
     }
 
     try {
-      await writeFile(path, serialized);
+      // wx checks and creates in one step, so a file created meanwhile isn't overwritten
+      await writeFile(path, serialized, {
+        flag: overwriteIfPresent ? 'w' : 'wx',
+      });
     } catch (e) {
-      const error = e as Error;
+      const error = e as NodeJS.ErrnoException;
+      if (error.code === 'EEXIST') {
+        return Result.err(new AlreadyExistsFileWriteError({ path }));
+      }
+
       return Result.err(
         new FileSystemError({ path, message: error.message, cause: error }),
       );
