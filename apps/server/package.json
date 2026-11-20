@@ -22,6 +22,7 @@
     "@node-rs/argon2": "2.2.2",
     "@pdfme/common": "6.2.8",
     "@pdfme/generator": "6.2.8",
+    "@pdfme/pdf-lib": "6.2.8",
     "@pdfme/schemas": "6.2.8",
     "better-result": "^3.0.1",
     "better-sqlite3": "13.2.0",
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@cert-it/data": "workspace:^",
     "@cert-it/file": "workspace:^",
+    "@cert-it/fonts": "workspace:^",
     "@cert-it/hono": "workspace:^",
     "@cert-it/jobs": "workspace:^",
     "@cert-it/shared": "workspace:^",

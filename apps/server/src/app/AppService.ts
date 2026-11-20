@@ -13,6 +13,8 @@ import { DataDirectoryService } from '../storage/DataDirectoryService';
 import { UserService } from '../user/UserService';
 import { CourseService } from '../course/CourseService';
 import { ParticipantService } from '../participant/ParticipantService';
+import { FontService } from '../font/FontService';
+import { TemplateService } from '../template/TemplateService';
 
 type AppServiceOptions = {
   dataDirectory: DataDirectoryService;
@@ -143,6 +145,8 @@ export class AppService {
     const auth = AuthService.create(services);
     const courses = CourseService.create(services);
     const participants = ParticipantService.create(services);
+    const fonts = FontService.create({ ...services, dataDirectory });
+    const templates = TemplateService.create({ ...services, dataDirectory });
     const adminPanel = AdminPanelService.create({ config });
     const certificateFiles = CertificateFileService.create({
       config,
@@ -158,6 +162,8 @@ export class AppService {
       users,
       courses,
       participants,
+      fonts,
+      templates,
       auditLog,
     });
 

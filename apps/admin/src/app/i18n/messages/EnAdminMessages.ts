@@ -368,6 +368,18 @@ export const EnAdminMessages = {
         'Another participant of this course already has this email.',
       lastAdmin: 'There must be at least one active admin.',
       ownAccount: "You can't change your own role, status or password here.",
+      fileTooLarge: 'The file is too large.',
+      invalidFont: 'The file is broken or is not a font.',
+      fontCollection:
+        'The file holds several fonts. Upload a single TTF or OTF font.',
+      webFont:
+        'This is a web font (WOFF or WOFF2). Upload the TTF or OTF version.',
+      invalidPdf: 'The file is broken or is not a PDF.',
+      encryptedPdf:
+        'The PDF is password-protected. Upload a version without protection.',
+      pdfNotOnePage: 'The PDF must have exactly one page.',
+      unknownFont: 'A field uses a font that is no longer available.',
+      unknownBasePdf: 'Upload the base PDF again, then save.',
     },
     network: "Couldn't reach the server. Check your connection and try again.",
     unexpected: 'Something went wrong. Try again.',

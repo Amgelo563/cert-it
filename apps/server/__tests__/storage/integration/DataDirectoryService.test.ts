@@ -68,12 +68,49 @@ describe('DataDirectoryService (start, temporary files)', () => {
 
     expect(readdirSync(certificates)).toEqual(['ABCD-EFGH-JK.pdf']);
   });
+
+  test('GIVEN an upload left by a crash WHEN starting THEN removes it', () => {
+    const directory = new DataDirectoryService({ root });
+    directory.start();
+    writeFileSync(directory.createUploadPath(), 'partial');
+
+    directory.start();
+
+    expect(readdirSync(join(root, 'templates'))).toEqual([]);
+  });
+});
+
+describe('DataDirectoryService (moveFile)', () => {
+  test('GIVEN an upload WHEN moving it to a missing folder THEN creates the folder and moves the file', async () => {
+    const directory = new DataDirectoryService({ root });
+    directory.start();
+    const upload = directory.createUploadPath();
+    writeFileSync(upload, 'pdf');
+
+    await directory.moveFile(
+      upload,
+      directory.getTemplateFile(3 as CourseId, 'abc'),
+    );
+
+    expect(readFileSync(join(root, 'templates', '3', 'abc.pdf'), 'utf8')).toBe(
+      'pdf',
+    );
+    expect(existsSync(upload)).toBe(false);
+  });
+
+  test('GIVEN a target outside the directory WHEN moving THEN throws', async () => {
+    const directory = new DataDirectoryService({ root });
+
+    await expect(directory.moveFile('x', '../outside.pdf')).rejects.toThrow(
+      'outside',
+    );
+  });
 });
 
 describe('DataDirectoryService (writeFile)', () => {
   test('GIVEN a file in a missing folder WHEN writing THEN creates the folder and the file', async () => {
     const directory = new DataDirectoryService({ root });
-    const path = directory.getTemplatePath(3 as CourseId, 1);
+    const path = directory.getTemplatePath(3 as CourseId, 'abc');
 
     await directory.writeFile(path, 'pdf');
 
@@ -121,15 +158,18 @@ describe('DataDirectoryService (paths)', () => {
     );
   });
 
-  test('GIVEN a course and version WHEN getting file paths THEN follows the data directory layout', () => {
+  test('GIVEN a course and hash WHEN getting file paths THEN follows the data directory layout', () => {
     const directory = new DataDirectoryService({ root });
     const courseId = 7 as CourseId;
 
     expect(directory.getFontPath('abc.ttf')).toBe(
       join(root, 'fonts', 'abc.ttf'),
     );
-    expect(directory.getTemplatePath(courseId, 2)).toBe(
-      join(root, 'templates', '7', 'v2.pdf'),
+    expect(directory.getTemplateFile(courseId, 'abc')).toBe(
+      'templates/7/abc.pdf',
+    );
+    expect(directory.getTemplatePath(courseId, 'abc')).toBe(
+      join(root, 'templates', '7', 'abc.pdf'),
     );
     expect(
       directory.getCertificatePath(courseId, 'ABCD-EFGH-JK' as CertificateCode),

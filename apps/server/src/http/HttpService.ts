@@ -21,9 +21,11 @@ import type { Config } from '../config/schema/ConfigSchema';
 import { CourseService } from '../course/CourseService';
 import type { DatabaseService } from '../database/DatabaseService';
 import { StartupError } from '../error/StartupError';
+import { FontService } from '../font/FontService';
 import { LocaleResolver } from '../i18n/LocaleResolver';
 import { MessagesService } from '../i18n/MessagesService';
 import { ParticipantService } from '../participant/ParticipantService';
+import { TemplateService } from '../template/TemplateService';
 import { UserService } from '../user/UserService';
 import type { HttpEnv } from './HttpEnv';
 
@@ -40,6 +42,8 @@ type HttpServiceOptions = {
   users: UserService;
   courses: CourseService;
   participants: ParticipantService;
+  fonts: FontService;
+  templates: TemplateService;
   auditLog: AuditLogService;
   csrf: CsrfGuard;
   compressor: ResponseCompressor;
@@ -93,6 +97,10 @@ export class HttpService {
 
   protected readonly participants: ParticipantService;
 
+  protected readonly fonts: FontService;
+
+  protected readonly templates: TemplateService;
+
   protected readonly auditLog: AuditLogService;
 
   protected readonly csrf: CsrfGuard;
@@ -122,6 +130,8 @@ export class HttpService {
     this.users = options.users;
     this.courses = options.courses;
     this.participants = options.participants;
+    this.fonts = options.fonts;
+    this.templates = options.templates;
     this.auditLog = options.auditLog;
     this.csrf = options.csrf;
     this.compressor = options.compressor;
@@ -140,6 +150,8 @@ export class HttpService {
     users: UserService;
     courses: CourseService;
     participants: ParticipantService;
+    fonts: FontService;
+    templates: TemplateService;
     auditLog: AuditLogService;
   }): HttpService {
     const {
@@ -151,6 +163,8 @@ export class HttpService {
       users,
       courses,
       participants,
+      fonts,
+      templates,
       auditLog,
     } = options;
     const siteUrl = new SiteUrl({ baseUrl: config.site.baseUrl });
@@ -171,6 +185,8 @@ export class HttpService {
       users,
       courses,
       participants,
+      fonts,
+      templates,
       auditLog,
       csrf: createCsrfGuard(siteUrl),
       compressor: new ResponseCompressor(),
@@ -226,6 +242,8 @@ export class HttpService {
       .route(UserService.Path, this.users.getApp())
       .route(CourseService.Path, this.courses.getApp())
       .route(ParticipantService.Path, this.participants.getApp())
+      .route(TemplateService.Path, this.templates.getApp())
+      .route(FontService.Path, this.fonts.getApp())
       .route(AuditLogService.Path, this.auditLog.getApp());
   }
 
@@ -326,11 +344,13 @@ export class HttpService {
     };
   }
 
-  // API answers are per user and change with every write
+  // API answers are per user and change with every write, unless a route says otherwise
   protected noStore(): MiddlewareHandler<HttpEnv> {
     return async (c, next) => {
       await next();
-      c.header('Cache-Control', 'no-store');
+      if (!c.res.headers.has('Cache-Control')) {
+        c.header('Cache-Control', 'no-store');
+      }
     };
   }
 

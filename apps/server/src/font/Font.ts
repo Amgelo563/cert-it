@@ -1,5 +1,4 @@
-import type { Brand } from '@cert-it/shared';
-import type { FontSource } from './FontSourceEnum';
+import type { Brand, FontSource } from '@cert-it/shared';
 
 export type FontId = Brand<number, 'FontId'>;
 

@@ -1,3 +1,6 @@
+import { randomUUID } from 'node:crypto';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { RateLimiter, type SiteUrl } from '@cert-it/hono';
 import { LocaleEnum } from '@cert-it/shared';
 import { AuditLogService } from '../../../src/audit/AuditLogService';
@@ -8,14 +11,22 @@ import { PasswordHasher } from '../../../src/auth/password/PasswordHasher';
 import { SessionService } from '../../../src/auth/session/SessionService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { CourseService } from '../../../src/course/CourseService';
+import { FontService } from '../../../src/font/FontService';
+import { DataDirectoryService } from '../../../src/storage/DataDirectoryService';
+import { TemplateService } from '../../../src/template/TemplateService';
+import { createTestConfig } from '../../config/mocks/createTestConfig';
 import { ParticipantService } from '../../../src/participant/ParticipantService';
 import { UserService } from '../../../src/user/UserService';
 
-/** Returns the auth, user, course, participant and audit log options of HttpService, with rate limits that tests can reach. */
+/** Returns the API service options of HttpService, with rate limits that tests can reach. Without a data directory, file routes use one that is never created. */
 export function createAuthOptions(
   database: DatabaseService,
   siteUrl: SiteUrl,
-  options: { maxAttempts?: number; now?: () => number } = {},
+  options: {
+    maxAttempts?: number;
+    now?: () => number;
+    dataDirectory?: DataDirectoryService;
+  } = {},
 ) {
   const sessions = new SessionService({ database, siteUrl, now: options.now });
   const limiter = () =>
@@ -56,11 +67,28 @@ export function createAuthOptions(
 
   const participants = new ParticipantService({ database, guard, auditLog });
 
+  const dataDirectory =
+    options.dataDirectory
+    ?? new DataDirectoryService({
+      root: join(tmpdir(), `cert-it-unused-${randomUUID()}`),
+    });
+  const services = {
+    config: createTestConfig(),
+    database,
+    dataDirectory,
+    guard,
+    auditLog,
+  };
+  const fonts = FontService.create(services);
+  const templates = TemplateService.create(services);
+
   return {
     auth,
     users,
     courses,
     participants,
+    fonts,
+    templates,
     auditLog,
     csrf: createCsrfGuard(siteUrl),
   };

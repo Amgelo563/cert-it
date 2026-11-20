@@ -1,7 +1,7 @@
 import type { DuplicateModelError, ModelNotFoundError } from '@cert-it/data';
 import type { Result } from 'better-result';
 import type { Font, FontId } from '../Font';
-import type { FontSource } from '../FontSourceEnum';
+import type { FontSource } from '@cert-it/shared';
 
 /** An object that stores and queries fonts. */
 export interface FontRepository {

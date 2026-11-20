@@ -1,3 +1,6 @@
+import { randomUUID } from 'node:crypto';
+import { mkdir, rename, rm } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { type FileContent, ManagedDirectory } from '@cert-it/file';
 import type { CertificateCode } from '../certificate/code/CertificateCode';
 import type { CourseId } from '../course/Course';
@@ -70,13 +73,60 @@ export class DataDirectoryService {
     return this.directory.resolve(DataDirectoryService.FontsFolder, fileName);
   }
 
-  /** Returns the path of the base PDF of a course's template version. */
-  public getTemplatePath(courseId: CourseId, version: number): string {
-    return this.directory.resolve(
+  /** Returns the path of the folder fonts are stored in. */
+  public getFontsFolder(): string {
+    return this.directory.resolve(DataDirectoryService.FontsFolder);
+  }
+
+  /** Returns the path of a course's base PDF relative to the directory, given its SHA-256, as template versions store it. */
+  public getTemplateFile(courseId: CourseId, sha256: string): string {
+    return [
       DataDirectoryService.TemplatesFolder,
       String(courseId),
-      `v${version}.pdf`,
+      `${sha256}.pdf`,
+    ].join('/');
+  }
+
+  /** Returns the path of a course's base PDF, given its SHA-256. */
+  public getTemplatePath(courseId: CourseId, sha256: string): string {
+    return this.resolve(this.getTemplateFile(courseId, sha256));
+  }
+
+  /**
+   * Returns the absolute path of a path inside the directory.
+   *
+   * @throws {Error} If the path is outside the directory.
+   */
+  public resolve(path: string): string {
+    return this.directory.resolve(path);
+  }
+
+  /** Returns a new path for an upload in progress. It ends like a temporary file, so start() removes it if a crash leaves it behind. */
+  public createUploadPath(): string {
+    return this.directory.resolve(
+      DataDirectoryService.TemplatesFolder,
+      `${randomUUID()}.upload${ManagedDirectory.TempFileSuffix}`,
     );
+  }
+
+  /**
+   * Moves a file to a path inside the directory, creating its folder and replacing any file there.
+   *
+   * @throws {Error} If the move fails, or the target is outside the directory.
+   */
+  public async moveFile(from: string, to: string): Promise<void> {
+    const target = this.directory.resolve(to);
+    await mkdir(dirname(target), { recursive: true });
+    await rename(from, target);
+  }
+
+  /**
+   * Deletes a file. Deleting a file that's already gone isn't an error.
+   *
+   * @throws {Error} If the path is outside the directory, or the file can't be deleted.
+   */
+  public async deleteFile(path: string): Promise<void> {
+    await rm(this.directory.resolve(path), { force: true });
   }
 
   /** Returns the path of a certificate's PDF. */

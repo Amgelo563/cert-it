@@ -329,6 +329,9 @@ importers:
       '@pdfme/generator':
         specifier: 6.2.8
         version: 6.2.8(@pdfme/common@6.2.8)(@pdfme/schemas@6.2.8(@pdfme/common@6.2.8))
+      '@pdfme/pdf-lib':
+        specifier: 6.2.8
+        version: 6.2.8
       '@pdfme/schemas':
         specifier: 6.2.8
         version: 6.2.8(@pdfme/common@6.2.8)
@@ -369,6 +372,9 @@ importers:
       '@cert-it/file':
         specifier: workspace:^
         version: link:../../packages/file
+      '@cert-it/fonts':
+        specifier: workspace:^
+        version: link:../../packages/fonts
       '@cert-it/hono':
         specifier: workspace:^
         version: link:../../packages/hono

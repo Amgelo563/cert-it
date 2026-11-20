@@ -370,6 +370,17 @@ export const EsAdminMessages = {
       lastAdmin: 'Debe quedar al menos un administrador activo.',
       ownAccount:
         'No puedes cambiar tu propio rol, estado o contraseña desde aquí.',
+      fileTooLarge: 'El archivo es demasiado grande.',
+      invalidFont: 'El archivo está dañado o no es una fuente.',
+      fontCollection:
+        'El archivo contiene varias fuentes. Sube una sola fuente TTF u OTF.',
+      webFont: 'Es una fuente web (WOFF o WOFF2). Sube la versión TTF u OTF.',
+      invalidPdf: 'El archivo está dañado o no es un PDF.',
+      encryptedPdf:
+        'El PDF está protegido con contraseña. Sube una versión sin protección.',
+      pdfNotOnePage: 'El PDF debe tener exactamente una página.',
+      unknownFont: 'Un campo usa una fuente que ya no está disponible.',
+      unknownBasePdf: 'Vuelve a subir el PDF base y guarda de nuevo.',
     },
     network:
       'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.',

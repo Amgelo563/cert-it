@@ -1,6 +1,6 @@
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { FontId } from '../Font';
-import type { FontSource } from '../FontSourceEnum';
+import type { FontSource } from '@cert-it/shared';
 
 export const fontTable = sqliteTable('fonts', {
   id: integer('id').primaryKey({ autoIncrement: true }).$type<FontId>(),

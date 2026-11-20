@@ -11,6 +11,7 @@ import { PasswordHasher } from '../../../src/auth/password/PasswordHasher';
 import { AccelFileServer } from '../../../src/certificate/file/AccelFileServer';
 import { CertificateFileService } from '../../../src/certificate/file/CertificateFileService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
+import type { DataDirectoryService } from '../../../src/storage/DataDirectoryService';
 import { HttpService } from '../../../src/http/HttpService';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
 import { MessagesService } from '../../../src/i18n/MessagesService';
@@ -20,6 +21,7 @@ import { createAuthOptions } from '../../auth/mocks/createAuthOptions';
 import { sessionCookie } from '../../auth/mocks/createAuthApp';
 
 export type ApiRequestInit = {
+  /** Sent as JSON, except text and bytes, which are sent as they are. */
   body?: unknown;
   cookie?: string;
   ip?: string;
@@ -37,7 +39,7 @@ const passwords = new PasswordHasher();
 /** The whole HttpService under the /certs base path, with helpers to call its API as a browser would. */
 export function createApiHarness(
   database: DatabaseService,
-  options: { maxAttempts?: number } = {},
+  options: { maxAttempts?: number; dataDirectory?: DataDirectoryService } = {},
 ) {
   const siteUrl = new SiteUrl({ baseUrl: `${ApiHarnessOrigin}/certs` });
   const http = new HttpService({
@@ -76,7 +78,11 @@ export function createApiHarness(
       'x-real-ip': init.ip ?? '198.51.100.1',
     };
     if (init.cookie) headers['cookie'] = init.cookie;
-    if (init.body !== undefined) headers['content-type'] = 'application/json';
+    const raw =
+      typeof init.body === 'string' || init.body instanceof Uint8Array;
+    if (init.body !== undefined && !raw) {
+      headers['content-type'] = 'application/json';
+    }
 
     return Promise.resolve(
       http.getApp().request(
@@ -85,8 +91,8 @@ export function createApiHarness(
           method,
           headers,
           body:
-            typeof init.body === 'string' || init.body === undefined
-              ? init.body
+            raw || init.body === undefined
+              ? (init.body as string | Uint8Array<ArrayBuffer> | undefined)
               : JSON.stringify(init.body),
         },
         { incoming: { socket: { remoteAddress: '127.0.0.1' } } },

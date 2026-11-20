@@ -1,10 +1,9 @@
-import { LocaleEnum, RoleEnum } from '@cert-it/shared';
+import { FontSourceEnum, LocaleEnum, RoleEnum } from '@cert-it/shared';
 import type { CertificateCode } from '../../../src/certificate/code/CertificateCode';
 import type { Certificate } from '../../../src/certificate/Certificate';
 import type { Course } from '../../../src/course/Course';
 import type { Repositories } from '../../../src/database/Repositories';
 import type { Font } from '../../../src/font/Font';
-import { FontSourceEnum } from '../../../src/font/FontSourceEnum';
 import type { Participant } from '../../../src/participant/Participant';
 import type { TemplateVersion } from '../../../src/template/TemplateVersion';
 import type { User } from '../../../src/user/User';
