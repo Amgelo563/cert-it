@@ -43,8 +43,8 @@ export interface TemplateVersionRepository {
   /** Returns the template versions of a course, newest first. */
   listByCourse(courseId: CourseId): TemplateVersion[];
 
-  /** Returns the template versions of a course that can be deleted: not the newest one, and used by no certificate. */
-  listUnused(courseId: CourseId): TemplateVersion[];
+  /** Returns the template versions that can be deleted: replaced by a newer version of their course saved before `replacedBefore`, and used by no certificate. */
+  listUnused(replacedBefore: Date): TemplateVersion[];
 
   /** Returns the base PDF paths every template version uses, each once. */
   listBasePdfPaths(): string[];

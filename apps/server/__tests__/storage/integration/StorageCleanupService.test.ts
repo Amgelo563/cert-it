@@ -78,6 +78,55 @@ function setup() {
   };
 }
 
+describe('StorageCleanupService (template versions)', () => {
+  test('GIVEN an old version replaced long ago WHEN cleaning up THEN deletes it, and then the font only it used', async () => {
+    const { admin, cleanup, database, font, seeder } = setup();
+    const course = seeder.course();
+    const old = seeder.templateVersion(course, admin);
+    const latest = seeder.templateVersion(course, admin);
+    const repositories = database.getRepositories();
+    const oldFont = font();
+    repositories.templateVersions.setFontIds(old.id, [oldFont.id]);
+
+    const result = await cleanup();
+
+    expect(result.templateVersions).toBe(1);
+    expect(result.fonts).toBe(1);
+    expect(repositories.templateVersions.findById(old.id)).toBeNull();
+    expect(repositories.templateVersions.findById(latest.id)).not.toBeNull();
+    expect(repositories.fonts.findById(oldFont.id)).toBeNull();
+  });
+
+  test('GIVEN an old version a certificate uses WHEN cleaning up THEN keeps it', async () => {
+    const { admin, cleanup, database, seeder } = setup();
+    const course = seeder.course();
+    const used = seeder.templateVersion(course, admin);
+    seeder.templateVersion(course, admin);
+    seeder.certificate(seeder.participant(course), used);
+
+    const result = await cleanup();
+
+    expect(result.templateVersions).toBe(0);
+    expect(
+      database.getRepositories().templateVersions.findById(used.id),
+    ).not.toBeNull();
+  });
+
+  test('GIVEN a version replaced just now WHEN cleaning up THEN keeps it, as a job may still use it', async () => {
+    const { admin, cleanup, database, seeder } = setup();
+    const course = seeder.course();
+    const replaced = seeder.templateVersion(course, admin);
+    seeder.templateVersion(course, admin);
+
+    const result = await cleanup(Date.now());
+
+    expect(result.templateVersions).toBe(0);
+    expect(
+      database.getRepositories().templateVersions.findById(replaced.id),
+    ).not.toBeNull();
+  });
+});
+
 describe('StorageCleanupService (fonts)', () => {
   test('GIVEN an unused font older than the grace period WHEN cleaning up THEN deletes its row and file', async () => {
     const { cleanup, database, font, root } = setup();

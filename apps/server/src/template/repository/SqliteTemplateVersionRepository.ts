@@ -1,5 +1,16 @@
 import { AbstractSqliteRepository } from '@cert-it/data';
-import { and, desc, eq, inArray, max, ne, notExists } from 'drizzle-orm';
+import {
+  and,
+  desc,
+  eq,
+  exists,
+  gt,
+  inArray,
+  lte,
+  max,
+  notExists,
+} from 'drizzle-orm';
+import { alias } from 'drizzle-orm/sqlite-core';
 import { certificateTable } from '../../certificate/repository/certificateTable';
 import type { CourseId } from '../../course/Course';
 import type { FontId } from '../../font/Font';
@@ -63,14 +74,23 @@ export class SqliteTemplateVersionRepository
     });
   }
 
-  public listUnused(courseId: CourseId): TemplateVersion[] {
-    const latest = this.findLatest(courseId);
-    if (!latest) return [];
+  public listUnused(replacedBefore: Date): TemplateVersion[] {
+    const newer = alias(templateVersionTable, 'newer');
 
     return this.findMany({
       where: and(
-        eq(templateVersionTable.courseId, courseId),
-        ne(templateVersionTable.id, latest.id),
+        exists(
+          this.db
+            .select({ id: newer.id })
+            .from(newer)
+            .where(
+              and(
+                eq(newer.courseId, templateVersionTable.courseId),
+                gt(newer.version, templateVersionTable.version),
+                lte(newer.createdAt, replacedBefore),
+              ),
+            ),
+        ),
         notExists(
           this.db
             .select({ id: certificateTable.id })
@@ -80,7 +100,7 @@ export class SqliteTemplateVersionRepository
             ),
         ),
       ),
-      orderBy: [templateVersionTable.version],
+      orderBy: [templateVersionTable.courseId, templateVersionTable.version],
     });
   }
 

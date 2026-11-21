@@ -20,14 +20,15 @@ type StorageCleanupServiceOptions = {
 
 /** What one cleanup deleted. */
 export type CleanupResult = {
+  templateVersions: number;
   fonts: number;
   basePdfs: number;
 };
 
 /**
- * Deletes fonts and base PDFs no template version uses, once they've been unused for a while.
+ * Deletes old template versions no certificate uses, then the fonts and base PDFs no template version uses, once they've been unused for a while.
  *
- * Unused files aren't deleted at once: an editor may have just uploaded them and not saved the template yet.
+ * Nothing is deleted at once: an editor may have just uploaded a file and not saved the template yet, and a job may still use a version just replaced.
  */
 export class StorageCleanupService {
   public static readonly DefaultGraceMs = 24 * 60 * 60 * 1000;
@@ -80,10 +81,10 @@ export class StorageCleanupService {
   public start(): void {
     const runLogged = () => {
       this.run().then(
-        ({ fonts, basePdfs }) => {
-          if (fonts + basePdfs > 0) {
+        ({ templateVersions, fonts, basePdfs }) => {
+          if (templateVersions + fonts + basePdfs > 0) {
             this.log(
-              `Deleted ${fonts} unused fonts and ${basePdfs} unused base PDFs`,
+              `Deleted ${templateVersions} unused template versions, ${fonts} unused fonts and ${basePdfs} unused base PDFs`,
             );
           }
         },
@@ -102,16 +103,36 @@ export class StorageCleanupService {
   }
 
   /**
-   * Deletes the fonts and base PDFs that have been unused for longer than the grace period.
+   * Deletes the template versions, fonts and base PDFs that have been unused for longer than the grace period.
+   *
+   * Versions go first, so the fonts and base PDFs only they used are deleted in the same run.
    *
    * @throws {Error} If a file can't be listed or deleted.
    */
   public async run(): Promise<CleanupResult> {
     const cutoff = this.now() - this.graceMs;
     return {
+      templateVersions: this.deleteTemplateVersions(cutoff),
       fonts: await this.deleteFonts(cutoff),
       basePdfs: await this.deleteBasePdfs(cutoff),
     };
+  }
+
+  // a version's links to its fonts go with it; if a certificate started using it meanwhile, its delete fails and it stays
+  protected deleteTemplateVersions(cutoff: number): number {
+    const { templateVersions } = this.database.getRepositories();
+    let deleted = 0;
+
+    for (const version of templateVersions.listUnused(new Date(cutoff))) {
+      try {
+        if (templateVersions.delete(version.id).isErr()) continue;
+      } catch {
+        continue;
+      }
+      deleted += 1;
+    }
+
+    return deleted;
   }
 
   // the row goes first: if a template started using the font meanwhile, its delete fails and the file stays

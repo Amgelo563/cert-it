@@ -78,21 +78,44 @@ describe('SqliteTemplateVersionRepository (listByCourse)', () => {
 });
 
 describe('SqliteTemplateVersionRepository (listUnused)', () => {
+  // after every version seeded so far
+  const later = () => new Date(Date.now() + 60_000);
+
   test('GIVEN old versions with and without certificates WHEN listing unused THEN returns old ones without certificates', () => {
     const unused = seeder.templateVersion(course, user);
     const used = seeder.templateVersion(course, user);
     seeder.templateVersion(course, user);
     seeder.certificate(seeder.participant(course), used);
 
-    expect(repositories.templateVersions.listUnused(course.id)).toEqual([
-      unused,
-    ]);
+    expect(repositories.templateVersions.listUnused(later())).toEqual([unused]);
   });
 
   test('GIVEN only one version without certificates WHEN listing unused THEN keeps it since it is the latest', () => {
     seeder.templateVersion(course, user);
 
-    expect(repositories.templateVersions.listUnused(course.id)).toEqual([]);
+    expect(repositories.templateVersions.listUnused(later())).toEqual([]);
+  });
+
+  test('GIVEN replaced versions in two courses WHEN listing unused THEN returns both', () => {
+    const other = seeder.course();
+    const first = seeder.templateVersion(course, user);
+    seeder.templateVersion(course, user);
+    const second = seeder.templateVersion(other, user);
+    seeder.templateVersion(other, user);
+
+    expect(repositories.templateVersions.listUnused(later())).toEqual([
+      first,
+      second,
+    ]);
+  });
+
+  test('GIVEN a version replaced after the cutoff WHEN listing unused THEN keeps it', () => {
+    seeder.templateVersion(course, user);
+    seeder.templateVersion(course, user);
+
+    expect(
+      repositories.templateVersions.listUnused(new Date(Date.now() - 60_000)),
+    ).toEqual([]);
   });
 });
 
