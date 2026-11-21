@@ -91,14 +91,14 @@ export function StoredFontsPanel({
         <Stack gap="lg">
           {inTemplate.length > 0 && (
             <Stack gap="xs">
-              <Text size="xs" fw={600} c="dimmed" tt="uppercase">
+              <Text size="xs" fw={500} c="dimmed">
                 {t('template.fontsModal.inTemplate')}
               </Text>
               {inTemplate.map((font) => row(font, true))}
             </Stack>
           )}
           <Stack gap="xs">
-            <Text size="xs" fw={600} c="dimmed" tt="uppercase">
+            <Text size="xs" fw={500} c="dimmed">
               {t('template.fontsModal.otherStored')}
             </Text>
             {!others && (
