@@ -129,5 +129,27 @@ export type CourseMessages = {
     save: string;
     /** With the new version number in `{version}`. */
     saved: string;
+    /** The certificate generated in the browser from the canvas. */
+    preview: {
+      open: string;
+      title: string;
+      sample: string;
+      participant: string;
+      searchParticipant: string;
+      noParticipants: string;
+      searchFailed: string;
+      pickHint: string;
+      /** Shown for a participant without a certificate, whose date and QR code are samples. */
+      notIssued: string;
+      /** With the participant's `{name}`. */
+      missingGlyphsTitle: string;
+      missingGlyphsText: string;
+      /** With the error in `{reason}`. */
+      failed: string;
+      imageAlt: string;
+      download: string;
+      /** Name of the downloaded file of a sample preview, without its extension. */
+      sampleFile: string;
+    };
   };
 };

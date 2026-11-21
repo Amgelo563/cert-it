@@ -39,17 +39,23 @@ export function withFontNames(
   );
 }
 
-/** Returns the text fields whose sample their font can't fully draw. */
+/**
+ * Returns the text fields whose text their font can't fully draw.
+ *
+ * @param values Text of each field type, such as a participant's; without it, each field's own sample is checked.
+ */
 export function findGlyphWarnings(
   schemas: Template['schemas'],
   checkers: ReadonlyMap<string, GlyphChecker>,
+  values?: Readonly<Record<string, string>>,
 ): GlyphWarning[] {
   return schemas.flat().flatMap((field) => {
     const font = field['fontName'];
     const checker = typeof font === 'string' ? checkers.get(font) : undefined;
     if (!isTextField(field) || !checker || typeof font !== 'string') return [];
 
-    const missing = checker.findMissing(String(field.content ?? ''));
+    const text = values ? values[field.type] : field.content;
+    const missing = checker.findMissing(String(text ?? ''));
     return missing.length > 0 ? [{ field: field.name, font, missing }] : [];
   });
 }

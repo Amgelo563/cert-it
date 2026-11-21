@@ -119,5 +119,24 @@ export const EsCourseMessages = {
     fontAdded: 'Se agregó {family} {style}',
     save: 'Guardar versión',
     saved: 'Guardado como versión {version}',
+    preview: {
+      open: 'Vista previa',
+      title: 'Vista previa del certificado',
+      sample: 'Datos de ejemplo',
+      participant: 'Participante',
+      searchParticipant: 'Busca por nombre o correo',
+      noParticipants: 'Ningún participante coincide.',
+      searchFailed: 'No se pudieron cargar los participantes.',
+      pickHint: 'Elige un participante para ver su certificado.',
+      notIssued:
+        'Aún no tiene certificado, así que la fecha es la de hoy y el código QR es de ejemplo.',
+      missingGlyphsTitle: 'El nombre de {name} no se puede imprimir completo',
+      missingGlyphsText:
+        'Estos campos usan una fuente a la que le faltan algunos de sus caracteres, así que saldrían en blanco. Elige otra fuente o corrige el nombre.',
+      failed: 'No se pudo generar la vista previa: {reason}',
+      imageAlt: 'El certificado tal como se imprimiría',
+      download: 'Descargar PDF',
+      sampleFile: 'Certificado de ejemplo',
+    },
   },
 } satisfies CourseMessages;

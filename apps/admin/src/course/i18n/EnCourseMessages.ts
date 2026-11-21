@@ -119,5 +119,24 @@ export const EnCourseMessages = {
     fontAdded: '{family} {style} added',
     save: 'Save version',
     saved: 'Saved as version {version}',
+    preview: {
+      open: 'Preview',
+      title: 'Certificate preview',
+      sample: 'Sample data',
+      participant: 'Participant',
+      searchParticipant: 'Search by name or email',
+      noParticipants: 'No participants match.',
+      searchFailed: "Participants couldn't be loaded.",
+      pickHint: 'Pick a participant to see their certificate.',
+      notIssued:
+        "They don't have a certificate yet, so the date is today's and the QR code is a sample.",
+      missingGlyphsTitle: "{name}'s name can't be fully printed",
+      missingGlyphsText:
+        "These fields use a font without some of its characters, so they'd print as blanks. Pick another font, or fix the name.",
+      failed: "The preview couldn't be generated: {reason}",
+      imageAlt: 'The certificate as it would be printed',
+      download: 'Download PDF',
+      sampleFile: 'Sample certificate',
+    },
   },
 } satisfies CourseMessages;

@@ -21,6 +21,7 @@
     "@mantine/modals": "9.8.0",
     "@mantine/notifications": "9.8.0",
     "@pdfme/common": "6.2.8",
+    "@pdfme/converter": "6.2.8",
     "@pdfme/generator": "6.2.8",
     "@pdfme/schemas": "6.2.8",
     "@pdfme/ui": "6.2.8",

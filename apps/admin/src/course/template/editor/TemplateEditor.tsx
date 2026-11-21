@@ -4,6 +4,7 @@ import {
   CourseDateFormatter,
   type FontSummary,
   type SaveTemplateRequest,
+  type TemplateValues,
 } from '@cert-it/shared';
 import type { Font, Template } from '@pdfme/common';
 import '@mantine/dropzone/styles.css';
@@ -22,6 +23,7 @@ import { notifications } from '@mantine/notifications';
 import {
   IconAlertTriangle,
   IconDeviceFloppy,
+  IconEye,
   IconFileTypePdf,
   IconInfoCircle,
   IconTypography,
@@ -31,6 +33,8 @@ import { useTranslation } from 'react-i18next';
 import { describeApiError } from '../../../app/api/describeApiError';
 import { useApiClient } from '../../../app/api/useApiClient';
 import { LeaveGuard } from '../../../app/router/LeaveGuard';
+import { certificatePageUrl } from '../../participants/certificatePageUrl';
+import { PreviewModal } from '../preview/PreviewModal';
 import { FontsModal } from './fonts/FontsModal';
 import { createFieldPlugins } from '../designer/createFieldPlugins';
 import {
@@ -96,6 +100,8 @@ export function TemplateEditor({
   const [fontInfo, setFontInfo] = useState(start.fontInfo);
   const [fontsOpen, setFontsOpen] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
+  // the template shown in the preview, or null while it's closed
+  const [previewing, setPreviewing] = useState<Template | null>(null);
   // the canvas's fields, and the last saved version as a comparable key
   const [fields, setFields] = useState<Template['schemas'] | null>(null);
   const [savedKey, setSavedKey] = useState<string | null>(null);
@@ -134,29 +140,35 @@ export function TemplateEditor({
     [fonts],
   );
 
+  // what new fields show, and what a preview prints until a certificate exists
+  const samples = useMemo<TemplateValues>(
+    () => ({
+      participantName: t('template.sampleName'),
+      issueDate: new CourseDateFormatter({
+        locale: course.locale,
+        dateFormat: course.dateFormat,
+      }).format(today()),
+      qrcode: certificatePageUrl(SampleCode),
+    }),
+    [t, course.locale, course.dateFormat],
+  );
+
   // new names or languages restart the Designer, which keeps its canvas
   const hasFonts = fonts.size > 0;
-  const plugins = useMemo(() => {
-    const date = new CourseDateFormatter({
-      locale: course.locale,
-      dateFormat: course.dateFormat,
-    }).format(today());
-
-    return createFieldPlugins({
-      labels: {
-        participantName: t('template.fields.participantName'),
-        issueDate: t('template.fields.issueDate'),
-        qrcode: t('template.fields.qrcode'),
-      },
-      samples: {
-        participantName: t('template.sampleName'),
-        issueDate: date,
-        qrcode: new URL(`../c/${SampleCode}`, document.baseURI).href,
-      },
-      withText: hasFonts,
-      fontLabel: (sha256) => fontLabelOf(fontInfo, sha256),
-    });
-  }, [t, course.locale, course.dateFormat, hasFonts, fontInfo]);
+  const plugins = useMemo(
+    () =>
+      createFieldPlugins({
+        labels: {
+          participantName: t('template.fields.participantName'),
+          issueDate: t('template.fields.issueDate'),
+          qrcode: t('template.fields.qrcode'),
+        },
+        samples,
+        withText: hasFonts,
+        fontLabel: (sha256) => fontLabelOf(fontInfo, sha256),
+      }),
+    [t, samples, hasFonts, fontInfo],
+  );
 
   const fieldNames = useMemo(
     () => ({
@@ -305,6 +317,17 @@ export function TemplateEditor({
     });
   };
 
+  // the canvas as it is now, named as it would be saved
+  const openPreview = () => {
+    if (!basePdf || !designer.current) return;
+    const { schemas } = designer.current.getTemplate();
+    setPreviewing({
+      // generating mustn't touch the bytes the Designer draws
+      basePdf: basePdf.bytes.slice(0),
+      schemas: withFontNames(schemas, fallback),
+    });
+  };
+
   const save = () =>
     basePdf
     && run('save', async () => {
@@ -408,6 +431,24 @@ export function TemplateEditor({
             onRemove={unloadFont}
             onUpload={uploadFont}
             onImported={loadFont}
+          />
+          <Button
+            variant="default"
+            disabled={busy !== null}
+            leftSection={<IconEye size={16} stroke={1.5} />}
+            onClick={openPreview}
+          >
+            {t('template.preview.open')}
+          </Button>
+          <PreviewModal
+            course={course}
+            template={previewing}
+            onClose={() => setPreviewing(null)}
+            fonts={fontOption}
+            plugins={plugins}
+            samples={samples}
+            checkers={checkers}
+            fontLabel={(sha256) => fontLabelOf(fontInfo, sha256)}
           />
           <Button
             onClick={() => void save()}
