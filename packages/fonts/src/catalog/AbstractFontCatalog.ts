@@ -50,20 +50,33 @@ export abstract class AbstractFontCatalog<Entry> implements FontCatalog {
     const entries = await this.getEntries();
     if (entries.isErr()) return Result.err(entries.error);
 
-    const found: CatalogFamily[] = [];
+    // every match is ranked before the limit, so a short query still finds its exact name
+    const found: { family: CatalogFamily; rank: number }[] = [];
     for (const entry of entries.value) {
-      if (found.length >= limit) break;
-
       const family = this.toFamily(entry);
-      if (
-        family.family.toLowerCase().includes(query)
-        && (!category || family.category === category)
-      ) {
-        found.push(family);
-      }
+      if (category && family.category !== category) continue;
+
+      const rank = AbstractFontCatalog.rankMatch(family.family, query);
+      if (rank !== null) found.push({ family, rank });
     }
 
-    return Result.ok(found);
+    // sort is stable, so equal ranks keep the catalog's order
+    return Result.ok(
+      found
+        .sort((a, b) => a.rank - b.rank)
+        .slice(0, limit)
+        .map(({ family }) => family),
+    );
+  }
+
+  /** Returns how well a name matches a lowercase query, lower first: exact, prefix, word start, anywhere; null if it doesn't. */
+  protected static rankMatch(name: string, query: string): number | null {
+    const lower = name.toLowerCase();
+    if (lower === query) return 0;
+    if (lower.startsWith(query)) return 1;
+    if (lower.includes(` ${query}`)) return 2;
+    if (lower.includes(query)) return 3;
+    return null;
   }
 
   public abstract download(

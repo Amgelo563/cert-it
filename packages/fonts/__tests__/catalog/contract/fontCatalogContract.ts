@@ -19,11 +19,22 @@ export function fontCatalogContract(harness: FontCatalogHarness): void {
     return (await catalog.search(options)).unwrap().map(({ family }) => family);
   }
 
-  test('GIVEN part of a name in any case WHEN searching THEN returns the matching families in the catalog order', async () => {
+  test('GIVEN part of a name in any case WHEN searching THEN returns the matching families, equal matches in the catalog order', async () => {
     expect(await searchNames({ query: 'ROBO' })).toEqual([
       'Roboto',
       'Roboto Slab',
     ]);
+  });
+
+  test('GIVEN a query that starts one name and is inside another WHEN searching THEN returns the one it starts first', async () => {
+    expect(await searchNames({ query: 'l' })).toEqual([
+      'Lobster',
+      'Roboto Slab',
+    ]);
+  });
+
+  test('GIVEN a limit below the matches WHEN searching THEN keeps the best ones, not the first in the catalog', async () => {
+    expect(await searchNames({ query: 'l', limit: 1 })).toEqual(['Lobster']);
   });
 
   test('GIVEN a category WHEN searching THEN returns only families in it', async () => {
