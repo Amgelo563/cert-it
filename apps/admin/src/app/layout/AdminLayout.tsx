@@ -7,7 +7,7 @@ import classes from './AdminLayout.module.css';
 import { AdminHeader } from './header/AdminHeader';
 import { AdminSidebar } from './sidebar/AdminSidebar';
 
-/** Sidebar, header and footer around every admin page. */
+/** Sidebar and header around every admin page. */
 export function AdminLayout() {
   const { t } = useTranslation();
   const navigation = useNavigation();
@@ -59,7 +59,6 @@ export function AdminLayout() {
         <div className={classes.content}>
           <Outlet />
         </div>
-        <footer className={classes.footer}>{t('app.title')}</footer>
       </AppShell.Main>
     </AppShell>
   );

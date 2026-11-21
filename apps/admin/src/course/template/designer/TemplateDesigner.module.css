@@ -4,8 +4,12 @@
   isolation: isolate;
 }
 
-/* fills the window below the header, the course title and its tabs */
+/* a first guess; useFillWindowHeight sets the real height */
 .container {
   height: calc(100dvh - rem(360px));
-  min-height: rem(480px);
+}
+
+/* pdfme's bulk rename; names don't matter here, values bind by type; important beats its inline style */
+.container :global(div:has(> .pdfme-designer-bulk-update)) {
+  display: none !important;
 }

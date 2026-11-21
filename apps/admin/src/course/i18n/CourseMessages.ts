@@ -71,6 +71,10 @@ export type CourseMessages = {
     versionLabel: string;
     /** Shown in place of the version while nothing is saved. */
     unsaved: string;
+    /** What a version is, under its number. */
+    versionHelp: string;
+    /** Next to the version while the canvas differs from it. */
+    unsavedChanges: string;
     replacePdf: string;
     /** Shown after uploading, until it's saved with the template. */
     pdfUploaded: string;
@@ -120,7 +124,9 @@ export type CourseMessages = {
     fields: { participantName: string; issueDate: string; qrcode: string };
     /** Name new participant name fields show. */
     sampleName: string;
+    /** Lead of the one-line warning, before its fields. */
     missingGlyphsTitle: string;
+    /** After the fields: what happens and what to do. */
     missingGlyphsText: string;
     /** One field, with `{field}`, the missing `{characters}` and its `{font}`. */
     missingGlyphsItem: string;

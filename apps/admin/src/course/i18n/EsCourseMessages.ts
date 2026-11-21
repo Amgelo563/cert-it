@@ -71,6 +71,8 @@ export const EsCourseMessages = {
       'Este curso no tiene una plantilla de certificado. Suelta aquí su PDF base o haz clic para elegirlo.',
     versionLabel: 'Versión {version}',
     unsaved: 'Sin guardar',
+    versionHelp: 'Cada certificado registra la versión con que se generó',
+    unsavedChanges: 'Cambios sin guardar',
     replacePdf: 'Cambiar PDF base',
     pdfUploaded: 'PDF base subido. Guarda para conservarlo en la plantilla.',
     largePdf:
@@ -114,7 +116,7 @@ export const EsCourseMessages = {
     sampleName: 'María José Núñez',
     missingGlyphsTitle: 'Algunos caracteres no se pueden imprimir',
     missingGlyphsText:
-      'Estos campos usan una fuente que no los tiene, así que saldrían en blanco. Elige otra fuente o revisa el texto de ejemplo.',
+      'Saldrían en blanco: elige otra fuente o revisa el texto de ejemplo.',
     missingGlyphsItem: '{field}: {characters} (no están en {font})',
     fontAdded: 'Se agregó {family} {style}',
     save: 'Guardar versión',

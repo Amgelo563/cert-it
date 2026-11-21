@@ -1,19 +1,35 @@
 import { ThemeValues } from '@cert-it/shared';
 import type { Font, Lang, Plugins, Template } from '@pdfme/common';
 import { Designer } from '@pdfme/ui';
+import { useComputedColorScheme } from '@mantine/core';
 import { type Ref, useEffect, useImperativeHandle, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Surface } from '../../../app/layout/Surface';
 import { nameNewField } from './nameNewField';
 import classes from './TemplateDesigner.module.css';
+import { useFillWindowHeight } from './useFillWindowHeight';
 
-// antd theme of the Designer, with the same color and radius as the Mantine theme
-const DesignerTheme = {
-  token: {
-    colorPrimary: ThemeValues.brandShades[ThemeValues.brandShadeIndex],
-    // antd's controls are small, so a smaller radius than the cards
-    borderRadius: 8,
-    fontFamily: ThemeValues.fontFamily,
+// antd's controls are small, so a smaller radius than the cards
+const DesignerRadiusPx = 8;
+
+// antd themes of the Designer, with the same colors and radius as the Mantine theme
+const DesignerThemes = {
+  light: {
+    token: {
+      colorPrimary: ThemeValues.brandShades[ThemeValues.brandShadeIndex],
+      borderRadius: DesignerRadiusPx,
+      fontFamily: ThemeValues.fontFamily,
+    },
+  },
+  // pdfme switches to antd's dark algorithm on a dark background
+  dark: {
+    token: {
+      colorPrimary: ThemeValues.brandShades[ThemeValues.brandShadeIndexDark],
+      colorBgBase: ThemeValues.darkShades[7],
+      colorTextBase: ThemeValues.darkShades[0],
+      borderRadius: DesignerRadiusPx,
+      fontFamily: ThemeValues.fontFamily,
+    },
   },
 };
 
@@ -21,6 +37,9 @@ const DesignerTheme = {
 function fontOption(fonts: Font): { font?: Font } {
   return Object.keys(fonts).length > 0 ? { font: fonts } : {};
 }
+
+// below this, the canvas and the panels get too cramped to use
+const DesignerMinHeightPx = 360;
 
 // after pdfme's own attempt to select the new field, which runs on the next tick
 const FieldSelectDelayMs = 50;
@@ -51,7 +70,7 @@ type TemplateDesignerProps = {
   onChange?: (template: Template) => void;
 };
 
-/** The pdfme Designer, themed like the panel and following its language. */
+/** The pdfme Designer, themed like the panel and following its language and color scheme. */
 export function TemplateDesigner({
   ref,
   template,
@@ -65,6 +84,8 @@ export function TemplateDesigner({
   const container = useRef<HTMLDivElement>(null);
   const designer = useRef<Designer | null>(null);
   const lang = i18n.language as Lang;
+  const theme = DesignerThemes[useComputedColorScheme('light')];
+  useFillWindowHeight(container, DesignerMinHeightPx);
   // the latest callbacks, since the Designer keeps the first ones it gets
   const callbacks = useRef({ onLoad, onChange, fieldNames });
   useEffect(() => {
@@ -95,7 +116,7 @@ export function TemplateDesigner({
     const instance = new Designer({
       domContainer: container.current,
       template: canvas.current ?? template,
-      options: { lang, theme: DesignerTheme, ...fontOption(fonts) },
+      options: { lang, theme, ...fontOption(fonts) },
       plugins,
     });
     designer.current = instance;
@@ -138,6 +159,10 @@ export function TemplateDesigner({
   useEffect(() => {
     designer.current?.updateOptions({ lang });
   }, [lang]);
+
+  useEffect(() => {
+    designer.current?.updateOptions({ theme });
+  }, [theme]);
 
   return (
     <Surface className={classes.designer}>

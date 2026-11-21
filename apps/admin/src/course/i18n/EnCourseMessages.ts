@@ -71,6 +71,8 @@ export const EnCourseMessages = {
       "This course doesn't have a certificate template. Drop its base PDF here, or click to choose it.",
     versionLabel: 'Version {version}',
     unsaved: 'Not saved yet',
+    versionHelp: 'Each certificate records the version it was made with',
+    unsavedChanges: 'Unsaved changes',
     replacePdf: 'Replace base PDF',
     pdfUploaded: 'Base PDF uploaded. Save to keep it in the template.',
     largePdf:
@@ -114,7 +116,7 @@ export const EnCourseMessages = {
     sampleName: 'María José Núñez',
     missingGlyphsTitle: "Some characters can't be printed",
     missingGlyphsText:
-      "These fields use a font without them, so they'd print as blanks. Pick another font, or check the sample text.",
+      "They'd print as blanks: pick another font, or check the sample text.",
     missingGlyphsItem: '{field}: {characters} (missing in {font})',
     fontAdded: '{family} {style} added',
     save: 'Save version',

@@ -43,6 +43,11 @@
   @media (max-width: $mantine-breakpoint-sm) {
     padding: var(--mantine-spacing-md);
   }
+
+  /* pages that need every pixel, such as the template designer */
+  &:has([data-full-width]) {
+    max-width: none;
+  }
 }
 
 .progress {
@@ -51,10 +56,4 @@
   right: 0;
   left: 0;
   z-index: 1000;
-}
-
-.footer {
-  padding: var(--mantine-spacing-md) var(--mantine-spacing-xl);
-  font-size: var(--mantine-font-size-xs);
-  color: var(--mantine-color-dimmed);
 }

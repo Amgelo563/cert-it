@@ -13,7 +13,6 @@ import {
   Button,
   FileButton,
   Group,
-  List,
   Stack,
   Text,
   ThemeIcon,
@@ -32,10 +31,12 @@ import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { describeApiError } from '../../../app/api/describeApiError';
 import { useApiClient } from '../../../app/api/useApiClient';
+import { StatusLabel } from '../../../app/layout/StatusLabel';
 import { LeaveGuard } from '../../../app/router/LeaveGuard';
 import { certificatePageUrl } from '../../participants/certificatePageUrl';
 import { PreviewModal } from '../preview/PreviewModal';
 import { FontsModal } from './fonts/FontsModal';
+import classes from './TemplateEditor.module.css';
 import { createFieldPlugins } from '../designer/createFieldPlugins';
 import {
   TemplateDesigner,
@@ -389,14 +390,26 @@ export function TemplateEditor({
   }
 
   return (
-    <Stack gap="md">
+    <Stack gap="md" data-full-width>
       <LeaveGuard when={changed} />
-      <Group justify="space-between" gap="sm">
-        <Text size="sm" c="dimmed">
-          {version === null
-            ? t('template.unsaved')
-            : t('template.versionLabel', { version })}
-        </Text>
+      <Group justify="space-between" gap="md">
+        <Stack gap={4}>
+          <Group gap="sm">
+            <Text size="lg" fw={500} className={classes.versionNumber}>
+              {version === null
+                ? t('template.unsaved')
+                : t('template.versionLabel', { version })}
+            </Text>
+            {changed && version !== null && (
+              <StatusLabel color="orange">
+                {t('template.unsavedChanges')}
+              </StatusLabel>
+            )}
+          </Group>
+          <Text size="sm" c="dimmed">
+            {t('template.versionHelp')}
+          </Text>
+        </Stack>
         <Group gap="sm">
           <FileButton onChange={uploadPdf} accept={PdfType}>
             {(props) => (
@@ -466,26 +479,30 @@ export function TemplateEditor({
         </Alert>
       )}
       {warnings.length > 0 && (
+        // one line, so it takes little from the canvas
         <Alert
           color="yellow"
           variant="light"
-          title={t('template.missingGlyphsTitle')}
+          py="xs"
           icon={<IconAlertTriangle size={18} stroke={1.5} />}
         >
-          <Stack gap={4}>
-            <Text size="sm">{t('template.missingGlyphsText')}</Text>
-            <List size="sm">
-              {warnings.map((warning) => (
-                <List.Item key={warning.field}>
-                  {t('template.missingGlyphsItem', {
-                    field: warning.field,
-                    characters: warning.missing.join(' '),
-                    font: fontLabelOf(fontInfo, warning.font),
-                  })}
-                </List.Item>
-              ))}
-            </List>
-          </Stack>
+          <Text size="sm">
+            <Text span size="sm" fw={500}>
+              {t('template.missingGlyphsTitle')}
+            </Text>
+            {': '}
+            {warnings
+              .map((warning) =>
+                t('template.missingGlyphsItem', {
+                  field: warning.field,
+                  characters: warning.missing.join(' '),
+                  font: fontLabelOf(fontInfo, warning.font),
+                }),
+              )
+              .join('; ')}
+            {'. '}
+            {t('template.missingGlyphsText')}
+          </Text>
         </Alert>
       )}
       <TemplateDesigner
