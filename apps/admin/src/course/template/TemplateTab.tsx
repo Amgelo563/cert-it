@@ -19,6 +19,7 @@ const BlankStart: TemplateEditorStart = {
   content: { schemas: [[]] },
   basePdf: null,
   fonts: new Map(),
+  fontInfo: new Map(),
 };
 
 /** A course's certificate template, in the Designer: its latest version, or a prompt for a base PDF if it has none. */
@@ -49,6 +50,7 @@ export function TemplateTab() {
       content: detail.template,
       basePdf: { sha256: detail.basePdf, bytes: basePdf },
       fonts,
+      fontInfo: new Map(detail.fonts.map((font) => [font.sha256, font])),
     };
   }, [current, detail, files.files]);
 
@@ -70,7 +72,7 @@ export function TemplateTab() {
   return (
     <TemplateEditor
       key={courseId}
-      courseId={course.id}
+      course={course}
       start={start}
       onSaved={reload}
     />

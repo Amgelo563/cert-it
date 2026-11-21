@@ -76,6 +76,21 @@ export const EsCourseMessages = {
     largePdf:
       'Este PDF pesa {size}. Cada certificado lleva una copia completa, así que multiplica el uso de disco y el tiempo de generación.',
     addFont: 'Agregar fuente',
+    storedFonts: 'Fuentes guardadas',
+    noStoredFonts: 'No hay otras fuentes guardadas',
+    uploadFont: 'Subir archivo de fuente…',
+    needsFont:
+      'Agrega una fuente para ubicar el nombre del participante y la fecha. Sin una, solo se puede ubicar el código QR.',
+    fields: {
+      participantName: 'Nombre del participante',
+      issueDate: 'Fecha de emisión',
+      qrcode: 'Código QR',
+    },
+    sampleName: 'María José Núñez',
+    missingGlyphsTitle: 'Algunos caracteres no se pueden imprimir',
+    missingGlyphsText:
+      'Estos campos usan una fuente que no los tiene, así que saldrían en blanco. Elige otra fuente o revisa el texto de ejemplo.',
+    missingGlyphsItem: '{field}: {characters} (no están en {font})',
     fontAdded: 'Se agregó {family} {style}',
     save: 'Guardar versión',
     saved: 'Guardado como versión {version}',

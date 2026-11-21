@@ -199,6 +199,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@cert-it/fonts':
+        specifier: workspace:^
+        version: link:../../packages/fonts
       '@cert-it/shared':
         specifier: workspace:^
         version: link:../../packages/shared

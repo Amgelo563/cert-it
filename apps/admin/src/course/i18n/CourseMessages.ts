@@ -77,6 +77,21 @@ export type CourseMessages = {
     /** Warning for a large base PDF, with its size in `{size}`, such as "2.4 MB". */
     largePdf: string;
     addFont: string;
+    /** Heading of the stored fonts in the font menu. */
+    storedFonts: string;
+    /** Shown in the font menu when every stored font is already loaded. */
+    noStoredFonts: string;
+    uploadFont: string;
+    /** Shown while no font is loaded, so only the QR code can be placed. */
+    needsFont: string;
+    /** Sidebar labels of the field types. */
+    fields: { participantName: string; issueDate: string; qrcode: string };
+    /** Name new participant name fields show. */
+    sampleName: string;
+    missingGlyphsTitle: string;
+    missingGlyphsText: string;
+    /** One field, with `{field}`, the missing `{characters}` and its `{font}`. */
+    missingGlyphsItem: string;
     /** With the font's family and style in `{family}` and `{style}`. */
     fontAdded: string;
     save: string;

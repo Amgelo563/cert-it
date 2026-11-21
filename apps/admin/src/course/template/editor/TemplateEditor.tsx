@@ -1,30 +1,51 @@
-import type { SaveTemplateRequest } from '@cert-it/shared';
+import { GlyphChecker } from '@cert-it/fonts';
+import {
+  type CourseSummary,
+  CourseDateFormatter,
+  type FontSummary,
+  type SaveTemplateRequest,
+} from '@cert-it/shared';
 import type { Font, Template } from '@pdfme/common';
 import '@mantine/dropzone/styles.css';
 import {
+  Alert,
   Button,
   FileButton,
   Group,
+  List,
+  Loader,
+  Menu,
   Stack,
   Text,
   ThemeIcon,
 } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
+import { useFileDialog } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import {
+  IconAlertTriangle,
+  IconChevronDown,
   IconDeviceFloppy,
   IconFileTypePdf,
+  IconInfoCircle,
   IconTypography,
+  IconUpload,
 } from '@tabler/icons-react';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { describeApiError } from '../../../app/api/describeApiError';
 import { useApiClient } from '../../../app/api/useApiClient';
 import { LeaveGuard } from '../../../app/router/LeaveGuard';
+import { createFieldPlugins } from '../designer/createFieldPlugins';
 import {
   TemplateDesigner,
   type TemplateDesignerHandle,
 } from '../designer/TemplateDesigner';
+import {
+  findGlyphWarnings,
+  type GlyphWarning,
+  withFontNames,
+} from './templateFields';
 
 /** A base PDF the editor holds: its hash for saving, its bytes for the canvas. */
 export type EditorBasePdf = {
@@ -44,10 +65,12 @@ export type TemplateEditorStart = {
   basePdf: EditorBasePdf | null;
   /** Font bytes by SHA-256, the name text fields use. */
   fonts: ReadonlyMap<string, ArrayBuffer>;
+  /** Names of those fonts, by SHA-256. */
+  fontInfo: ReadonlyMap<string, FontSummary>;
 };
 
 type TemplateEditorProps = {
-  courseId: number;
+  course: CourseSummary;
   start: TemplateEditorStart;
   /** Called after saving a version, such as to refresh the course's counts. */
   onSaved: () => void;
@@ -59,9 +82,12 @@ const PdfType = 'application/pdf';
 
 const FontTypes = '.ttf,.otf,font/ttf,font/otf';
 
-/** The Designer with its toolbar: upload a base PDF or a font, and save the canvas as a new version. */
+// what new QR fields encode until issuing puts the certificate's own URL there
+const SampleCode = 'ABCD-EFGH-JK';
+
+/** The Designer with its toolbar: upload a base PDF, add fonts, and save the canvas as a new version. */
 export function TemplateEditor({
-  courseId,
+  course,
   start,
   onSaved,
 }: TemplateEditorProps) {
@@ -72,26 +98,37 @@ export function TemplateEditor({
   const [content, setContent] = useState(start.content);
   const [basePdf, setBasePdf] = useState(start.basePdf);
   const [fonts, setFonts] = useState(start.fonts);
+  const [fontInfo, setFontInfo] = useState(start.fontInfo);
+  // every stored font, for the font menu; loaded when it first opens
+  const [stored, setStored] = useState<FontSummary[] | null>(null);
   const [busy, setBusy] = useState<Busy>(null);
-  // the canvas's fields and the last saved version, as comparable keys
-  const [fieldsKey, setFieldsKey] = useState<string | null>(null);
+  // the canvas's fields, and the last saved version as a comparable key
+  const [fields, setFields] = useState<Template['schemas'] | null>(null);
   const [savedKey, setSavedKey] = useState<string | null>(null);
-  const param = { courseId: String(courseId) };
+  const param = { courseId: String(course.id) };
+
+  // the first font loaded is pdfme's fallback, drawn by fields that name none
+  const fallback = fonts.keys().next().value ?? null;
+  const named = useMemo(
+    () => (fields ? withFontNames(fields, fallback) : null),
+    [fields, fallback],
+  );
 
   // a new base PDF counts as a change, even with the same fields
   const currentKey =
-    basePdf && fieldsKey !== null ? `${basePdf.sha256}:${fieldsKey}` : null;
+    basePdf && named ? `${basePdf.sha256}:${fieldsKeyOf(named)}` : null;
   const changed = currentKey !== null && currentKey !== savedKey;
 
   // the loaded version is the baseline, as pdfme read it, so its own tidying isn't a change
   const onLoad = (loaded: Template) => {
-    const key = fieldsKeyOf(loaded);
-    setFieldsKey(key);
-    if (version !== null && basePdf) setSavedKey(`${basePdf.sha256}:${key}`);
+    setFields(loaded.schemas);
+    if (version !== null && basePdf) {
+      const key = fieldsKeyOf(withFontNames(loaded.schemas, fallback));
+      setSavedKey(`${basePdf.sha256}:${key}`);
+    }
   };
-  const onChange = (edited: Template) => setFieldsKey(fieldsKeyOf(edited));
+  const onChange = (edited: Template) => setFields(edited.schemas);
 
-  // the first font is the fallback pdfme asks for; every field names its own
   const fontOption = useMemo<Font>(
     () =>
       Object.fromEntries(
@@ -103,10 +140,50 @@ export function TemplateEditor({
     [fonts],
   );
 
+  // new names or languages restart the Designer, which keeps its canvas
+  const hasFonts = fonts.size > 0;
+  const plugins = useMemo(() => {
+    const date = new CourseDateFormatter({
+      locale: course.locale,
+      dateFormat: course.dateFormat,
+    }).format(today());
+
+    return createFieldPlugins({
+      labels: {
+        participantName: t('template.fields.participantName'),
+        issueDate: t('template.fields.issueDate'),
+        qrcode: t('template.fields.qrcode'),
+      },
+      samples: {
+        participantName: t('template.sampleName'),
+        issueDate: date,
+        qrcode: new URL(`../c/${SampleCode}`, document.baseURI).href,
+      },
+      withText: hasFonts,
+      fontLabel: (sha256) => fontLabelOf(fontInfo, sha256),
+    });
+  }, [t, course.locale, course.dateFormat, hasFonts, fontInfo]);
+
   // a new value only when the base PDF changes, so typing on the canvas never resets it
   const template = useMemo<Template | null>(
     () => (basePdf ? { ...content, basePdf: basePdf.bytes } : null),
     [content, basePdf],
+  );
+
+  // parsed once per font, not on every edit
+  const checkers = useMemo(
+    () =>
+      new Map(
+        [...fonts].flatMap(([sha256, bytes]) => {
+          const checker = GlyphChecker.fromBytes(new Uint8Array(bytes));
+          return checker.isOk() ? [[sha256, checker.value] as const] : [];
+        }),
+      ),
+    [fonts],
+  );
+  const warnings = useMemo<GlyphWarning[]>(
+    () => (named ? findGlyphWarnings(named, checkers) : []),
+    [named, checkers],
   );
 
   const run = async (kind: Exclude<Busy, null>, task: () => Promise<void>) => {
@@ -149,7 +226,24 @@ export function TemplateEditor({
       );
     });
 
-  const addFont = (file: File | null) =>
+  // a font joins the Designer only with its bytes, so fields never name one it can't draw
+  const loadFont = (font: FontSummary, bytes: ArrayBuffer) => {
+    setFontInfo((current) => new Map(current).set(font.sha256, font));
+    setFonts((current) =>
+      current.has(font.sha256)
+        ? current
+        : new Map(current).set(font.sha256, bytes),
+    );
+    notifications.show({
+      color: 'teal',
+      message: t('template.fontAdded', {
+        family: font.family,
+        style: font.style,
+      }),
+    });
+  };
+
+  const uploadFont = (file: File | null) =>
     file
     && run('font', async () => {
       const font = await api.request((routes) =>
@@ -161,37 +255,56 @@ export function TemplateEditor({
           },
         ),
       );
-      const bytes = await file.arrayBuffer();
-      setFonts((current) =>
-        current.has(font.sha256)
-          ? current
-          : new Map(current).set(font.sha256, bytes),
-      );
-      notifications.show({
-        color: 'teal',
-        message: t('template.fontAdded', {
-          family: font.family,
-          style: font.style,
-        }),
-      });
+      loadFont(font, await file.arrayBuffer());
     });
+
+  const addStoredFont = (font: FontSummary) =>
+    run('font', async () => {
+      const bytes = await api.requestBytes((routes) =>
+        routes.fonts[':sha256'].$get({ param: { sha256: font.sha256 } }),
+      );
+      loadFont(font, bytes);
+    });
+
+  const fontDialog = useFileDialog({
+    accept: FontTypes,
+    multiple: false,
+    onChange: (files) => void uploadFont(files?.[0] ?? null),
+  });
+
+  const loadStored = () => {
+    if (stored) return;
+    api
+      .request((routes) => routes.fonts.$get())
+      .then(setStored, (error) => {
+        notifications.show({
+          color: 'red',
+          message: describeApiError(error, i18n),
+        });
+      });
+  };
 
   const save = () =>
     basePdf
     && run('save', async () => {
-      const content = withoutBasePdf(designer.current!);
+      const sent = {
+        schemas: withFontNames(
+          withoutBasePdf(designer.current!).schemas,
+          fallback,
+        ),
+      };
       const saved = await api.request((routes) =>
         routes.courses[':courseId'].template.$post({
           param,
           json: {
             basePdf: basePdf.sha256,
             // the server checks every field against its own schema
-            template: content as SaveTemplateRequest['template'],
+            template: sent as SaveTemplateRequest['template'],
           },
         }),
       );
       // what was sent is now the baseline, even if the canvas changed meanwhile
-      setSavedKey(`${basePdf.sha256}:${fieldsKeyOf(content)}`);
+      setSavedKey(`${basePdf.sha256}:${fieldsKeyOf(sent.schemas)}`);
       setVersion(saved.version);
       notifications.show({
         color: 'teal',
@@ -199,22 +312,6 @@ export function TemplateEditor({
       });
       onSaved();
     });
-
-  const pdfButton = (
-    <FileButton onChange={uploadPdf} accept={PdfType}>
-      {(props) => (
-        <Button
-          {...props}
-          variant="default"
-          loading={busy === 'pdf'}
-          disabled={busy !== null && busy !== 'pdf'}
-          leftSection={<IconFileTypePdf size={16} stroke={1.5} />}
-        >
-          {t('template.replacePdf')}
-        </Button>
-      )}
-    </FileButton>
-  );
 
   // nothing to place fields on until there's a page; clicking it opens the file picker too
   if (!template) {
@@ -247,6 +344,8 @@ export function TemplateEditor({
     );
   }
 
+  const unloaded = stored?.filter((font) => !fonts.has(font.sha256));
+
   return (
     <Stack gap="md">
       <LeaveGuard when={changed} />
@@ -257,20 +356,58 @@ export function TemplateEditor({
             : t('template.versionLabel', { version })}
         </Text>
         <Group gap="sm">
-          {pdfButton}
-          <FileButton onChange={addFont} accept={FontTypes}>
+          <FileButton onChange={uploadPdf} accept={PdfType}>
             {(props) => (
               <Button
                 {...props}
                 variant="default"
-                loading={busy === 'font'}
-                disabled={busy !== null && busy !== 'font'}
-                leftSection={<IconTypography size={16} stroke={1.5} />}
+                loading={busy === 'pdf'}
+                disabled={busy !== null && busy !== 'pdf'}
+                leftSection={<IconFileTypePdf size={16} stroke={1.5} />}
               >
-                {t('template.addFont')}
+                {t('template.replacePdf')}
               </Button>
             )}
           </FileButton>
+          <Menu position="bottom-end" onOpen={loadStored} width={260}>
+            <Menu.Target>
+              <Button
+                variant="default"
+                loading={busy === 'font'}
+                disabled={busy !== null && busy !== 'font'}
+                leftSection={<IconTypography size={16} stroke={1.5} />}
+                rightSection={<IconChevronDown size={14} stroke={1.5} />}
+              >
+                {t('template.addFont')}
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Label>{t('template.storedFonts')}</Menu.Label>
+              {!unloaded && (
+                <Menu.Item disabled leftSection={<Loader size={14} />}>
+                  {t('app.loading')}
+                </Menu.Item>
+              )}
+              {unloaded?.length === 0 && (
+                <Menu.Item disabled>{t('template.noStoredFonts')}</Menu.Item>
+              )}
+              {unloaded?.map((font) => (
+                <Menu.Item
+                  key={font.sha256}
+                  onClick={() => void addStoredFont(font)}
+                >
+                  {font.family} {font.style}
+                </Menu.Item>
+              ))}
+              <Menu.Divider />
+              <Menu.Item
+                leftSection={<IconUpload size={14} stroke={1.5} />}
+                onClick={fontDialog.open}
+              >
+                {t('template.uploadFont')}
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
           <Button
             onClick={() => void save()}
             loading={busy === 'save'}
@@ -281,10 +418,39 @@ export function TemplateEditor({
           </Button>
         </Group>
       </Group>
+      {!hasFonts && (
+        <Alert variant="light" icon={<IconInfoCircle size={18} stroke={1.5} />}>
+          {t('template.needsFont')}
+        </Alert>
+      )}
+      {warnings.length > 0 && (
+        <Alert
+          color="yellow"
+          variant="light"
+          title={t('template.missingGlyphsTitle')}
+          icon={<IconAlertTriangle size={18} stroke={1.5} />}
+        >
+          <Stack gap={4}>
+            <Text size="sm">{t('template.missingGlyphsText')}</Text>
+            <List size="sm">
+              {warnings.map((warning) => (
+                <List.Item key={warning.field}>
+                  {t('template.missingGlyphsItem', {
+                    field: warning.field,
+                    characters: warning.missing.join(' '),
+                    font: fontLabelOf(fontInfo, warning.font),
+                  })}
+                </List.Item>
+              ))}
+            </List>
+          </Stack>
+        </Alert>
+      )}
       <TemplateDesigner
         ref={designer}
         template={template}
         fonts={fontOption}
+        plugins={plugins}
         onLoad={onLoad}
         onChange={onChange}
       />
@@ -292,9 +458,24 @@ export function TemplateEditor({
   );
 }
 
+function fontLabelOf(
+  fontInfo: ReadonlyMap<string, FontSummary>,
+  sha256: string,
+): string {
+  const font = fontInfo.get(sha256);
+  return font ? `${font.family} ${font.style}` : sha256.slice(0, 8);
+}
+
+// the local date, as dates are written on certificates
+function today(): string {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
 // the fields as text, equal for equal fields
-function fieldsKeyOf(template: Pick<Template, 'schemas'>): string {
-  return JSON.stringify(template.schemas, canonical);
+function fieldsKeyOf(schemas: Template['schemas']): string {
+  return JSON.stringify(schemas, canonical);
 }
 
 // pdfme adds defaults such as readOnly false once a field is edited, so false counts as unset; keys sorted

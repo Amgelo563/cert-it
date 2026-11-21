@@ -76,6 +76,21 @@ export const EnCourseMessages = {
     largePdf:
       'This PDF is {size}. Every certificate carries a full copy, so it multiplies disk use and generation time.',
     addFont: 'Add font',
+    storedFonts: 'Stored fonts',
+    noStoredFonts: 'No other stored fonts',
+    uploadFont: 'Upload font file…',
+    needsFont:
+      'Add a font to place the participant name and the date. Only the QR code can be placed without one.',
+    fields: {
+      participantName: 'Participant name',
+      issueDate: 'Issue date',
+      qrcode: 'QR code',
+    },
+    sampleName: 'María José Núñez',
+    missingGlyphsTitle: "Some characters can't be printed",
+    missingGlyphsText:
+      "These fields use a font without them, so they'd print as blanks. Pick another font, or check the sample text.",
+    missingGlyphsItem: '{field}: {characters} (missing in {font})',
     fontAdded: '{family} {style} added',
     save: 'Save version',
     saved: 'Saved as version {version}',
