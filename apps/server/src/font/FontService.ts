@@ -1,7 +1,11 @@
 import { createReadStream } from 'node:fs';
-import { stat } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { Readable } from 'node:stream';
-import { InvalidFontError, InvalidFontReasonEnum } from '@cert-it/fonts';
+import {
+  InvalidFontError,
+  InvalidFontReasonEnum,
+  TextOutliner,
+} from '@cert-it/fonts';
 import { FontStore } from '@cert-it/fonts/node';
 import {
   type ApiErrorCode,
@@ -9,11 +13,14 @@ import {
   AuditActionEnum,
   AuditEntityEnum,
   DoesntExistFileError,
+  type FontPreview,
+  type FontSource,
   FontSourceEnum,
   type FontSummary,
   PermissionEnum,
   Sha256Schema,
 } from '@cert-it/shared';
+import { Result } from 'better-result';
 import { type Context, Hono } from 'hono';
 import type { ClientErrorStatusCode } from 'hono/utils/http-status';
 import type { AuditLogService } from '../audit/AuditLogService';
@@ -24,6 +31,7 @@ import type { DatabaseService } from '../database/DatabaseService';
 import { apiError } from '../http/api/apiError';
 import { UploadReader } from '../http/upload/UploadReader';
 import type { DataDirectoryService } from '../storage/DataDirectoryService';
+import type { UserId } from '../user/User';
 import type { Font } from './Font';
 
 type FontServiceOptions = {
@@ -42,6 +50,9 @@ export class FontService {
   // the URL holds the hash, so the bytes never change
   public static readonly ImmutableCacheControl =
     'private, max-age=31536000, immutable';
+
+  /** For previews: they change only with how they're drawn, so a day is plenty. */
+  public static readonly PreviewCacheControl = 'private, max-age=86400';
 
   protected static readonly ErrorStatuses: Partial<
     Record<ApiErrorCode, ClientErrorStatusCode>
@@ -137,6 +148,11 @@ export class FontService {
         '/:sha256',
         guard.requirePermission(PermissionEnum.ViewRecords),
         (c) => this.download(c),
+      )
+      .get(
+        '/:sha256/preview',
+        guard.requirePermission(PermissionEnum.ViewRecords),
+        (c) => this.preview(c),
       );
   }
 
@@ -150,49 +166,68 @@ export class FontService {
     const bytes = await this.uploads.readBytes(c.req.raw);
     if (bytes.isErr()) return this.error(c, ApiErrorCodeEnum.FileTooLarge);
 
-    const saved = await this.store.save(bytes.value);
+    const stored = await this.storeFont(
+      bytes.value,
+      FontSourceEnum.Upload,
+      c.get('user').id,
+    );
+    if (stored.isErr())
+      return this.error(c, this.invalidFontCode(stored.error));
+
+    const { font, created } = stored.value;
+    return created
+      ? c.json<FontSummary, 201>(FontService.toSummary(font), 201)
+      : c.json<FontSummary, 200>(FontService.toSummary(font), 200);
+  }
+
+  /**
+   * Checks a font and stores it, recording who added it, unless one with the same contents is stored already.
+   *
+   * @throws {Error} If the file can't be written.
+   */
+  public async storeFont(
+    bytes: Uint8Array,
+    source: FontSource,
+    userId: UserId,
+  ): Promise<Result<{ font: Font; created: boolean }, InvalidFontError>> {
+    const saved = await this.store.save(bytes);
     if (saved.isErr()) {
       if (!InvalidFontError.is(saved.error)) throw saved.error;
-      return this.error(c, this.invalidFontCode(saved.error));
+      return Result.err(saved.error);
     }
 
     const { fonts } = this.database.getRepositories();
     const existing = fonts.findBySha256(saved.value.sha256);
-    if (existing) {
-      return c.json<FontSummary, 200>(FontService.toSummary(existing), 200);
-    }
+    if (existing) return Result.ok({ font: existing, created: false });
 
     const created = fonts.create({
       sha256: saved.value.sha256,
       family: saved.value.family,
       style: saved.value.style,
-      source: FontSourceEnum.Upload,
+      source,
       fileName: saved.value.fileName,
     });
-    // the same font uploaded twice at once
+    // the same font stored twice at once
     if (created.isErr()) {
       const stored = fonts.findBySha256(saved.value.sha256);
       if (!stored) throw created.error;
-      return c.json<FontSummary, 200>(FontService.toSummary(stored), 200);
+      return Result.ok({ font: stored, created: false });
     }
 
     const font = created.value;
     this.auditLog.record({
-      userId: c.get('user').id,
+      userId,
       action: AuditActionEnum.Create,
       entity: AuditEntityEnum.Font,
       entityId: font.id,
-      details: { family: font.family, style: font.style },
+      details: { family: font.family, style: font.style, source },
     });
-    return c.json<FontSummary, 201>(FontService.toSummary(font), 201);
+    return Result.ok({ font, created: true });
   }
 
   // streamed without byte ranges, so the compressor still shrinks it
   protected async download(c: Context<AuthEnv>) {
-    const sha256 = Sha256Schema.safeParse(c.req.param('sha256'));
-    const font = sha256.success
-      ? this.database.getRepositories().fonts.findBySha256(sha256.data)
-      : null;
+    const font = this.findFont(c);
     if (!font) return this.error(c, ApiErrorCodeEnum.NotFound);
 
     const path = this.getFontPath(font);
@@ -213,6 +248,34 @@ export class FontService {
       'Content-Length': String(size),
       'Cache-Control': FontService.ImmutableCacheControl,
     });
+  }
+
+  // the font's name drawn in itself, a few KB where the font may be MBs
+  protected async preview(c: Context<AuthEnv>) {
+    const font = this.findFont(c);
+    if (!font) return this.error(c, ApiErrorCodeEnum.NotFound);
+
+    let bytes: Uint8Array;
+    try {
+      bytes = await readFile(this.getFontPath(font));
+    } catch (error) {
+      if (!DoesntExistFileError.matches(error)) throw error;
+      return this.error(c, ApiErrorCodeEnum.NotFound);
+    }
+
+    // stored fonts were checked when added
+    const outline = TextOutliner.fromBytes(bytes)
+      .unwrap()
+      .outline(`${font.family} ${font.style}`);
+    c.header('Cache-Control', FontService.PreviewCacheControl);
+    return c.json<FontPreview, 200>(outline, 200);
+  }
+
+  protected findFont(c: Context<AuthEnv>): Font | null {
+    const sha256 = Sha256Schema.safeParse(c.req.param('sha256'));
+    return sha256.success
+      ? this.database.getRepositories().fonts.findBySha256(sha256.data)
+      : null;
   }
 
   protected invalidFontCode(error: InvalidFontError): ApiErrorCode {

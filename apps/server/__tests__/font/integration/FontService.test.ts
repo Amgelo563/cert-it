@@ -6,6 +6,7 @@ import {
   ApiErrorCodeEnum,
   AuditActionEnum,
   AuditEntityEnum,
+  type FontPreview,
   type FontSummary,
   RoleEnum,
 } from '@cert-it/shared';
@@ -170,4 +171,30 @@ describe('FontService (list and download)', () => {
       expect(response.headers.get('Cache-Control')).toBe('no-store');
     },
   );
+});
+
+describe('FontService (preview)', () => {
+  test('GIVEN a stored font WHEN previewing it THEN answers its name drawn as SVG path data', async () => {
+    const { fonts } = await setup();
+    const bytes = readFontFixture('basic.ttf');
+    await fonts('POST', '', bytes);
+
+    const response = await fonts('GET', `/${sha256(bytes)}/preview`);
+    const preview = (await response.json()) as FontPreview;
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Cache-Control')).toBe(
+      'private, max-age=86400',
+    );
+    expect(preview.path).toMatch(/^M-?\d+ -?\d+/);
+    expect(preview.viewBox).toMatch(/^0 -\d+ \d+ \d+$/);
+  });
+
+  test('GIVEN an unknown hash WHEN previewing THEN answers 404', async () => {
+    const { fonts } = await setup();
+
+    const response = await fonts('GET', `/${'a'.repeat(64)}/preview`);
+
+    expect(response.status).toBe(404);
+  });
 });

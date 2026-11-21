@@ -43,6 +43,10 @@ const RouteAccessTable: Readonly<Record<string, RouteAccess>> = {
   'GET /fonts': PermissionEnum.ViewRecords,
   'POST /fonts': PermissionEnum.EditCourses,
   'GET /fonts/:sha256': PermissionEnum.ViewRecords,
+  'GET /fonts/:sha256/preview': PermissionEnum.ViewRecords,
+  'GET /font-catalog': PermissionEnum.EditCourses,
+  'POST /font-catalog/import': PermissionEnum.EditCourses,
+  'GET /font-catalog/preview': PermissionEnum.EditCourses,
   'GET /audit': PermissionEnum.ViewAuditLog,
 };
 

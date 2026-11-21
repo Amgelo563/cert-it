@@ -11,6 +11,10 @@ import { PasswordHasher } from '../../../src/auth/password/PasswordHasher';
 import { SessionService } from '../../../src/auth/session/SessionService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { CourseService } from '../../../src/course/CourseService';
+import {
+  type ActiveCatalog,
+  FontCatalogService,
+} from '../../../src/font/catalog/FontCatalogService';
 import { FontService } from '../../../src/font/FontService';
 import { DataDirectoryService } from '../../../src/storage/DataDirectoryService';
 import { TemplateService } from '../../../src/template/TemplateService';
@@ -26,6 +30,8 @@ export function createAuthOptions(
     maxAttempts?: number;
     now?: () => number;
     dataDirectory?: DataDirectoryService;
+    /** The font catalog; none by default, so tests never reach the internet. */
+    catalog?: ActiveCatalog;
   } = {},
 ) {
   const sessions = new SessionService({ database, siteUrl, now: options.now });
@@ -80,6 +86,11 @@ export function createAuthOptions(
     auditLog,
   };
   const fonts = FontService.create(services);
+  const fontCatalog = new FontCatalogService({
+    guard,
+    fonts,
+    active: options.catalog ?? null,
+  });
   const templates = TemplateService.create(services);
 
   return {
@@ -88,6 +99,7 @@ export function createAuthOptions(
     courses,
     participants,
     fonts,
+    fontCatalog,
     templates,
     auditLog,
     csrf: createCsrfGuard(siteUrl),

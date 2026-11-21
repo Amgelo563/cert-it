@@ -10,9 +10,11 @@ import type { Config } from '../config/schema/ConfigSchema';
 import { DatabaseService } from '../database/DatabaseService';
 import { HttpService } from '../http/HttpService';
 import { DataDirectoryService } from '../storage/DataDirectoryService';
+import { StorageCleanupService } from '../storage/StorageCleanupService';
 import { UserService } from '../user/UserService';
 import { CourseService } from '../course/CourseService';
 import { ParticipantService } from '../participant/ParticipantService';
+import { FontCatalogService } from '../font/catalog/FontCatalogService';
 import { FontService } from '../font/FontService';
 import { TemplateService } from '../template/TemplateService';
 
@@ -21,6 +23,7 @@ type AppServiceOptions = {
   database: DatabaseService;
   passwords: PasswordHasher;
   sessions: SessionService;
+  storageCleanup: StorageCleanupService;
   users: UserService;
   adminPanel: AdminPanelService;
   http: HttpService;
@@ -41,6 +44,8 @@ export class AppService {
 
   protected readonly sessions: SessionService;
 
+  protected readonly storageCleanup: StorageCleanupService;
+
   protected readonly users: UserService;
 
   protected readonly adminPanel: AdminPanelService;
@@ -52,6 +57,7 @@ export class AppService {
     this.database = options.database;
     this.passwords = options.passwords;
     this.sessions = options.sessions;
+    this.storageCleanup = options.storageCleanup;
     this.users = options.users;
     this.adminPanel = options.adminPanel;
     this.http = options.http;
@@ -97,6 +103,7 @@ export class AppService {
       this.database.start();
       await this.startUsers();
       this.sessions.start();
+      this.storageCleanup.start();
       await this.startAdminPanel();
       await this.http.start();
     } catch (error) {
@@ -109,6 +116,7 @@ export class AppService {
   public async stop(): Promise<void> {
     await this.http.stop();
     this.sessions.stop();
+    this.storageCleanup.stop();
     this.database.close();
   }
 
@@ -146,6 +154,7 @@ export class AppService {
     const courses = CourseService.create(services);
     const participants = ParticipantService.create(services);
     const fonts = FontService.create({ ...services, dataDirectory });
+    const fontCatalog = FontCatalogService.create({ ...services, fonts });
     const templates = TemplateService.create({ ...services, dataDirectory });
     const adminPanel = AdminPanelService.create({ config });
     const certificateFiles = CertificateFileService.create({
@@ -163,6 +172,7 @@ export class AppService {
       courses,
       participants,
       fonts,
+      fontCatalog,
       templates,
       auditLog,
     });
@@ -172,6 +182,7 @@ export class AppService {
       database,
       passwords,
       sessions,
+      storageCleanup: StorageCleanupService.create({ database, dataDirectory }),
       users,
       adminPanel,
       http,

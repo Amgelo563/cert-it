@@ -79,6 +79,8 @@ export const EsAppMessages = {
       pdfNotOnePage: 'El PDF debe tener exactamente una página.',
       unknownFont: 'Un campo usa una fuente que ya no está disponible.',
       unknownBasePdf: 'Vuelve a subir el PDF base y guarda de nuevo.',
+      catalogUnavailable:
+        'El catálogo de fuentes no respondió. Inténtalo más tarde o sube el archivo de la fuente.',
     },
     network:
       'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.',

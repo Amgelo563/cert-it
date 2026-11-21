@@ -11,7 +11,6 @@ import { PasswordHasher } from '../../../src/auth/password/PasswordHasher';
 import { AccelFileServer } from '../../../src/certificate/file/AccelFileServer';
 import { CertificateFileService } from '../../../src/certificate/file/CertificateFileService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
-import type { DataDirectoryService } from '../../../src/storage/DataDirectoryService';
 import { HttpService } from '../../../src/http/HttpService';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
 import { MessagesService } from '../../../src/i18n/MessagesService';
@@ -39,7 +38,7 @@ const passwords = new PasswordHasher();
 /** The whole HttpService under the /certs base path, with helpers to call its API as a browser would. */
 export function createApiHarness(
   database: DatabaseService,
-  options: { maxAttempts?: number; dataDirectory?: DataDirectoryService } = {},
+  options: Parameters<typeof createAuthOptions>[2] = {},
 ) {
   const siteUrl = new SiteUrl({ baseUrl: `${ApiHarnessOrigin}/certs` });
   const http = new HttpService({

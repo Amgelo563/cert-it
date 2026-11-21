@@ -78,6 +78,11 @@ export class DataDirectoryService {
     return this.directory.resolve(DataDirectoryService.FontsFolder);
   }
 
+  /** Returns the path of the folder base PDFs are stored in, one folder per course. */
+  public getTemplatesFolder(): string {
+    return this.directory.resolve(DataDirectoryService.TemplatesFolder);
+  }
+
   /** Returns the path of a course's base PDF relative to the directory, given its SHA-256, as template versions store it. */
   public getTemplateFile(courseId: CourseId, sha256: string): string {
     return [

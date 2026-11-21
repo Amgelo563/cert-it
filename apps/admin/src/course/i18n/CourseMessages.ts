@@ -76,14 +76,46 @@ export type CourseMessages = {
     pdfUploaded: string;
     /** Warning for a large base PDF, with its size in `{size}`, such as "2.4 MB". */
     largePdf: string;
-    addFont: string;
-    /** Heading of the stored fonts in the font menu. */
-    storedFonts: string;
-    /** Shown in the font menu when every stored font is already loaded. */
+    /** The toolbar button that opens the template's fonts. */
+    fonts: string;
+    fontsModal: {
+      title: string;
+      /** Tabs: the stored fonts, and uploading a file. The catalog's tab shows its own name. */
+      stored: string;
+      upload: string;
+      searchStored: string;
+      /** Headings of the stored fonts: the template's, then the rest. */
+      inTemplate: string;
+      otherStored: string;
+      noMatches: string;
+      uploadTitle: string;
+      uploadText: string;
+    };
+    /** Shown when no font is stored at all. */
     noStoredFonts: string;
-    uploadFont: string;
+    /** After taking a `{font}` out of the template. */
+    fontRemoved: string;
+    /** A `{font}` that can't be taken out, as the listed `{fields}` use it. */
+    fontInUse: string;
+    /** The font catalog's search and import. */
+    catalog: {
+      searchPlaceholder: string;
+      noResults: string;
+      style: string;
+      styleHint: string;
+      /** A style, with its `{weight}`, such as 400. */
+      weight: string;
+      italicWeight: string;
+      subset: string;
+      subsetHint: string;
+      import: string;
+      /** Heading of the sample name drawn in the picked style. */
+      preview: string;
+    };
     /** Shown while no font is loaded, so only the QR code can be placed. */
     needsFont: string;
+    /** Names new fields get, by type; repeats get a number, such as "Name 2". */
+    fieldNames: { participantName: string; issueDate: string; qrcode: string };
     /** Sidebar labels of the field types. */
     fields: { participantName: string; issueDate: string; qrcode: string };
     /** Name new participant name fields show. */

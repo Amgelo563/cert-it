@@ -43,6 +43,8 @@ export const ApiErrorCodeEnum = {
   UnknownFont: 'unknown_font',
   /** The base PDF wasn't uploaded to the course. */
   UnknownBasePdf: 'unknown_base_pdf',
+  /** The online font catalog didn't answer as expected. */
+  CatalogUnavailable: 'catalog_unavailable',
 } as const;
 
 /** The code in the body of an API error response. */

@@ -46,6 +46,9 @@ export interface TemplateVersionRepository {
   /** Returns the template versions of a course that can be deleted: not the newest one, and used by no certificate. */
   listUnused(courseId: CourseId): TemplateVersion[];
 
+  /** Returns the base PDF paths every template version uses, each once. */
+  listBasePdfPaths(): string[];
+
   /** Returns the IDs of the fonts a template version uses. */
   listFontIds(id: TemplateVersionId): FontId[];
 

@@ -13,3 +13,5 @@ export * from './font/FontReader';
 export * from './font/InvalidFontReasonEnum';
 export * from './font/errors/InvalidFontError';
 export * from './glyph/GlyphChecker';
+export * from './outline/TextOutline';
+export * from './outline/TextOutliner';

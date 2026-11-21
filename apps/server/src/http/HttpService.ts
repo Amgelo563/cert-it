@@ -21,6 +21,7 @@ import type { Config } from '../config/schema/ConfigSchema';
 import { CourseService } from '../course/CourseService';
 import type { DatabaseService } from '../database/DatabaseService';
 import { StartupError } from '../error/StartupError';
+import { FontCatalogService } from '../font/catalog/FontCatalogService';
 import { FontService } from '../font/FontService';
 import { LocaleResolver } from '../i18n/LocaleResolver';
 import { MessagesService } from '../i18n/MessagesService';
@@ -43,6 +44,7 @@ type HttpServiceOptions = {
   courses: CourseService;
   participants: ParticipantService;
   fonts: FontService;
+  fontCatalog: FontCatalogService;
   templates: TemplateService;
   auditLog: AuditLogService;
   csrf: CsrfGuard;
@@ -99,6 +101,8 @@ export class HttpService {
 
   protected readonly fonts: FontService;
 
+  protected readonly fontCatalog: FontCatalogService;
+
   protected readonly templates: TemplateService;
 
   protected readonly auditLog: AuditLogService;
@@ -131,6 +135,7 @@ export class HttpService {
     this.courses = options.courses;
     this.participants = options.participants;
     this.fonts = options.fonts;
+    this.fontCatalog = options.fontCatalog;
     this.templates = options.templates;
     this.auditLog = options.auditLog;
     this.csrf = options.csrf;
@@ -151,6 +156,7 @@ export class HttpService {
     courses: CourseService;
     participants: ParticipantService;
     fonts: FontService;
+    fontCatalog: FontCatalogService;
     templates: TemplateService;
     auditLog: AuditLogService;
   }): HttpService {
@@ -164,6 +170,7 @@ export class HttpService {
       courses,
       participants,
       fonts,
+      fontCatalog,
       templates,
       auditLog,
     } = options;
@@ -186,6 +193,7 @@ export class HttpService {
       courses,
       participants,
       fonts,
+      fontCatalog,
       templates,
       auditLog,
       csrf: createCsrfGuard(siteUrl),
@@ -244,6 +252,7 @@ export class HttpService {
       .route(ParticipantService.Path, this.participants.getApp())
       .route(TemplateService.Path, this.templates.getApp())
       .route(FontService.Path, this.fonts.getApp())
+      .route(FontCatalogService.Path, this.fontCatalog.getApp())
       .route(AuditLogService.Path, this.auditLog.getApp());
   }
 

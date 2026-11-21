@@ -4,6 +4,7 @@ import { Designer } from '@pdfme/ui';
 import { type Ref, useEffect, useImperativeHandle, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Surface } from '../../../app/layout/Surface';
+import { nameNewField } from './nameNewField';
 import classes from './TemplateDesigner.module.css';
 
 // antd theme of the Designer, with the same color and radius as the Mantine theme
@@ -21,6 +22,13 @@ function fontOption(fonts: Font): { font?: Font } {
   return Object.keys(fonts).length > 0 ? { font: fonts } : {};
 }
 
+// after pdfme's own attempt to select the new field, which runs on the next tick
+const FieldSelectDelayMs = 50;
+
+function fieldNamesOf(template: Template): Set<string> {
+  return new Set(template.schemas.flat().map((field) => field.name));
+}
+
 /** What the Designer lets its parent do. */
 export type TemplateDesignerHandle = {
   /** Returns the template as it is on the canvas, with the editor's changes. */
@@ -35,6 +43,8 @@ type TemplateDesignerProps = {
   fonts: Font;
   /** The field types editors can place, keyed by their label; a new value restarts the Designer, keeping the canvas. */
   plugins: Plugins;
+  /** Name for each field type, given to new fields in place of pdfme's field1, field2. */
+  fieldNames?: Readonly<Record<string, string>>;
   /** Called once the Designer is first created, with the template as it loaded it. */
   onLoad?: (template: Template) => void;
   /** Called on every change to the template, by the editor or a new `template`. */
@@ -47,6 +57,7 @@ export function TemplateDesigner({
   template,
   fonts,
   plugins,
+  fieldNames = {},
   onLoad,
   onChange,
 }: TemplateDesignerProps) {
@@ -55,9 +66,9 @@ export function TemplateDesigner({
   const designer = useRef<Designer | null>(null);
   const lang = i18n.language as Lang;
   // the latest callbacks, since the Designer keeps the first ones it gets
-  const callbacks = useRef({ onLoad, onChange });
+  const callbacks = useRef({ onLoad, onChange, fieldNames });
   useEffect(() => {
-    callbacks.current = { onLoad, onChange };
+    callbacks.current = { onLoad, onChange, fieldNames };
   });
   // the `template` prop last applied, which needs no update
   const applied = useRef<Template | null>(null);
@@ -88,9 +99,19 @@ export function TemplateDesigner({
       plugins,
     });
     designer.current = instance;
-    instance.onChangeTemplate((changed) =>
-      callbacks.current.onChange?.(changed),
-    );
+    let names = fieldNamesOf(instance.getTemplate());
+    instance.onChangeTemplate((changed) => {
+      const named = nameNewField(changed, names, callbacks.current.fieldNames);
+      names = fieldNamesOf(named?.template ?? changed);
+      if (!named) {
+        callbacks.current.onChange?.(changed);
+        return;
+      }
+
+      // reports the renamed template; pdfme then selects the field by its old id, so it's selected again after
+      instance.updateTemplate(named.template);
+      setTimeout(() => instance.selectSchemas(named.name), FieldSelectDelayMs);
+    });
     if (first) callbacks.current.onLoad?.(instance.getTemplate());
 
     return () => {

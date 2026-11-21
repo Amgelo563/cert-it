@@ -13,29 +13,25 @@ import {
   FileButton,
   Group,
   List,
-  Loader,
-  Menu,
   Stack,
   Text,
   ThemeIcon,
 } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
-import { useFileDialog } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import {
   IconAlertTriangle,
-  IconChevronDown,
   IconDeviceFloppy,
   IconFileTypePdf,
   IconInfoCircle,
   IconTypography,
-  IconUpload,
 } from '@tabler/icons-react';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { describeApiError } from '../../../app/api/describeApiError';
 import { useApiClient } from '../../../app/api/useApiClient';
 import { LeaveGuard } from '../../../app/router/LeaveGuard';
+import { FontsModal } from './fonts/FontsModal';
 import { createFieldPlugins } from '../designer/createFieldPlugins';
 import {
   TemplateDesigner,
@@ -43,6 +39,7 @@ import {
 } from '../designer/TemplateDesigner';
 import {
   findGlyphWarnings,
+  isTextField,
   type GlyphWarning,
   withFontNames,
 } from './templateFields';
@@ -80,8 +77,6 @@ type Busy = 'pdf' | 'font' | 'save' | null;
 
 const PdfType = 'application/pdf';
 
-const FontTypes = '.ttf,.otf,font/ttf,font/otf';
-
 // what new QR fields encode until issuing puts the certificate's own URL there
 const SampleCode = 'ABCD-EFGH-JK';
 
@@ -99,8 +94,7 @@ export function TemplateEditor({
   const [basePdf, setBasePdf] = useState(start.basePdf);
   const [fonts, setFonts] = useState(start.fonts);
   const [fontInfo, setFontInfo] = useState(start.fontInfo);
-  // every stored font, for the font menu; loaded when it first opens
-  const [stored, setStored] = useState<FontSummary[] | null>(null);
+  const [fontsOpen, setFontsOpen] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
   // the canvas's fields, and the last saved version as a comparable key
   const [fields, setFields] = useState<Template['schemas'] | null>(null);
@@ -164,6 +158,15 @@ export function TemplateEditor({
     });
   }, [t, course.locale, course.dateFormat, hasFonts, fontInfo]);
 
+  const fieldNames = useMemo(
+    () => ({
+      participantName: t('template.fieldNames.participantName'),
+      issueDate: t('template.fieldNames.issueDate'),
+      qrcode: t('template.fieldNames.qrcode'),
+    }),
+    [t],
+  );
+
   // a new value only when the base PDF changes, so typing on the canvas never resets it
   const template = useMemo<Template | null>(
     () => (basePdf ? { ...content, basePdf: basePdf.bytes } : null),
@@ -186,15 +189,21 @@ export function TemplateEditor({
     [named, checkers],
   );
 
-  const run = async (kind: Exclude<Busy, null>, task: () => Promise<void>) => {
+  // true once the task worked; a failure is shown and gives false
+  const run = async (
+    kind: Exclude<Busy, null>,
+    task: () => Promise<void>,
+  ): Promise<boolean> => {
     setBusy(kind);
     try {
       await task();
+      return true;
     } catch (error) {
       notifications.show({
         color: 'red',
         message: describeApiError(error, i18n),
       });
+      return false;
     } finally {
       setBusy(null);
     }
@@ -243,9 +252,8 @@ export function TemplateEditor({
     });
   };
 
-  const uploadFont = (file: File | null) =>
-    file
-    && run('font', async () => {
+  const uploadFont = (file: File) =>
+    run('font', async () => {
       const font = await api.request((routes) =>
         routes.fonts.$post(
           {},
@@ -266,22 +274,35 @@ export function TemplateEditor({
       loadFont(font, bytes);
     });
 
-  const fontDialog = useFileDialog({
-    accept: FontTypes,
-    multiple: false,
-    onChange: (files) => void uploadFont(files?.[0] ?? null),
-  });
-
-  const loadStored = () => {
-    if (stored) return;
-    api
-      .request((routes) => routes.fonts.$get())
-      .then(setStored, (error) => {
-        notifications.show({
-          color: 'red',
-          message: describeApiError(error, i18n),
-        });
+  // only a font no field draws with: those without one draw with the fallback
+  const unloadFont = (font: FontSummary) => {
+    const label = `${font.family} ${font.style}`;
+    const users = (named ?? [])
+      .flat()
+      .filter(
+        (field) => isTextField(field) && field['fontName'] === font.sha256,
+      )
+      .map((field) => field.name);
+    if (users.length > 0) {
+      notifications.show({
+        color: 'yellow',
+        message: t('template.fontInUse', {
+          font: label,
+          fields: users.join(', '),
+        }),
       });
+      return;
+    }
+
+    setFonts((current) => {
+      const next = new Map(current);
+      next.delete(font.sha256);
+      return next;
+    });
+    notifications.show({
+      color: 'teal',
+      message: t('template.fontRemoved', { font: label }),
+    });
   };
 
   const save = () =>
@@ -344,8 +365,6 @@ export function TemplateEditor({
     );
   }
 
-  const unloaded = stored?.filter((font) => !fonts.has(font.sha256));
-
   return (
     <Stack gap="md">
       <LeaveGuard when={changed} />
@@ -369,45 +388,27 @@ export function TemplateEditor({
               </Button>
             )}
           </FileButton>
-          <Menu position="bottom-end" onOpen={loadStored} width={260}>
-            <Menu.Target>
-              <Button
-                variant="default"
-                loading={busy === 'font'}
-                disabled={busy !== null && busy !== 'font'}
-                leftSection={<IconTypography size={16} stroke={1.5} />}
-                rightSection={<IconChevronDown size={14} stroke={1.5} />}
-              >
-                {t('template.addFont')}
-              </Button>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Label>{t('template.storedFonts')}</Menu.Label>
-              {!unloaded && (
-                <Menu.Item disabled leftSection={<Loader size={14} />}>
-                  {t('app.loading')}
-                </Menu.Item>
-              )}
-              {unloaded?.length === 0 && (
-                <Menu.Item disabled>{t('template.noStoredFonts')}</Menu.Item>
-              )}
-              {unloaded?.map((font) => (
-                <Menu.Item
-                  key={font.sha256}
-                  onClick={() => void addStoredFont(font)}
-                >
-                  {font.family} {font.style}
-                </Menu.Item>
-              ))}
-              <Menu.Divider />
-              <Menu.Item
-                leftSection={<IconUpload size={14} stroke={1.5} />}
-                onClick={fontDialog.open}
-              >
-                {t('template.uploadFont')}
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
+          <Button
+            variant="default"
+            loading={busy === 'font'}
+            disabled={busy !== null && busy !== 'font'}
+            leftSection={<IconTypography size={16} stroke={1.5} />}
+            onClick={() => setFontsOpen(true)}
+          >
+            {t('template.fonts')}
+          </Button>
+          <FontsModal
+            opened={fontsOpen}
+            onClose={() => setFontsOpen(false)}
+            loaded={[...fonts.keys()].flatMap(
+              (sha256) => fontInfo.get(sha256) ?? [],
+            )}
+            busy={busy === 'font'}
+            onAdd={addStoredFont}
+            onRemove={unloadFont}
+            onUpload={uploadFont}
+            onImported={loadFont}
+          />
           <Button
             onClick={() => void save()}
             loading={busy === 'save'}
@@ -451,6 +452,7 @@ export function TemplateEditor({
         template={template}
         fonts={fontOption}
         plugins={plugins}
+        fieldNames={fieldNames}
         onLoad={onLoad}
         onChange={onChange}
       />

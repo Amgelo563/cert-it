@@ -79,6 +79,8 @@ export const EnAppMessages = {
       pdfNotOnePage: 'The PDF must have exactly one page.',
       unknownFont: 'A field uses a font that is no longer available.',
       unknownBasePdf: 'Upload the base PDF again, then save.',
+      catalogUnavailable:
+        "The font catalog didn't answer. Try again later, or upload the font file.",
     },
     network: "Couldn't reach the server. Check your connection and try again.",
     unexpected: 'Something went wrong. Try again.',

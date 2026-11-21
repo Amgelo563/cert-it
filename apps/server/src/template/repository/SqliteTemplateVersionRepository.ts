@@ -84,6 +84,14 @@ export class SqliteTemplateVersionRepository
     });
   }
 
+  public listBasePdfPaths(): string[] {
+    return this.db
+      .selectDistinct({ path: templateVersionTable.basePdfPath })
+      .from(templateVersionTable)
+      .all()
+      .map(({ path }) => path);
+  }
+
   public listFontIds(id: TemplateVersionId): FontId[] {
     return this.db
       .select({ fontId: templateVersionFontTable.fontId })
