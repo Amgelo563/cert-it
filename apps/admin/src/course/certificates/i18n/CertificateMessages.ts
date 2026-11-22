@@ -87,6 +87,10 @@ export type CertificateMessages = {
     /** Notice above the table, with the number of certificates on an older template in `{count}`. */
     outdatedNotice: string;
     outdatedReview: string;
+    /** The button that opens the export menu. */
+    export: string;
+    exportZip: string;
+    exportCsv: string;
   };
   regenerate: {
     title: string;

@@ -73,6 +73,9 @@ export const EsCertificateMessages = {
     outdatedNotice:
       'Certificados con una versión anterior de la plantilla: {count}. Regenéralos para usar la última.',
     outdatedReview: 'Revisar',
+    export: 'Exportar',
+    exportZip: 'PDF vigentes (ZIP)',
+    exportCsv: 'Códigos y enlaces (CSV)',
   },
   regenerate: {
     title: 'Regenerar certificados',

@@ -39,6 +39,7 @@ import { CertificateJobPanel } from './job/CertificateJobPanel';
 import { isJobActive } from './job/isJobActive';
 import { useCertificateJob } from './job/useCertificateJob';
 import { EditCertificateModal } from './edit/EditCertificateModal';
+import { CertificateExportMenu } from './export/CertificateExportMenu';
 import { RegenerateCertificatesModal } from './regenerate/RegenerateCertificatesModal';
 import { useOutdatedCertificates } from './regenerate/useOutdatedCertificates';
 import { RevokeCertificateModal } from './revoke/RevokeCertificateModal';
@@ -115,6 +116,7 @@ export function CertificatesTab() {
     - certificateCounts.active
     - certificateCounts.revoked;
   const hasTemplate = course.latestTemplateVersion !== null;
+  const issuedCount = certificateCounts.active + certificateCounts.revoked;
 
   const followJob = (added: JobSummary, message: string) => {
     notifications.show({ color: 'teal', message });
@@ -259,9 +261,15 @@ export function CertificatesTab() {
                 </Text>
               )}
             </Group>
-            {canIssue && hasTemplate && (
+            {canIssue && (hasTemplate || issuedCount > 0) && (
               <Group gap="sm">
-                {selected.length > 0 ? (
+                {issuedCount > 0 && selected.length === 0 && (
+                  <CertificateExportMenu
+                    courseId={course.id}
+                    activeCount={certificateCounts.active}
+                  />
+                )}
+                {!hasTemplate ? null : selected.length > 0 ? (
                   <>
                     <Button
                       variant="subtle"

@@ -22,6 +22,7 @@ import { createTestConfig } from '../../config/mocks/createTestConfig';
 import { ParticipantService } from '../../../src/participant/ParticipantService';
 import { CertificateService } from '../../../src/certificate/CertificateService';
 import { CertificateRegenerator } from '../../../src/certificate/regenerate/CertificateRegenerator';
+import { CertificateExportService } from '../../../src/certificate/export/CertificateExportService';
 import { JobService } from '../../../src/job/JobService';
 import { QueueOnlyJobService } from '../../job/mocks/QueueOnlyJobService';
 import { UserService } from '../../../src/user/UserService';
@@ -103,6 +104,13 @@ export function createAuthOptions(
     dataDirectory,
     regenerator,
   });
+  const certificateExports = new CertificateExportService({
+    database,
+    guard,
+    dataDirectory,
+    siteUrl,
+    log: () => {},
+  });
   const jobs = new JobService({
     database,
     guard,
@@ -131,6 +139,7 @@ export function createAuthOptions(
     courses,
     participants,
     certificates,
+    certificateExports,
     jobs,
     fonts,
     fontCatalog,

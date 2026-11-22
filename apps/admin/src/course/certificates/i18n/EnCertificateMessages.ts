@@ -73,6 +73,9 @@ export const EnCertificateMessages = {
     outdatedNotice:
       'Certificates on an older template version: {count}. Regenerate them to use the latest one.',
     outdatedReview: 'Review',
+    export: 'Export',
+    exportZip: 'Active PDFs (ZIP)',
+    exportCsv: 'Codes and URLs (CSV)',
   },
   regenerate: {
     title: 'Regenerate certificates',

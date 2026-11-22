@@ -50,6 +50,10 @@ const RouteAccessTable: Readonly<Record<string, RouteAccess>> = {
   'POST /courses/:courseId/certificates/issue':
     PermissionEnum.IssueCertificates,
   'GET /courses/:courseId/certificates/outdated': PermissionEnum.ViewRecords,
+  'GET /courses/:courseId/certificates/export/zip':
+    PermissionEnum.IssueCertificates,
+  'GET /courses/:courseId/certificates/export/csv':
+    PermissionEnum.IssueCertificates,
   'POST /courses/:courseId/certificates/regenerate':
     PermissionEnum.IssueCertificates,
   'PATCH /courses/:courseId/certificates/:id': PermissionEnum.IssueCertificates,

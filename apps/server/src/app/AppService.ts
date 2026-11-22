@@ -20,6 +20,7 @@ import { TemplateService } from '../template/TemplateService';
 import { BackgroundJobService } from '../job/BackgroundJobService';
 import { JobService } from '../job/JobService';
 import { CertificateService } from '../certificate/CertificateService';
+import { CertificateExportService } from '../certificate/export/CertificateExportService';
 
 type AppServiceOptions = {
   dataDirectory: DataDirectoryService;
@@ -177,6 +178,10 @@ export class AppService {
       dataDirectory,
       jobs,
     });
+    const certificateExports = CertificateExportService.create({
+      ...services,
+      dataDirectory,
+    });
     const jobRoutes = JobService.create({ ...services, jobs });
     const fonts = FontService.create({ ...services, dataDirectory });
     const fontCatalog = FontCatalogService.create({ ...services, fonts });
@@ -197,6 +202,7 @@ export class AppService {
       courses,
       participants,
       certificates,
+      certificateExports,
       jobs: jobRoutes,
       fonts,
       fontCatalog,
