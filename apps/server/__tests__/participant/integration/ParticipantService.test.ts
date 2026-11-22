@@ -1,28 +1,36 @@
+import { existsSync } from 'node:fs';
 import {
   type ApiPage,
   AuditActionEnum,
   AuditEntityEnum,
   type AuditEntrySummary,
+  JobTypeEnum,
   type ParticipantSummary,
   RoleEnum,
 } from '@cert-it/shared';
 import { afterEach, describe, expect, test } from 'vite-plus/test';
+import type { Certificate } from '../../../src/certificate/Certificate';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
 import { MockSeeder } from '../../database/mocks/MockSeeder';
 import { createApiHarness } from '../../http/mocks/createApiHarness';
+import { TestDataDirectories } from '../../storage/mocks/TestDataDirectories';
 
 const databases: DatabaseService[] = [];
 
+const directories = new TestDataDirectories();
+
 afterEach(() => {
   for (const database of databases.splice(0)) database.close();
+  directories.removeAll();
 });
 
 // an Admin logged in through the API, with a course to add participants to
 async function setup() {
   const database = createTestDatabase();
   databases.push(database);
-  const harness = createApiHarness(database);
+  const dataDirectory = directories.create();
+  const harness = createApiHarness(database, { dataDirectory });
   const admin = await harness.loginAs({
     email: 'admin@example.org',
     role: RoleEnum.Admin,
@@ -45,7 +53,19 @@ async function setup() {
       .auditLog.list({ page: 1, size: 50 })
       .items.filter((entry) => entry.entity === AuditEntityEnum.Participant);
 
-  return { ...harness, admin, auditEntries, course, participants, seeder };
+  const writePdf = (certificate: Certificate) =>
+    directories.writePdf(dataDirectory, certificate);
+
+  return {
+    ...harness,
+    admin,
+    auditEntries,
+    course,
+    database,
+    participants,
+    seeder,
+    writePdf,
+  };
 }
 
 describe('ParticipantService (list)', () => {
@@ -219,6 +239,52 @@ describe('ParticipantService (update)', () => {
     ]);
   });
 
+  test('GIVEN a participant with a certificate WHEN renaming them THEN renders it again with its own version', async () => {
+    const { admin, course, database, participants, seeder } = await setup();
+    const version = seeder.templateVersion(course, admin.user);
+    const certificate = seeder.certificate(
+      seeder.participant(course, { name: 'Ada Lovelase' }),
+      version,
+    );
+    seeder.templateVersion(course, admin.user);
+
+    await participants('PATCH', `/${certificate.participantId}`, {
+      name: 'Ada Lovelace',
+    });
+    const jobs = database
+      .getRepositories()
+      .jobs.listByCourse(course.id, { page: 1, size: 10 }).items;
+
+    expect(jobs).toEqual([
+      expect.objectContaining({
+        type: JobTypeEnum.Regenerate,
+        payload: {
+          certificateIds: [certificate.id],
+          templateVersionId: version.id,
+        },
+      }),
+    ]);
+  });
+
+  test('GIVEN a participant with a certificate WHEN changing only their email THEN adds no job', async () => {
+    const { admin, course, database, participants, seeder } = await setup();
+    const certificate = seeder.certificate(
+      seeder.participant(course),
+      seeder.templateVersion(course, admin.user),
+    );
+
+    await participants('PATCH', `/${certificate.participantId}`, {
+      email: 'new@example.org',
+    });
+
+    expect(
+      database.getRepositories().jobs.listByCourse(course.id, {
+        page: 1,
+        size: 10,
+      }).total,
+    ).toBe(0);
+  });
+
   test("GIVEN another participant's email WHEN updating THEN answers 409", async () => {
     const { course, participants, seeder } = await setup();
     seeder.participant(course, { email: 'taken@example.org' });
@@ -264,6 +330,23 @@ describe('ParticipantService (delete)', () => {
       entity: AuditEntityEnum.Participant,
       entityName: 'Ada',
     });
+  });
+
+  test('GIVEN a participant with a certificate WHEN deleting them THEN removes its PDF too', async () => {
+    const { admin, course, participants, seeder, writePdf } = await setup();
+    const certificate = seeder.certificate(
+      seeder.participant(course),
+      seeder.templateVersion(course, admin.user),
+    );
+    const path = writePdf(certificate);
+
+    const response = await participants(
+      'DELETE',
+      `/${certificate.participantId}`,
+    );
+
+    expect(response.status).toBe(204);
+    expect(existsSync(path)).toBe(false);
   });
 
   test('GIVEN an Editor WHEN deleting a participant THEN answers 403', async () => {

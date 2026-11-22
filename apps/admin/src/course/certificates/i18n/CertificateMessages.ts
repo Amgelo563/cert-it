@@ -1,4 +1,8 @@
-import type { JobStatus, ParticipantCertificateFilter } from '@cert-it/shared';
+import type {
+  JobStatus,
+  JobType,
+  ParticipantCertificateFilter,
+} from '@cert-it/shared';
 
 /** Texts of a course's certificates tab. Placeholders are written as `{key}`. */
 export type CertificateMessages = {
@@ -64,10 +68,46 @@ export type CertificateMessages = {
     reinstateText: string;
     /** With the participant's `{name}`. */
     reinstatedNotice: string;
+    edit: string;
+    editTitle: string;
+    editText: string;
+    nameLabel: string;
+    nameDescription: string;
+    nameRequired: string;
+    dateRequired: string;
+    editSubmit: string;
+    /** Notice after an edit, with the participant's `{name}`. */
+    editStarted: string;
+    delete: string;
+    deleteTitle: string;
+    /** With the participant's `{name}` and the certificate's `{code}`. */
+    deleteText: string;
+    /** With the participant's `{name}`. */
+    deletedNotice: string;
+    /** Notice above the table, with the number of certificates on an older template in `{count}`. */
+    outdatedNotice: string;
+    outdatedReview: string;
+  };
+  regenerate: {
+    title: string;
+    /** With the number of certificates in `{count}` and the latest template version in `{version}`. */
+    text: string;
+    /** The current version of a listed certificate, in `{version}`. */
+    fromVersion: string;
+    selectAll: string;
+    /** Accessible label of a row's checkbox, with the participant's `{name}`. */
+    select: string;
+    notNow: string;
+    /** The submit button, with the number checked in `{count}`. */
+    submit: string;
+    /** Notice after the job is added, with its `{count}`. */
+    started: string;
+    /** Notice from the template tab, which has no job panel. */
+    startedElsewhere: string;
   };
   certificateJob: {
-    /** Title of the panel, by the job's status. */
-    titles: Record<JobStatus, string>;
+    /** Title of the panel, by the job's type and status. */
+    titles: Record<JobType, Record<JobStatus, string>>;
     /** Progress of a running job, in `{progress}` of `{total}`. */
     progress: string;
     /** Result of a finished job, with the certificates issued in `{count}`. */

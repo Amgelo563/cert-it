@@ -161,14 +161,22 @@ export class AppService {
     const services = { config, database, passwords, sessions, guard, auditLog };
     const users = UserService.create(services);
     const auth = AuthService.create(services);
-    const courses = CourseService.create(services);
-    const participants = ParticipantService.create(services);
     const jobs = BackgroundJobService.create({
       config,
       database,
       dataDirectory,
     });
-    const certificates = CertificateService.create({ ...services, jobs });
+    const courses = CourseService.create({ ...services, dataDirectory });
+    const participants = ParticipantService.create({
+      ...services,
+      dataDirectory,
+      jobs,
+    });
+    const certificates = CertificateService.create({
+      ...services,
+      dataDirectory,
+      jobs,
+    });
     const jobRoutes = JobService.create({ ...services, jobs });
     const fonts = FontService.create({ ...services, dataDirectory });
     const fontCatalog = FontCatalogService.create({ ...services, fonts });

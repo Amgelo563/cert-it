@@ -47,7 +47,9 @@ export function CertificateJobPanel({
         <Group justify="space-between" wrap="nowrap" gap="sm">
           <Group gap="xs" wrap="nowrap">
             {icon}
-            <Text fw={500}>{t(`certificateJob.titles.${job.status}`)}</Text>
+            <Text fw={500}>
+              {t(`certificateJob.titles.${job.type}.${job.status}`)}
+            </Text>
           </Group>
           {!active && (
             <Group gap="xs" wrap="nowrap">
@@ -82,7 +84,7 @@ export function CertificateJobPanel({
             <Progress
               value={percent}
               color="gray"
-              aria-label={t(`certificateJob.titles.${job.status}`)}
+              aria-label={t(`certificateJob.titles.${job.type}.${job.status}`)}
             />
             <MonoFigure>
               {t('certificateJob.progress', {

@@ -9,9 +9,14 @@ import {
   IssueCertificatesRequestSchema,
   type JobSummary,
   JobTypeEnum,
+  type OutdatedCertificates,
   PermissionEnum,
+  type RegenerateCertificatesRequest,
+  RegenerateCertificatesRequestSchema,
   type RevokeCertificateRequest,
   RevokeCertificateRequestSchema,
+  type UpdateCertificateRequest,
+  UpdateCertificateRequestSchema,
 } from '@cert-it/shared';
 import { type Context, Hono } from 'hono';
 import type { ClientErrorStatusCode } from 'hono/utils/http-status';
@@ -26,15 +31,23 @@ import { jsonBodyLimit } from '../http/api/jsonBodyLimit';
 import type { BackgroundJobService } from '../job/BackgroundJobService';
 import { JobService } from '../job/JobService';
 import type { ParticipantId } from '../participant/Participant';
+import type { DataDirectoryService } from '../storage/DataDirectoryService';
+import type { TemplateVersion } from '../template/TemplateVersion';
 import type { Certificate, CertificateId } from './Certificate';
+import { CertificateRegenerator } from './regenerate/CertificateRegenerator';
 
 type CertificateServiceOptions = {
   database: DatabaseService;
   guard: AuthGuard;
   auditLog: AuditLogService;
   jobs: BackgroundJobService;
+  /** Where certificate PDFs are, to delete one with its certificate. */
+  dataDirectory: DataDirectoryService;
+  regenerator: CertificateRegenerator;
   /** @default () => new Date() */
   now?: () => Date;
+  /** @default console.error */
+  log?: (line: string) => void;
 };
 
 /** Serves a course's certificate routes: Editors issue certificates as background jobs, and revoke or reinstate them. */
@@ -53,6 +66,7 @@ export class CertificateService {
     [ApiErrorCodeEnum.NothingToIssue]: 409,
     [ApiErrorCodeEnum.CertificateRevoked]: 409,
     [ApiErrorCodeEnum.CertificateActive]: 409,
+    [ApiErrorCodeEnum.NothingToRegenerate]: 409,
   };
 
   protected readonly database: DatabaseService;
@@ -63,7 +77,13 @@ export class CertificateService {
 
   protected readonly jobs: BackgroundJobService;
 
+  protected readonly dataDirectory: DataDirectoryService;
+
+  protected readonly regenerator: CertificateRegenerator;
+
   protected readonly now: () => Date;
+
+  protected readonly log: (line: string) => void;
 
   protected readonly app: ReturnType<CertificateService['createApp']>;
 
@@ -72,7 +92,10 @@ export class CertificateService {
     this.guard = options.guard;
     this.auditLog = options.auditLog;
     this.jobs = options.jobs;
+    this.dataDirectory = options.dataDirectory;
+    this.regenerator = options.regenerator;
     this.now = options.now ?? (() => new Date());
+    this.log = options.log ?? console.error;
     this.app = this.createApp();
   }
 
@@ -81,10 +104,15 @@ export class CertificateService {
     guard: AuthGuard;
     auditLog: AuditLogService;
     jobs: BackgroundJobService;
+    dataDirectory: DataDirectoryService;
     injections?: Partial<CertificateServiceOptions>;
   }): CertificateService {
     const { injections, ...defaults } = options;
-    return new CertificateService({ ...defaults, ...injections });
+    return new CertificateService({
+      regenerator: CertificateRegenerator.create(defaults),
+      ...defaults,
+      ...injections,
+    });
   }
 
   /** Returns the routes, to mount at {@link CertificateService.Path}. */
@@ -104,6 +132,30 @@ export class CertificateService {
         jsonBodyLimit(CertificateService.MaxIssueBytes),
         apiValidator('json', IssueCertificatesRequestSchema),
         (c) => this.issue(c, c.req.valid('json')),
+      )
+      .get(
+        '/outdated',
+        guard.requirePermission(PermissionEnum.ViewRecords),
+        (c) => this.listOutdated(c),
+      )
+      .post(
+        '/regenerate',
+        guard.requirePermission(PermissionEnum.IssueCertificates),
+        jsonBodyLimit(CertificateService.MaxIssueBytes),
+        apiValidator('json', RegenerateCertificatesRequestSchema),
+        (c) => this.regenerateOutdated(c, c.req.valid('json')),
+      )
+      .patch(
+        '/:id',
+        guard.requirePermission(PermissionEnum.IssueCertificates),
+        jsonBodyLimit(),
+        apiValidator('json', UpdateCertificateRequestSchema),
+        (c) => this.update(c, c.req.valid('json')),
+      )
+      .delete(
+        '/:id',
+        guard.requirePermission(PermissionEnum.DeleteRecords),
+        (c) => this.remove(c),
       )
       .post(
         '/:id/revoke',
@@ -156,6 +208,139 @@ export class CertificateService {
       },
     });
     return c.json<JobSummary, 202>(JobService.toSummary(job), 202);
+  }
+
+  protected listOutdated(c: Context<AuthEnv>) {
+    const course = this.findCourse(c);
+    if (!course) return this.error(c, ApiErrorCodeEnum.NotFound);
+
+    const { templateVersions, participants } = this.database.getRepositories();
+    const latest = templateVersions.findLatest(course.id);
+    const outdated = latest ? this.findOutdated(course, latest) : [];
+    const versions = templateVersions.findVersionNumbers([
+      ...new Set(outdated.map((certificate) => certificate.templateVersionId)),
+    ]);
+    const names = new Map(
+      participants
+        .findByIds(outdated.map((certificate) => certificate.participantId))
+        .map((participant) => [participant.id, participant.name]),
+    );
+
+    const items = outdated
+      .map((certificate) => ({
+        id: certificate.id,
+        code: certificate.code,
+        participantId: certificate.participantId,
+        name: names.get(certificate.participantId) ?? '',
+        templateVersion: versions.get(certificate.templateVersionId) ?? 0,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
+    return c.json<OutdatedCertificates, 200>(
+      { latestVersion: latest?.version ?? null, items },
+      200,
+    );
+  }
+
+  // moves certificates to the latest version, keeping their codes and dates
+  protected regenerateOutdated(
+    c: Context<AuthEnv>,
+    body: RegenerateCertificatesRequest,
+  ) {
+    const course = this.findCourse(c);
+    if (!course) return this.error(c, ApiErrorCodeEnum.NotFound);
+
+    const latest = this.database
+      .getRepositories()
+      .templateVersions.findLatest(course.id);
+    if (!latest) return this.error(c, ApiErrorCodeEnum.NoTemplate);
+
+    const outdated = this.findOutdated(course, latest);
+    const requested = body.certificateIds && new Set(body.certificateIds);
+    const selected = requested
+      ? outdated.filter((certificate) => requested.has(certificate.id))
+      : outdated;
+    if (selected.length === 0) {
+      return this.error(c, ApiErrorCodeEnum.NothingToRegenerate);
+    }
+
+    const job = this.regenerator.queue({
+      courseId: course.id,
+      certificates: selected,
+      version: latest,
+      userId: c.get('user').id,
+    });
+    return c.json<JobSummary, 202>(JobService.toSummary(job), 202);
+  }
+
+  // same code and template version; the name lives on the participant
+  protected update(c: Context<AuthEnv>, body: UpdateCertificateRequest) {
+    const target = this.findCertificate(c);
+    if (!target) return this.error(c, ApiErrorCodeEnum.NotFound);
+
+    const repositories = this.database.getRepositories();
+    const version = repositories.templateVersions.findById(
+      target.templateVersionId,
+    );
+    if (!version) return this.error(c, ApiErrorCodeEnum.NotFound);
+
+    if (body.name !== undefined) {
+      const renamed = repositories.participants.update(target.participantId, {
+        name: body.name,
+      });
+      if (renamed.isErr()) return this.error(c, ApiErrorCodeEnum.NotFound);
+    }
+    const updated =
+      body.issueDate === undefined
+        ? target
+        : repositories.certificates
+            .update(target.id, { issueDate: body.issueDate })
+            .unwrapOr(null);
+    if (!updated) return this.error(c, ApiErrorCodeEnum.NotFound);
+
+    this.audit(c, updated, AuditActionEnum.Update, {
+      code: updated.code,
+      ...(body.name === undefined ? {} : { name: body.name }),
+      ...(body.issueDate === undefined ? {} : { issueDate: body.issueDate }),
+    });
+    const job = this.regenerator.queue({
+      courseId: updated.courseId,
+      certificates: [updated],
+      version,
+      userId: c.get('user').id,
+    });
+    return c.json<JobSummary, 202>(JobService.toSummary(job), 202);
+  }
+
+  // the row goes first, so the file is never served without one
+  protected async remove(c: Context<AuthEnv>) {
+    const target = this.findCertificate(c);
+    if (!target) return this.error(c, ApiErrorCodeEnum.NotFound);
+
+    const repositories = this.database.getRepositories();
+    const deleted = repositories.certificates.delete(target.id);
+    if (deleted.isErr()) return this.error(c, ApiErrorCodeEnum.NotFound);
+
+    const path = this.dataDirectory.getCertificatePath(
+      target.courseId,
+      target.code,
+    );
+    await this.dataDirectory.deleteFile(path).catch((error: unknown) => {
+      this.log(`Couldn't delete ${path}: ${String(error)}`);
+    });
+    this.audit(c, target, AuditActionEnum.Delete, {
+      code: target.code,
+      name: repositories.participants.findById(target.participantId)?.name,
+    });
+    return c.body(null, 204);
+  }
+
+  protected findOutdated(
+    course: Course,
+    latest: TemplateVersion,
+  ): Certificate[] {
+    return this.database
+      .getRepositories()
+      .certificates.listWithOtherVersion(course.id, latest.id);
   }
 
   protected revoke(c: Context<AuthEnv>, body: RevokeCertificateRequest) {
@@ -257,7 +442,11 @@ export class CertificateService {
   protected audit(
     c: Context<AuthEnv>,
     target: Certificate,
-    action: typeof AuditActionEnum.Revoke | typeof AuditActionEnum.Reinstate,
+    action:
+      | typeof AuditActionEnum.Revoke
+      | typeof AuditActionEnum.Reinstate
+      | typeof AuditActionEnum.Update
+      | typeof AuditActionEnum.Delete,
     details: Readonly<Record<string, unknown>>,
   ): void {
     this.auditLog.record({

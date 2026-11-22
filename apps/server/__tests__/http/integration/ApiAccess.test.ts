@@ -49,6 +49,11 @@ const RouteAccessTable: Readonly<Record<string, RouteAccess>> = {
   'GET /font-catalog/preview': PermissionEnum.EditCourses,
   'POST /courses/:courseId/certificates/issue':
     PermissionEnum.IssueCertificates,
+  'GET /courses/:courseId/certificates/outdated': PermissionEnum.ViewRecords,
+  'POST /courses/:courseId/certificates/regenerate':
+    PermissionEnum.IssueCertificates,
+  'PATCH /courses/:courseId/certificates/:id': PermissionEnum.IssueCertificates,
+  'DELETE /courses/:courseId/certificates/:id': PermissionEnum.DeleteRecords,
   'POST /courses/:courseId/certificates/:id/revoke':
     PermissionEnum.RevokeCertificates,
   'POST /courses/:courseId/certificates/:id/reinstate':

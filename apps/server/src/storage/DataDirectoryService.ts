@@ -134,6 +134,21 @@ export class DataDirectoryService {
     await rm(this.directory.resolve(path), { force: true });
   }
 
+  /**
+   * Deletes a course's folder of certificate PDFs. A folder that's already gone isn't an error.
+   *
+   * @throws {Error} If the folder can't be deleted.
+   */
+  public async deleteCertificateFolder(courseId: CourseId): Promise<void> {
+    await rm(
+      this.directory.resolve(
+        DataDirectoryService.CertificatesFolder,
+        String(courseId),
+      ),
+      { recursive: true, force: true },
+    );
+  }
+
   /** Returns the path of a certificate's PDF. */
   public getCertificatePath(courseId: CourseId, code: CertificateCode): string {
     return this.directory.resolve(

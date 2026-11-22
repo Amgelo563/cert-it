@@ -21,6 +21,7 @@ import { TemplateService } from '../../../src/template/TemplateService';
 import { createTestConfig } from '../../config/mocks/createTestConfig';
 import { ParticipantService } from '../../../src/participant/ParticipantService';
 import { CertificateService } from '../../../src/certificate/CertificateService';
+import { CertificateRegenerator } from '../../../src/certificate/regenerate/CertificateRegenerator';
 import { JobService } from '../../../src/job/JobService';
 import { QueueOnlyJobService } from '../../job/mocks/QueueOnlyJobService';
 import { UserService } from '../../../src/user/UserService';
@@ -67,21 +68,40 @@ export function createAuthOptions(
     log: () => {},
   });
 
+  const dataDirectory =
+    options.dataDirectory
+    ?? new DataDirectoryService({
+      root: join(tmpdir(), `cert-it-unused-${randomUUID()}`),
+    });
+  const backgroundJobs = new QueueOnlyJobService(database);
+  const regenerator = new CertificateRegenerator({
+    auditLog,
+    jobs: backgroundJobs,
+  });
+
   const courses = new CourseService({
     database,
     guard,
     auditLog,
     defaultLocale: LocaleEnum.En,
+    dataDirectory,
   });
 
-  const participants = new ParticipantService({ database, guard, auditLog });
+  const participants = new ParticipantService({
+    database,
+    guard,
+    auditLog,
+    dataDirectory,
+    regenerator,
+  });
 
-  const backgroundJobs = new QueueOnlyJobService(database);
   const certificates = new CertificateService({
     database,
     guard,
     auditLog,
     jobs: backgroundJobs,
+    dataDirectory,
+    regenerator,
   });
   const jobs = new JobService({
     database,
@@ -90,11 +110,6 @@ export function createAuthOptions(
     jobs: backgroundJobs,
   });
 
-  const dataDirectory =
-    options.dataDirectory
-    ?? new DataDirectoryService({
-      root: join(tmpdir(), `cert-it-unused-${randomUUID()}`),
-    });
   const services = {
     config: createTestConfig(),
     database,

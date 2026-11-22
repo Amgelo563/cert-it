@@ -55,13 +55,51 @@ export const EnCertificateMessages = {
     reinstateText:
       "{name}'s certificate {code} becomes valid again, with the same code and PDF.",
     reinstatedNotice: "{name}'s certificate was reinstated.",
+    edit: 'Edit',
+    editTitle: 'Edit certificate',
+    editText:
+      'The PDF is rendered again with the same code and template version.',
+    nameLabel: 'Name',
+    nameDescription: 'As it should be printed on the certificate',
+    nameRequired: 'Enter a name',
+    dateRequired: 'Pick a date',
+    editSubmit: 'Save and render',
+    editStarted: "Rendering {name}'s certificate again.",
+    delete: 'Delete',
+    deleteTitle: 'Delete certificate',
+    deleteText:
+      "{name}'s certificate {code} and its PDF are deleted for good, and the code stops working. Use this for issuing mistakes; to cancel a valid certificate, revoke it instead.",
+    deletedNotice: "{name}'s certificate was deleted.",
+    outdatedNotice:
+      'Certificates on an older template version: {count}. Regenerate them to use the latest one.',
+    outdatedReview: 'Review',
+  },
+  regenerate: {
+    title: 'Regenerate certificates',
+    text: 'Certificates on an older version: {count}. Regenerated ones keep their codes and dates, rendered with template v{version}.',
+    fromVersion: 'v{version}',
+    selectAll: 'All',
+    select: 'Select {name}',
+    notNow: 'Not now',
+    submit: 'Regenerate ({count})',
+    started: 'Regenerating in the background: {count}.',
+    startedElsewhere:
+      'Regenerating in the background: {count}. Follow it on the Certificates tab.',
   },
   certificateJob: {
     titles: {
-      pending: 'Waiting to start',
-      running: 'Issuing certificates',
-      completed: 'Certificates issued',
-      failed: 'Issuing stopped',
+      issue: {
+        pending: 'Waiting to start',
+        running: 'Issuing certificates',
+        completed: 'Certificates issued',
+        failed: 'Issuing stopped',
+      },
+      regenerate: {
+        pending: 'Waiting to start',
+        running: 'Rendering certificates again',
+        completed: 'Certificates rendered again',
+        failed: 'Rendering stopped',
+      },
     },
     progress: '{progress} of {total}',
     rendered: 'Total: {count}',

@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { dirname } from 'node:path';
 import {
   type ApiPage,
   AuditActionEnum,
@@ -14,18 +16,23 @@ import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
 import { MockSeeder } from '../../database/mocks/MockSeeder';
 import { createApiHarness } from '../../http/mocks/createApiHarness';
+import { TestDataDirectories } from '../../storage/mocks/TestDataDirectories';
 
 const databases: DatabaseService[] = [];
 
+const directories = new TestDataDirectories();
+
 afterEach(() => {
   for (const database of databases.splice(0)) database.close();
+  directories.removeAll();
 });
 
 // an Admin logged in through the API, ready to manage courses
 async function setup() {
   const database = createTestDatabase();
   databases.push(database);
-  const harness = createApiHarness(database);
+  const dataDirectory = directories.create();
+  const harness = createApiHarness(database, { dataDirectory });
   const admin = await harness.loginAs({
     email: 'admin@example.org',
     role: RoleEnum.Admin,
@@ -39,7 +46,15 @@ async function setup() {
       .auditLog.list({ page: 1, size: 50 })
       .items.filter((entry) => entry.entity === AuditEntityEnum.Course);
 
-  return { ...harness, admin, auditEntries, courses, database, seeder };
+  return {
+    ...harness,
+    admin,
+    auditEntries,
+    courses,
+    database,
+    dataDirectory,
+    seeder,
+  };
 }
 
 describe('CourseService (list)', () => {
@@ -248,6 +263,25 @@ describe('CourseService (delete)', () => {
       entity: AuditEntityEnum.Course,
       entityName: 'Networks',
     });
+  });
+
+  test('GIVEN two courses with PDFs WHEN deleting one THEN removes only its PDFs', async () => {
+    const { admin, courses, dataDirectory, seeder } = await setup();
+    const course = seeder.course();
+    const [deleted, kept] = [course, seeder.course()].map((target) => {
+      const certificate = seeder.certificate(
+        seeder.participant(target),
+        seeder.templateVersion(target, admin.user),
+      );
+      return directories.writePdf(dataDirectory, certificate);
+    });
+
+    const response = await courses('DELETE', `/${course.id}`);
+
+    expect(response.status).toBe(204);
+    expect(existsSync(deleted!)).toBe(false);
+    expect(existsSync(dirname(deleted!))).toBe(false);
+    expect(existsSync(kept!)).toBe(true);
   });
 
   test('GIVEN an Editor WHEN deleting a course THEN answers 403 and keeps it', async () => {

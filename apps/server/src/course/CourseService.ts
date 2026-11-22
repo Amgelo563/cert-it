@@ -26,6 +26,7 @@ import type { AuthGuard } from '../auth/AuthGuard';
 import type { CertificateCounts } from '../certificate/CertificateCounts';
 import type { Config } from '../config/schema/ConfigSchema';
 import type { DatabaseService } from '../database/DatabaseService';
+import type { DataDirectoryService } from '../storage/DataDirectoryService';
 import { apiError } from '../http/api/apiError';
 import { apiValidator } from '../http/api/apiValidator';
 import { jsonBodyLimit } from '../http/api/jsonBodyLimit';
@@ -37,6 +38,10 @@ type CourseServiceOptions = {
   auditLog: AuditLogService;
   /** Locale of new courses that don't pick one, as in site.default_locale. */
   defaultLocale: Locale;
+  /** Where the course's certificate PDFs are, to delete them with it. */
+  dataDirectory: DataDirectoryService;
+  /** @default console.error */
+  log?: (line: string) => void;
 };
 
 /** Serves the course routes: anyone can read them, Editors change them and Admins delete them. */
@@ -63,6 +68,10 @@ export class CourseService {
 
   protected readonly defaultLocale: Locale;
 
+  protected readonly dataDirectory: DataDirectoryService;
+
+  protected readonly log: (line: string) => void;
+
   protected readonly app: ReturnType<CourseService['createApp']>;
 
   constructor(options: CourseServiceOptions) {
@@ -70,12 +79,15 @@ export class CourseService {
     this.guard = options.guard;
     this.auditLog = options.auditLog;
     this.defaultLocale = options.defaultLocale;
+    this.dataDirectory = options.dataDirectory;
+    this.log = options.log ?? console.error;
     this.app = this.createApp();
   }
 
   public static create(options: {
     config: Config;
     database: DatabaseService;
+    dataDirectory: DataDirectoryService;
     guard: AuthGuard;
     auditLog: AuditLogService;
     injections?: Partial<CourseServiceOptions>;
@@ -87,6 +99,8 @@ export class CourseService {
       guard: injections?.guard ?? options.guard,
       auditLog: injections?.auditLog ?? options.auditLog,
       defaultLocale: injections?.defaultLocale ?? config.site.defaultLocale,
+      dataDirectory: injections?.dataDirectory ?? options.dataDirectory,
+      log: injections?.log,
     });
   }
 
@@ -185,13 +199,21 @@ export class CourseService {
   }
 
   // the name goes in the audit entry, since the course won't be there to look up
-  protected remove(c: Context<AuthEnv>) {
+  // the row goes first, so a file left behind never belongs to a live course
+  protected async remove(c: Context<AuthEnv>) {
     const course = this.findCourse(c);
     if (!course) return this.error(c, ApiErrorCodeEnum.NotFound);
 
     const deleted = this.database.getRepositories().courses.delete(course.id);
     if (deleted.isErr()) return this.error(c, ApiErrorCodeEnum.NotFound);
 
+    await this.dataDirectory
+      .deleteCertificateFolder(course.id)
+      .catch((error: unknown) => {
+        this.log(
+          `Couldn't delete the certificates of course ${course.id}: ${String(error)}`,
+        );
+      });
     this.audit(c, course, AuditActionEnum.Delete, { name: course.name });
     return c.body(null, 204);
   }

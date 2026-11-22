@@ -24,7 +24,10 @@ import type { AuditLogService } from '../audit/AuditLogService';
 import type { AuthEnv } from '../auth/AuthEnv';
 import type { AuthGuard } from '../auth/AuthGuard';
 import type { Course, CourseId } from '../course/Course';
+import { CertificateRegenerator } from '../certificate/regenerate/CertificateRegenerator';
 import type { DatabaseService } from '../database/DatabaseService';
+import type { BackgroundJobService } from '../job/BackgroundJobService';
+import type { DataDirectoryService } from '../storage/DataDirectoryService';
 import { apiError } from '../http/api/apiError';
 import { apiValidator } from '../http/api/apiValidator';
 import { jsonBodyLimit } from '../http/api/jsonBodyLimit';
@@ -36,8 +39,14 @@ type ParticipantServiceOptions = {
   database: DatabaseService;
   guard: AuthGuard;
   auditLog: AuditLogService;
+  /** Where certificate PDFs are, to delete a participant's with them. */
+  dataDirectory: DataDirectoryService;
+  /** Renders a certificate again when its participant's name changes. */
+  regenerator: CertificateRegenerator;
   /** @default a ParticipantImporter on the same database */
   importer?: ParticipantImporter;
+  /** @default console.error */
+  log?: (line: string) => void;
 };
 
 /** Serves a course's participant routes: anyone can read them, Editors change them and Admins delete them. */
@@ -63,6 +72,12 @@ export class ParticipantService {
 
   protected readonly importer: ParticipantImporter;
 
+  protected readonly dataDirectory: DataDirectoryService;
+
+  protected readonly regenerator: CertificateRegenerator;
+
+  protected readonly log: (line: string) => void;
+
   protected readonly app: ReturnType<ParticipantService['createApp']>;
 
   constructor(options: ParticipantServiceOptions) {
@@ -72,6 +87,9 @@ export class ParticipantService {
     this.importer =
       options.importer
       ?? new ParticipantImporter({ database: options.database });
+    this.dataDirectory = options.dataDirectory;
+    this.regenerator = options.regenerator;
+    this.log = options.log ?? console.error;
     this.app = this.createApp();
   }
 
@@ -79,6 +97,8 @@ export class ParticipantService {
     database: DatabaseService;
     guard: AuthGuard;
     auditLog: AuditLogService;
+    dataDirectory: DataDirectoryService;
+    jobs: BackgroundJobService;
     injections?: Partial<ParticipantServiceOptions>;
   }): ParticipantService {
     const { injections } = options;
@@ -87,6 +107,15 @@ export class ParticipantService {
       database: injections?.database ?? options.database,
       guard: injections?.guard ?? options.guard,
       auditLog: injections?.auditLog ?? options.auditLog,
+      dataDirectory: injections?.dataDirectory ?? options.dataDirectory,
+      regenerator:
+        injections?.regenerator
+        ?? CertificateRegenerator.create({
+          auditLog: options.auditLog,
+          jobs: options.jobs,
+        }),
+      importer: injections?.importer,
+      log: injections?.log,
     });
   }
 
@@ -220,6 +249,9 @@ export class ParticipantService {
       ...(body.name === undefined ? {} : { name: participant.name }),
       ...(body.email === undefined ? {} : { email: participant.email }),
     });
+    if (participant.name !== target.name) {
+      this.regenerate(c, participant);
+    }
     return c.json<ParticipantSummary, 200>(
       this.toSummaries([participant])[0]!,
       200,
@@ -227,20 +259,50 @@ export class ParticipantService {
   }
 
   // the name goes in the audit entry, since the participant won't be there to look up
-  protected remove(c: Context<AuthEnv>) {
+  protected async remove(c: Context<AuthEnv>) {
     const target = this.findParticipant(c);
     if (!target) return this.error(c, ApiErrorCodeEnum.NotFound);
+    // the row goes with the participant, the file after
+    const certificate = this.database
+      .getRepositories()
+      .certificates.findByParticipant(target.id);
 
     const deleted = this.database
       .getRepositories()
       .participants.delete(target.id);
     if (deleted.isErr()) return this.error(c, ApiErrorCodeEnum.NotFound);
 
+    if (certificate) {
+      const path = this.dataDirectory.getCertificatePath(
+        certificate.courseId,
+        certificate.code,
+      );
+      await this.dataDirectory.deleteFile(path).catch((error: unknown) => {
+        this.log(`Couldn't delete ${path}: ${String(error)}`);
+      });
+    }
     this.audit(c, target, AuditActionEnum.Delete, {
       name: target.name,
       email: target.email,
     });
     return c.body(null, 204);
+  }
+
+  // the certificate keeps its code and template version; only the name changes
+  protected regenerate(c: Context<AuthEnv>, participant: Participant): void {
+    const { certificates, templateVersions } = this.database.getRepositories();
+    const certificate = certificates.findByParticipant(participant.id);
+    const version = certificate
+      ? templateVersions.findById(certificate.templateVersionId)
+      : null;
+    if (!certificate || !version) return;
+
+    this.regenerator.queue({
+      courseId: participant.courseId,
+      certificates: [certificate],
+      version,
+      userId: c.get('user').id,
+    });
   }
 
   protected findCourse(c: Context<AuthEnv>): Course | null {

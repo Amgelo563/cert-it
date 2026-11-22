@@ -9,6 +9,8 @@ import {
   IconBan,
   IconDots,
   IconExternalLink,
+  IconPencil,
+  IconTrash,
 } from '@tabler/icons-react';
 import { DataTable } from 'mantine-datatable';
 import { useMemo } from 'react';
@@ -34,8 +36,10 @@ type CertificatesTableProps = {
   /** The participant whose change is being sent, whose menu is disabled meanwhile. */
   busyId: number | null;
   onPageChange: (page: number) => void;
+  onEdit: (participant: ParticipantSummary) => void;
   onRevoke: (participant: ParticipantSummary) => void;
   onReinstate: (participant: ParticipantSummary) => void;
+  onDelete: (participant: ParticipantSummary) => void;
 };
 
 /** One page of a course's participants with their certificates; rows without one can be checked to issue. */
@@ -51,12 +55,16 @@ export function CertificatesTable({
   onSelectedChange,
   busyId,
   onPageChange,
+  onEdit,
   onRevoke,
   onReinstate,
+  onDelete,
 }: CertificatesTableProps) {
   const { t, i18n } = useTranslation();
   const can = usePermissions();
+  const canEdit = can(PermissionEnum.IssueCertificates);
   const canRevoke = can(PermissionEnum.RevokeCertificates);
+  const canDelete = can(PermissionEnum.DeleteRecords);
 
   // issue dates are calendar days, so they are read as UTC
   const dates = useMemo(
@@ -206,7 +214,7 @@ export function CertificatesTable({
                     </ActionIcon>
                   </Tooltip>
                 )}
-                {canRevoke && (
+                {(canEdit || canRevoke || canDelete) && (
                   <Menu position="bottom-end" width={200}>
                     <Menu.Target>
                       <ActionIcon
@@ -219,22 +227,40 @@ export function CertificatesTable({
                       </ActionIcon>
                     </Menu.Target>
                     <Menu.Dropdown>
-                      {active ? (
+                      {canEdit && (
+                        <Menu.Item
+                          leftSection={<IconPencil size={16} stroke={1.5} />}
+                          onClick={() => onEdit(participant)}
+                        >
+                          {t('certificates.edit')}
+                        </Menu.Item>
+                      )}
+                      {canRevoke
+                        && (active ? (
+                          <Menu.Item
+                            color="red"
+                            leftSection={<IconBan size={16} stroke={1.5} />}
+                            onClick={() => onRevoke(participant)}
+                          >
+                            {t('certificates.revoke')}
+                          </Menu.Item>
+                        ) : (
+                          <Menu.Item
+                            leftSection={
+                              <IconArrowBackUp size={16} stroke={1.5} />
+                            }
+                            onClick={() => onReinstate(participant)}
+                          >
+                            {t('certificates.reinstate')}
+                          </Menu.Item>
+                        ))}
+                      {canDelete && (
                         <Menu.Item
                           color="red"
-                          leftSection={<IconBan size={16} stroke={1.5} />}
-                          onClick={() => onRevoke(participant)}
+                          leftSection={<IconTrash size={16} stroke={1.5} />}
+                          onClick={() => onDelete(participant)}
                         >
-                          {t('certificates.revoke')}
-                        </Menu.Item>
-                      ) : (
-                        <Menu.Item
-                          leftSection={
-                            <IconArrowBackUp size={16} stroke={1.5} />
-                          }
-                          onClick={() => onReinstate(participant)}
-                        >
-                          {t('certificates.reinstate')}
+                          {t('certificates.delete')}
                         </Menu.Item>
                       )}
                     </Menu.Dropdown>

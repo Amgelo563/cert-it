@@ -55,13 +55,51 @@ export const EsCertificateMessages = {
     reinstateText:
       'El certificado {code} de {name} vuelve a ser válido, con el mismo código y PDF.',
     reinstatedNotice: 'Se restableció el certificado de {name}.',
+    edit: 'Editar',
+    editTitle: 'Editar certificado',
+    editText:
+      'El PDF se vuelve a generar con el mismo código y la misma versión de plantilla.',
+    nameLabel: 'Nombre',
+    nameDescription: 'Tal como debe aparecer en el certificado',
+    nameRequired: 'Escribe un nombre',
+    dateRequired: 'Elige una fecha',
+    editSubmit: 'Guardar y generar',
+    editStarted: 'Generando de nuevo el certificado de {name}.',
+    delete: 'Eliminar',
+    deleteTitle: 'Eliminar certificado',
+    deleteText:
+      'El certificado {code} de {name} y su PDF se eliminan para siempre, y el código deja de funcionar. Úsalo para errores de emisión; para anular un certificado válido, revócalo.',
+    deletedNotice: 'Se eliminó el certificado de {name}.',
+    outdatedNotice:
+      'Certificados con una versión anterior de la plantilla: {count}. Regenéralos para usar la última.',
+    outdatedReview: 'Revisar',
+  },
+  regenerate: {
+    title: 'Regenerar certificados',
+    text: 'Certificados con una versión anterior: {count}. Los regenerados conservan su código y fecha, y se generan con la plantilla v{version}.',
+    fromVersion: 'v{version}',
+    selectAll: 'Todos',
+    select: 'Seleccionar a {name}',
+    notNow: 'Ahora no',
+    submit: 'Regenerar ({count})',
+    started: 'Regenerando en segundo plano: {count}.',
+    startedElsewhere:
+      'Regenerando en segundo plano: {count}. Síguelo en la pestaña Certificados.',
   },
   certificateJob: {
     titles: {
-      pending: 'En espera',
-      running: 'Emitiendo certificados',
-      completed: 'Certificados emitidos',
-      failed: 'La emisión se detuvo',
+      issue: {
+        pending: 'En espera',
+        running: 'Emitiendo certificados',
+        completed: 'Certificados emitidos',
+        failed: 'La emisión se detuvo',
+      },
+      regenerate: {
+        pending: 'En espera',
+        running: 'Generando certificados de nuevo',
+        completed: 'Certificados generados de nuevo',
+        failed: 'La generación se detuvo',
+      },
     },
     progress: '{progress} de {total}',
     rendered: 'Total: {count}',

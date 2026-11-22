@@ -53,6 +53,7 @@ export const ApiErrorCodeEnum = {
   CertificateRevoked: 'certificate_revoked',
   /** The certificate is active, so there's nothing to reinstate. */
   CertificateActive: 'certificate_active',
+  NothingToRegenerate: 'nothing_to_regenerate',
   /** Only a failed job can run again. */
   JobNotFailed: 'job_not_failed',
 } as const;

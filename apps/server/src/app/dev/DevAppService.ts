@@ -76,6 +76,12 @@ export class DevAppService extends AppService {
     );
   }
 
+  /** Starts from an empty folder, since a crash leaves the last run's files behind for a rerun with the same process ID. */
+  public override async start(): Promise<void> {
+    await rm(this.dataDirectory.getRoot(), { recursive: true, force: true });
+    await super.start();
+  }
+
   /** Stops the server and removes its temporary files. */
   public override async stop(): Promise<void> {
     await super.stop();

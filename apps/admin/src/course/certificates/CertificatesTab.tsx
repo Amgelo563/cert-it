@@ -31,12 +31,16 @@ import { describeApiError } from '../../app/api/describeApiError';
 import { useApiClient } from '../../app/api/useApiClient';
 import { useApiRequest } from '../../app/api/useApiRequest';
 import { Surface } from '../../app/layout/Surface';
+import { StatusLabel } from '../../app/layout/StatusLabel';
 import { usePermissions } from '../../auth/usePermissions';
 import { useCourse } from '../useCourse';
 import { IssueCertificatesModal } from './issue/IssueCertificatesModal';
 import { CertificateJobPanel } from './job/CertificateJobPanel';
 import { isJobActive } from './job/isJobActive';
 import { useCertificateJob } from './job/useCertificateJob';
+import { EditCertificateModal } from './edit/EditCertificateModal';
+import { RegenerateCertificatesModal } from './regenerate/RegenerateCertificatesModal';
+import { useOutdatedCertificates } from './regenerate/useOutdatedCertificates';
 import { RevokeCertificateModal } from './revoke/RevokeCertificateModal';
 import { CertificatesTable } from './table/CertificatesTable';
 
@@ -70,6 +74,8 @@ export function CertificatesTab() {
     readonly number[] | null | undefined
   >();
   const [revoking, setRevoking] = useState<ParticipantSummary | null>(null);
+  const [editing, setEditing] = useState<ParticipantSummary | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
   // four options don't fit a phone at the default size
   const compactFilter = useMatches({ base: true, sm: false });
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -90,12 +96,16 @@ export function CertificatesTab() {
     ),
   );
 
-  // the header's counts change too
+  const outdated = useOutdatedCertificates(course.id);
+
+  // the header's counts and the outdated ones change too
   const reloadList = participants.reload;
+  const reloadOutdated = outdated.reload;
   const reloadAll = useCallback(() => {
     reloadList();
+    reloadOutdated();
     reloadCourse();
-  }, [reloadList, reloadCourse]);
+  }, [reloadList, reloadOutdated, reloadCourse]);
 
   const job = useCertificateJob(course.id, reloadAll);
   const running = job.job !== null && isJobActive(job.job);
@@ -106,49 +116,53 @@ export function CertificatesTab() {
     - certificateCounts.revoked;
   const hasTemplate = course.latestTemplateVersion !== null;
 
-  const issued = (added: JobSummary) => {
-    notifications.show({
-      color: 'teal',
-      message: t('certificates.issueStarted', { count: added.total }),
-    });
-    setIssuing(undefined);
-    setSelected([]);
+  const followJob = (added: JobSummary, message: string) => {
+    notifications.show({ color: 'teal', message });
     job.follow(added);
   };
 
-  const reinstate = (participant: ParticipantSummary) => {
+  // asks first, then sends the change for the participant's certificate
+  const confirmChange = (
+    participant: ParticipantSummary,
+    options: {
+      action: 'reinstate' | 'delete';
+      send: (param: { courseId: string; id: string }) => Promise<unknown>;
+    },
+  ) => {
     const certificate = participant.certificate;
     if (!certificate) return;
+    const { action, send } = options;
+    const destructive = action === 'delete';
     modals.openConfirmModal({
-      title: t('certificates.reinstateTitle'),
+      title: t(`certificates.${action}Title`),
       children: (
         <Text size="sm">
-          {t('certificates.reinstateText', {
+          {t(`certificates.${action}Text`, {
             name: participant.name,
             code: certificate.code,
           })}
         </Text>
       ),
       labels: {
-        confirm: t('certificates.reinstate'),
+        confirm: t(`certificates.${action}`),
         cancel: t('auth.cancel'),
       },
+      confirmProps: destructive ? { color: 'red' } : undefined,
       onConfirm: async () => {
         setBusyId(participant.id);
         try {
-          await api.request((routes) =>
-            routes.courses[':courseId'].certificates[':id'].reinstate.$post({
-              param: {
-                courseId: String(course.id),
-                id: String(certificate.id),
-              },
-            }),
-          );
+          await send({
+            courseId: String(course.id),
+            id: String(certificate.id),
+          });
           notifications.show({
             color: 'teal',
-            message: t('certificates.reinstatedNotice', {
-              name: participant.name,
-            }),
+            message: t(
+              destructive
+                ? 'certificates.deletedNotice'
+                : 'certificates.reinstatedNotice',
+              { name: participant.name },
+            ),
           });
           reloadAll();
         } catch (error) {
@@ -161,6 +175,34 @@ export function CertificatesTab() {
         }
       },
     });
+  };
+
+  const reinstate = (participant: ParticipantSummary) =>
+    confirmChange(participant, {
+      action: 'reinstate',
+      send: (param) =>
+        api.request((routes) =>
+          routes.courses[':courseId'].certificates[':id'].reinstate.$post({
+            param,
+          }),
+        ),
+    });
+
+  const remove = (participant: ParticipantSummary) =>
+    confirmChange(participant, {
+      action: 'delete',
+      send: (param) =>
+        api.request((routes) =>
+          routes.courses[':courseId'].certificates[':id'].$delete({ param }),
+        ),
+    });
+
+  const outdatedCount = outdated.data?.items.length ?? 0;
+
+  const issued = (added: JobSummary) => {
+    setIssuing(undefined);
+    setSelected([]);
+    followJob(added, t('certificates.issueStarted', { count: added.total }));
   };
 
   return (
@@ -179,6 +221,24 @@ export function CertificatesTab() {
           }
           onDismiss={job.dismiss}
         />
+      )}
+
+      {/* hidden while a job runs, which may be the regeneration itself */}
+      {canIssue && outdatedCount > 0 && !running && (
+        <Surface p="lg">
+          <Group justify="space-between" gap="sm">
+            <StatusLabel color="orange">
+              {t('certificates.outdatedNotice', { count: outdatedCount })}
+            </StatusLabel>
+            <Button
+              size="xs"
+              variant="light"
+              onClick={() => setRegenerating(true)}
+            >
+              {t('certificates.outdatedReview')}
+            </Button>
+          </Group>
+        </Surface>
       )}
 
       <Surface p="lg">
@@ -300,8 +360,10 @@ export function CertificatesTab() {
             onSelectedChange={setSelected}
             busyId={busyId}
             onPageChange={setPage}
+            onEdit={setEditing}
             onRevoke={setRevoking}
             onReinstate={reinstate}
+            onDelete={remove}
           />
         </Stack>
       </Surface>
@@ -329,6 +391,31 @@ export function CertificatesTab() {
           reloadAll();
         }}
       />
+      <EditCertificateModal
+        courseId={course.id}
+        participant={editing}
+        onClose={() => setEditing(null)}
+        onSaved={(added) => {
+          followJob(
+            added,
+            t('certificates.editStarted', { name: editing?.name ?? '' }),
+          );
+          setEditing(null);
+          reloadList();
+        }}
+      />
+      {outdated.data && (
+        <RegenerateCertificatesModal
+          opened={regenerating}
+          courseId={course.id}
+          outdated={outdated.data}
+          onClose={() => setRegenerating(false)}
+          onRegenerated={(added) => {
+            followJob(added, t('regenerate.started', { count: added.total }));
+            setRegenerating(false);
+          }}
+        />
+      )}
     </Stack>
   );
 }

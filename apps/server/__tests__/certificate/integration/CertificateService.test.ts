@@ -7,6 +7,9 @@ import {
   RoleEnum,
 } from '@cert-it/shared';
 import { afterEach, describe, expect, test } from 'vite-plus/test';
+import { existsSync } from 'node:fs';
+import type { Certificate } from '../../../src/certificate/Certificate';
+import { TestDataDirectories } from '../../storage/mocks/TestDataDirectories';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
 import { MockSeeder } from '../../database/mocks/MockSeeder';
@@ -14,15 +17,19 @@ import { createApiHarness } from '../../http/mocks/createApiHarness';
 
 const databases: DatabaseService[] = [];
 
+const directories = new TestDataDirectories();
+
 afterEach(() => {
   for (const database of databases.splice(0)) database.close();
+  directories.removeAll();
 });
 
 // an Editor logged in through the API, with a course that has a template
 async function setup() {
   const database = createTestDatabase();
   databases.push(database);
-  const harness = createApiHarness(database);
+  const dataDirectory = directories.create();
+  const harness = createApiHarness(database, { dataDirectory });
   const editor = await harness.loginAs({
     email: 'editor@example.org',
     role: RoleEnum.Editor,
@@ -46,6 +53,8 @@ async function setup() {
       .items.filter((entry) => entry.entity === entity);
   const findJob = (id: number) =>
     database.getRepositories().jobs.findById(id as never);
+  const writePdf = (certificate: Certificate) =>
+    directories.writePdf(dataDirectory, certificate);
 
   return {
     ...harness,
@@ -57,6 +66,7 @@ async function setup() {
     findJob,
     seeder,
     version,
+    writePdf,
   };
 }
 
@@ -303,5 +313,233 @@ describe('CertificateService (reinstate)', () => {
 
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({ error: 'certificate_active' });
+  });
+});
+
+describe('CertificateService (outdated)', () => {
+  test('GIVEN certificates on two versions WHEN listing outdated THEN answers the older ones with names, sorted', async () => {
+    const { course, editor, request, seeder, version } = await setup();
+    const zoe = seeder.certificate(
+      seeder.participant(course, { name: 'Zoe' }),
+      version,
+    );
+    const ada = seeder.certificate(
+      seeder.participant(course, { name: 'Ada' }),
+      version,
+    );
+    const latest = seeder.templateVersion(course, editor.user);
+    seeder.certificate(seeder.participant(course, { name: 'Cy' }), latest);
+
+    const response = await request(
+      'GET',
+      `/courses/${course.id}/certificates/outdated`,
+      { cookie: editor.cookie },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      latestVersion: 2,
+      items: [
+        {
+          id: ada.id,
+          code: ada.code,
+          participantId: ada.participantId,
+          name: 'Ada',
+          templateVersion: 1,
+        },
+        expect.objectContaining({ id: zoe.id, name: 'Zoe' }),
+      ],
+    });
+  });
+});
+
+describe('CertificateService (regenerate)', () => {
+  test('GIVEN outdated certificates WHEN regenerating all THEN adds a job to the latest version and audits it', async () => {
+    const {
+      auditEntries,
+      certificates,
+      course,
+      editor,
+      findJob,
+      seeder,
+      version,
+    } = await setup();
+    const old = seeder.certificate(seeder.participant(course), version);
+    const latest = seeder.templateVersion(course, editor.user);
+    seeder.certificate(seeder.participant(course), latest);
+
+    const response = await certificates('/regenerate', {});
+    const job = (await response.json()) as JobSummary;
+
+    expect(response.status).toBe(202);
+    expect(job).toMatchObject({ type: JobTypeEnum.Regenerate, total: 1 });
+    expect(findJob(job.id)?.payload).toEqual({
+      certificateIds: [old.id],
+      templateVersionId: latest.id,
+    });
+    expect(auditEntries(AuditEntityEnum.Job)).toEqual([
+      expect.objectContaining({
+        action: AuditActionEnum.Regenerate,
+        entityId: job.id,
+        details: { courseId: course.id, certificates: 1, templateVersion: 2 },
+      }),
+    ]);
+  });
+
+  test('GIVEN a selection WHEN regenerating THEN keeps only the outdated ones', async () => {
+    const { certificates, course, editor, findJob, seeder, version } =
+      await setup();
+    const first = seeder.certificate(seeder.participant(course), version);
+    seeder.certificate(seeder.participant(course), version);
+    const latest = seeder.templateVersion(course, editor.user);
+    const current = seeder.certificate(seeder.participant(course), latest);
+
+    const response = await certificates('/regenerate', {
+      certificateIds: [first.id, current.id],
+    });
+    const job = (await response.json()) as JobSummary;
+
+    expect(findJob(job.id)?.payload).toMatchObject({
+      certificateIds: [first.id],
+    });
+  });
+
+  test('GIVEN every certificate on the latest version WHEN regenerating THEN answers 409 nothing_to_regenerate', async () => {
+    const { certificates, course, seeder, version } = await setup();
+    seeder.certificate(seeder.participant(course), version);
+
+    const response = await certificates('/regenerate', {});
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'nothing_to_regenerate' });
+  });
+});
+
+describe('CertificateService (update)', () => {
+  test('GIVEN a new name and date WHEN editing THEN saves them and renders it again with its own version', async () => {
+    const {
+      auditEntries,
+      course,
+      database,
+      editor,
+      findJob,
+      request,
+      seeder,
+      version,
+    } = await setup();
+    const certificate = seeder.certificate(
+      seeder.participant(course, { name: 'Ada Lovelase' }),
+      version,
+    );
+    seeder.templateVersion(course, editor.user);
+
+    const response = await request(
+      'PATCH',
+      `/courses/${course.id}/certificates/${certificate.id}`,
+      {
+        cookie: editor.cookie,
+        body: { name: ' Ada Lovelace ', issueDate: '2026-12-01' },
+      },
+    );
+    const job = (await response.json()) as JobSummary;
+
+    const repositories = database.getRepositories();
+    expect(response.status).toBe(202);
+    expect(findJob(job.id)?.payload).toEqual({
+      certificateIds: [certificate.id],
+      templateVersionId: version.id,
+    });
+    expect(
+      repositories.participants.findById(certificate.participantId)?.name,
+    ).toBe('Ada Lovelace');
+    expect(repositories.certificates.findById(certificate.id)).toMatchObject({
+      code: certificate.code,
+      issueDate: '2026-12-01',
+    });
+    expect(auditEntries(AuditEntityEnum.Certificate)).toEqual([
+      expect.objectContaining({
+        action: AuditActionEnum.Update,
+        details: {
+          code: certificate.code,
+          name: 'Ada Lovelace',
+          issueDate: '2026-12-01',
+        },
+      }),
+    ]);
+  });
+
+  test('GIVEN an empty body WHEN editing THEN answers 400', async () => {
+    const { course, editor, request, seeder, version } = await setup();
+    const certificate = seeder.certificate(seeder.participant(course), version);
+
+    const response = await request(
+      'PATCH',
+      `/courses/${course.id}/certificates/${certificate.id}`,
+      { cookie: editor.cookie, body: {} },
+    );
+
+    expect(response.status).toBe(400);
+  });
+});
+
+describe('CertificateService (delete)', () => {
+  test('GIVEN an Admin WHEN deleting a certificate THEN removes its row and PDF and audits it', async () => {
+    const {
+      auditEntries,
+      course,
+      database,
+      loginAs,
+      request,
+      seeder,
+      version,
+      writePdf,
+    } = await setup();
+    const admin = await loginAs({
+      email: 'admin@example.org',
+      role: RoleEnum.Admin,
+    });
+    const certificate = seeder.certificate(
+      seeder.participant(course, { name: 'Ada' }),
+      version,
+    );
+    const path = writePdf(certificate);
+
+    const response = await request(
+      'DELETE',
+      `/courses/${course.id}/certificates/${certificate.id}`,
+      { cookie: admin.cookie },
+    );
+
+    expect(response.status).toBe(204);
+    expect(
+      database.getRepositories().certificates.findById(certificate.id),
+    ).toBeNull();
+    expect(existsSync(path)).toBe(false);
+    expect(auditEntries(AuditEntityEnum.Certificate)).toEqual([
+      expect.objectContaining({
+        action: AuditActionEnum.Delete,
+        userId: admin.user.id,
+        details: { code: certificate.code, name: 'Ada' },
+      }),
+    ]);
+  });
+
+  test('GIVEN an Editor WHEN deleting a certificate THEN answers 403 and keeps it', async () => {
+    const { course, database, editor, request, seeder, version, writePdf } =
+      await setup();
+    const certificate = seeder.certificate(seeder.participant(course), version);
+    const path = writePdf(certificate);
+
+    const response = await request(
+      'DELETE',
+      `/courses/${course.id}/certificates/${certificate.id}`,
+      { cookie: editor.cookie },
+    );
+
+    expect(response.status).toBe(403);
+    expect(
+      database.getRepositories().certificates.findById(certificate.id),
+    ).not.toBeNull();
+    expect(existsSync(path)).toBe(true);
   });
 });

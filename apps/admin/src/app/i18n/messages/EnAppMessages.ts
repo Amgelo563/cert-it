@@ -86,6 +86,8 @@ export const EnAppMessages = {
       certificateRevoked:
         'The certificate is already revoked. Reload the page.',
       certificateActive: 'The certificate is already active. Reload the page.',
+      nothingToRegenerate:
+        'Every certificate already uses the latest template.',
       jobNotFailed: 'Only a failed job can be run again. Reload the page.',
     },
     network: "Couldn't reach the server. Check your connection and try again.",

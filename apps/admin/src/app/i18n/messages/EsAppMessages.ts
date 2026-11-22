@@ -86,6 +86,8 @@ export const EsAppMessages = {
         'Todos los participantes seleccionados ya tienen certificado.',
       certificateRevoked: 'El certificado ya está revocado. Recarga la página.',
       certificateActive: 'El certificado ya está activo. Recarga la página.',
+      nothingToRegenerate:
+        'Todos los certificados ya usan la última plantilla.',
       jobNotFailed:
         'Solo se puede volver a ejecutar una tarea que falló. Recarga la página.',
     },

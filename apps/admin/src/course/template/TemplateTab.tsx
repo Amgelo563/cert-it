@@ -1,11 +1,16 @@
+import { type OutdatedCertificates, PermissionEnum } from '@cert-it/shared';
 import { Alert } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { IconAlertCircle } from '@tabler/icons-react';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiRoutes } from '../../app/api/ApiClient';
 import { describeApiError } from '../../app/api/describeApiError';
+import { useApiClient } from '../../app/api/useApiClient';
 import { useApiRequest } from '../../app/api/useApiRequest';
 import { PageLoader } from '../../app/layout/PageLoader';
+import { usePermissions } from '../../auth/usePermissions';
+import { RegenerateCertificatesModal } from '../certificates/regenerate/RegenerateCertificatesModal';
 import { useCourse } from '../useCourse';
 import {
   TemplateEditor,
@@ -24,9 +29,31 @@ const BlankStart: TemplateEditorStart = {
 
 /** A course's certificate template, in the Designer: its latest version, or a prompt for a base PDF if it has none. */
 export function TemplateTab() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const api = useApiClient();
+  const can = usePermissions();
   const { course, reload } = useCourse();
   const courseId = String(course.id);
+  // certificates on an older version after a save, to offer regenerating them
+  const [outdated, setOutdated] = useState<OutdatedCertificates | null>(null);
+
+  const saved = () => {
+    reload();
+    if (!can(PermissionEnum.IssueCertificates)) return;
+    api
+      .request((routes) =>
+        routes.courses[':courseId'].certificates.outdated.$get({
+          param: { courseId },
+        }),
+      )
+      .then(
+        (answer) => {
+          if (answer.items.length > 0) setOutdated(answer);
+        },
+        // the Certificates tab offers it too
+        () => {},
+      );
+  };
 
   const request = useApiRequest(
     useCallback(
@@ -70,11 +97,28 @@ export function TemplateTab() {
 
   // loaded once per course; saving keeps the canvas as it is
   return (
-    <TemplateEditor
-      key={courseId}
-      course={course}
-      start={start}
-      onSaved={reload}
-    />
+    <>
+      <TemplateEditor
+        key={courseId}
+        course={course}
+        start={start}
+        onSaved={saved}
+      />
+      {outdated && (
+        <RegenerateCertificatesModal
+          opened
+          courseId={course.id}
+          outdated={outdated}
+          onClose={() => setOutdated(null)}
+          onRegenerated={(job) => {
+            notifications.show({
+              color: 'teal',
+              message: t('regenerate.startedElsewhere', { count: job.total }),
+            });
+            setOutdated(null);
+          }}
+        />
+      )}
+    </>
   );
 }
