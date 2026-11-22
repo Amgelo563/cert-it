@@ -24,6 +24,7 @@ import type { AuditLogService } from '../audit/AuditLogService';
 import type { AuthEnv } from '../auth/AuthEnv';
 import type { AuthGuard } from '../auth/AuthGuard';
 import type { Course, CourseId } from '../course/Course';
+import type { Certificate } from '../certificate/Certificate';
 import { CertificateRegenerator } from '../certificate/regenerate/CertificateRegenerator';
 import type { DatabaseService } from '../database/DatabaseService';
 import type { BackgroundJobService } from '../job/BackgroundJobService';
@@ -31,6 +32,7 @@ import type { DataDirectoryService } from '../storage/DataDirectoryService';
 import { apiError } from '../http/api/apiError';
 import { apiValidator } from '../http/api/apiValidator';
 import { jsonBodyLimit } from '../http/api/jsonBodyLimit';
+import type { TemplateVersionId } from '../template/TemplateVersion';
 import { normalizeEmail } from '../util/email/NormalizedEmail';
 import { ParticipantImporter } from './import/ParticipantImporter';
 import type { Participant, ParticipantId } from './Participant';
@@ -169,7 +171,7 @@ export class ParticipantService {
     const course = this.findCourse(c);
     if (!course) return this.error(c, ApiErrorCodeEnum.NotFound);
 
-    const result = this.importer.run({
+    const { response, renamed } = this.importer.run({
       courseId: course.id,
       rows: body.rows,
       mode: body.mode,
@@ -181,10 +183,11 @@ export class ParticipantService {
         action: AuditActionEnum.Import,
         entity: AuditEntityEnum.Course,
         entityId: course.id,
-        details: { mode: body.mode, ...result.totals },
+        details: { mode: body.mode, ...response.totals },
       });
+      this.regenerate(c, course.id, renamed);
     }
-    return c.json<ImportParticipantsResponse, 200>(result, 200);
+    return c.json<ImportParticipantsResponse, 200>(response, 200);
   }
 
   protected list(c: Context<AuthEnv>, query: ParticipantListQuery) {
@@ -250,7 +253,7 @@ export class ParticipantService {
       ...(body.email === undefined ? {} : { email: participant.email }),
     });
     if (participant.name !== target.name) {
-      this.regenerate(c, participant);
+      this.regenerate(c, participant.courseId, [participant]);
     }
     return c.json<ParticipantSummary, 200>(
       this.toSummaries([participant])[0]!,
@@ -288,21 +291,34 @@ export class ParticipantService {
     return c.body(null, 204);
   }
 
-  // the certificate keeps its code and template version; only the name changes
-  protected regenerate(c: Context<AuthEnv>, participant: Participant): void {
+  // each certificate keeps its code and template version; only the name changes
+  protected regenerate(
+    c: Context<AuthEnv>,
+    courseId: CourseId,
+    renamed: readonly Participant[],
+  ): void {
     const { certificates, templateVersions } = this.database.getRepositories();
-    const certificate = certificates.findByParticipant(participant.id);
-    const version = certificate
-      ? templateVersions.findById(certificate.templateVersionId)
-      : null;
-    if (!certificate || !version) return;
+    const issued = certificates.listByParticipants(
+      renamed.map((participant) => participant.id),
+    );
+    // one job renders with one version
+    const byVersion = new Map<TemplateVersionId, Certificate[]>();
+    for (const certificate of issued) {
+      const group = byVersion.get(certificate.templateVersionId) ?? [];
+      group.push(certificate);
+      byVersion.set(certificate.templateVersionId, group);
+    }
 
-    this.regenerator.queue({
-      courseId: participant.courseId,
-      certificates: [certificate],
-      version,
-      userId: c.get('user').id,
-    });
+    for (const [versionId, group] of byVersion) {
+      const version = templateVersions.findById(versionId);
+      if (!version) continue;
+      this.regenerator.queue({
+        courseId,
+        certificates: group,
+        version,
+        userId: c.get('user').id,
+      });
+    }
   }
 
   protected findCourse(c: Context<AuthEnv>): Course | null {

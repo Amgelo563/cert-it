@@ -57,7 +57,16 @@ async function setup() {
       .auditLog.list({ page: 1, size: 50 })
       .items.filter((entry) => entry.action === AuditActionEnum.Import);
 
-  return { ...harness, course, database, imports, runImport, seeder, stored };
+  return {
+    ...harness,
+    course,
+    database,
+    editor,
+    imports,
+    runImport,
+    seeder,
+    stored,
+  };
 }
 
 describe('ParticipantImport (dry run)', () => {
@@ -191,6 +200,70 @@ describe('ParticipantImport (modes)', () => {
       status: ImportRowStatusEnum.Skip,
       reason: ImportSkipReasonEnum.Unchanged,
     });
+  });
+});
+
+describe('ParticipantImport (certificates)', () => {
+  // two certificates on each of two versions, and one participant without one
+  async function withCertificates() {
+    const context = await setup();
+    const { course, editor, seeder } = context;
+    const first = seeder.templateVersion(course, editor.user);
+    const second = seeder.templateVersion(course, editor.user);
+    const issue = (email: string, version: typeof first) =>
+      seeder.certificate(
+        seeder.participant(course, { name: email.split('@')[0], email }),
+        version,
+      );
+    const certificates = {
+      ada: issue('ada@example.org', first),
+      bob: issue('bob@example.org', first),
+      cy: issue('cy@example.org', second),
+      dan: issue('dan@example.org', second),
+    };
+    seeder.participant(course, { name: 'eve', email: 'eve@example.org' });
+    const jobs = () =>
+      context.database
+        .getRepositories()
+        .jobs.listByCourse(course.id, { page: 1, size: 10 })
+        .items.map((job) => job.payload)
+        .reverse();
+
+    return { ...context, certificates, first, jobs, second };
+  }
+
+  const rows: ImportRow[] = [
+    { name: 'Ada Lovelace', email: 'ada@example.org' },
+    { name: 'bob', email: 'bob@example.org', extra: { group: 'B' } },
+    { name: 'Cy Young', email: 'cy@example.org' },
+    { name: 'Eve Online', email: 'eve@example.org' },
+  ];
+
+  test('GIVEN renamed participants with certificates on two versions WHEN importing in update mode THEN renders them again, one job per version', async () => {
+    const { certificates, first, jobs, runImport, second } =
+      await withCertificates();
+
+    const { status } = await runImport({ mode: 'update', rows });
+
+    expect(status).toBe(200);
+    expect(jobs()).toEqual([
+      {
+        certificateIds: [certificates.ada.id],
+        templateVersionId: first.id,
+      },
+      {
+        certificateIds: [certificates.cy.id],
+        templateVersionId: second.id,
+      },
+    ]);
+  });
+
+  test('GIVEN renamed participants with certificates WHEN dry running THEN adds no job', async () => {
+    const { jobs, runImport } = await withCertificates();
+
+    await runImport({ mode: 'update', rows, dryRun: true });
+
+    expect(jobs()).toEqual([]);
   });
 });
 

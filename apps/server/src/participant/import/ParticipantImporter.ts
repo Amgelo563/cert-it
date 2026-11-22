@@ -1,7 +1,6 @@
 import {
   type ImportMode,
   ImportModeEnum,
-  type ImportParticipantsResponse,
   type ImportRow,
   type ImportRowError,
   ImportRowErrorEnum,
@@ -20,6 +19,7 @@ import {
   normalizeEmail,
 } from '../../util/email/NormalizedEmail';
 import type { Participant } from '../Participant';
+import type { ImportOutcome } from './ImportOutcome';
 
 type ParticipantImporterOptions = {
   database: DatabaseService;
@@ -44,24 +44,34 @@ export class ParticipantImporter {
    * Checks every row and saves the valid ones, all in one transaction.
    *
    * A dry run does the same work and rolls it back, so its report matches what the import would do.
+   * Renamed participants are returned too, since their certificates must be rendered again.
    */
   public run(options: {
     courseId: CourseId;
     rows: readonly ImportRow[];
     mode: ImportMode;
     dryRun: boolean;
-  }): ImportParticipantsResponse {
+  }): ImportOutcome {
     const { dryRun } = options;
+    const renamed: Participant[] = [];
     // an error result is how a transaction is rolled back
     const outcome = this.database
       .getUnitOfWork()
       .transaction((repositories) => {
-        const results = this.apply(repositories, options);
+        const results = this.apply(repositories, options, renamed);
         return dryRun ? Result.err(results) : Result.ok(results);
       });
     const rows = outcome.isOk() ? outcome.value : outcome.error;
 
-    return { dryRun, totals: ParticipantImporter.countStatuses(rows), rows };
+    return {
+      response: {
+        dryRun,
+        totals: ParticipantImporter.countStatuses(rows),
+        rows,
+      },
+      // nothing was saved on a dry run
+      renamed: dryRun ? [] : renamed,
+    };
   }
 
   protected apply(
@@ -71,6 +81,7 @@ export class ParticipantImporter {
       rows: readonly ImportRow[];
       mode: ImportMode;
     },
+    renamed: Participant[],
   ): ImportRowResult[] {
     const { courseId, rows, mode } = options;
     const { participants } = repositories;
@@ -130,7 +141,10 @@ export class ParticipantImporter {
           existingName: current.name,
         };
       }
-      participants.update(current.id, { name: row.name, extra }).unwrap();
+      const updated = participants
+        .update(current.id, { name: row.name, extra })
+        .unwrap();
+      if (updated.name !== current.name) renamed.push(updated);
       return {
         row: index,
         status: ImportRowStatusEnum.Update,
