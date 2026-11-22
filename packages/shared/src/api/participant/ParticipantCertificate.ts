@@ -2,6 +2,7 @@ import type { CertificateStatus } from '../../certificate/CertificateStatusEnum'
 
 /** A participant's certificate, as the participant routes show it. */
 export type ParticipantCertificate = {
+  readonly id: number;
   /** Code in the certificate's public URL and file URL. */
   readonly code: string;
   readonly status: CertificateStatus;

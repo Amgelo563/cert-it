@@ -81,6 +81,13 @@ export const EsAppMessages = {
       unknownBasePdf: 'Vuelve a subir el PDF base y guarda de nuevo.',
       catalogUnavailable:
         'El catálogo de fuentes no respondió. Inténtalo más tarde o sube el archivo de la fuente.',
+      noTemplate: 'Primero guarda una plantilla para este curso.',
+      nothingToIssue:
+        'Todos los participantes seleccionados ya tienen certificado.',
+      certificateRevoked: 'El certificado ya está revocado. Recarga la página.',
+      certificateActive: 'El certificado ya está activo. Recarga la página.',
+      jobNotFailed:
+        'Solo se puede volver a ejecutar una tarea que falló. Recarga la página.',
     },
     network:
       'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.',

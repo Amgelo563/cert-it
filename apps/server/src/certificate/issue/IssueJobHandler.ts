@@ -3,7 +3,7 @@ import type { JobContext } from '@cert-it/jobs';
 import { Result } from 'better-result';
 import type { Course } from '../../course/Course';
 import type { Job } from '../../job/Job';
-import type { JobTypeEnum } from '../../job/JobTypeEnum';
+import type { JobTypeEnum } from '@cert-it/shared';
 import type { Participant } from '../../participant/Participant';
 import type { TemplateVersionId } from '../../template/TemplateVersion';
 import type { CertificateCode } from '../code/CertificateCode';

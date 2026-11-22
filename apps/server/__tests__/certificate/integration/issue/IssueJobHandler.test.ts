@@ -11,7 +11,7 @@ import {
 } from 'vite-plus/test';
 import { CertificateCodeGenerator } from '../../../../src/certificate/code/CertificateCodeGenerator';
 import { IssueJobHandler } from '../../../../src/certificate/issue/IssueJobHandler';
-import { JobTypeEnum } from '../../../../src/job/JobTypeEnum';
+import { JobTypeEnum } from '@cert-it/shared';
 import type { ParticipantId } from '../../../../src/participant/Participant';
 import { CertificateJobFixture } from '../../mocks/CertificateJobFixture';
 

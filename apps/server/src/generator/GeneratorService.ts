@@ -4,7 +4,7 @@ import { IssueJobHandler } from '../certificate/issue/IssueJobHandler';
 import { RegenerateJobHandler } from '../certificate/issue/RegenerateJobHandler';
 import { DatabaseService } from '../database/DatabaseService';
 import type { Job } from '../job/Job';
-import { JobTypeEnum } from '../job/JobTypeEnum';
+import { JobTypeEnum } from '@cert-it/shared';
 import { DataDirectoryService } from '../storage/DataDirectoryService';
 import type { GeneratorSettings } from './GeneratorSettings';
 

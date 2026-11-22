@@ -20,6 +20,9 @@ import { DataDirectoryService } from '../../../src/storage/DataDirectoryService'
 import { TemplateService } from '../../../src/template/TemplateService';
 import { createTestConfig } from '../../config/mocks/createTestConfig';
 import { ParticipantService } from '../../../src/participant/ParticipantService';
+import { CertificateService } from '../../../src/certificate/CertificateService';
+import { JobService } from '../../../src/job/JobService';
+import { QueueOnlyJobService } from '../../job/mocks/QueueOnlyJobService';
 import { UserService } from '../../../src/user/UserService';
 
 /** Returns the API service options of HttpService, with rate limits that tests can reach. Without a data directory, file routes use one that is never created. */
@@ -73,6 +76,20 @@ export function createAuthOptions(
 
   const participants = new ParticipantService({ database, guard, auditLog });
 
+  const backgroundJobs = new QueueOnlyJobService(database);
+  const certificates = new CertificateService({
+    database,
+    guard,
+    auditLog,
+    jobs: backgroundJobs,
+  });
+  const jobs = new JobService({
+    database,
+    guard,
+    auditLog,
+    jobs: backgroundJobs,
+  });
+
   const dataDirectory =
     options.dataDirectory
     ?? new DataDirectoryService({
@@ -98,6 +115,8 @@ export function createAuthOptions(
     users,
     courses,
     participants,
+    certificates,
+    jobs,
     fonts,
     fontCatalog,
     templates,

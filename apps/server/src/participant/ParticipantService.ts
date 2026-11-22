@@ -310,6 +310,7 @@ export class ParticipantService {
         extra: participant.extra,
         certificate: certificate
           ? {
+              id: certificate.id,
               code: certificate.code,
               status: certificate.status,
               templateVersion: versions.get(certificate.templateVersionId) ?? 0,

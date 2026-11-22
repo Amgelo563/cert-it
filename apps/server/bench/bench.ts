@@ -28,6 +28,7 @@ import { serve } from '@hono/node-server';
 import { JobStatusEnum } from '@cert-it/jobs';
 import {
   FontSourceEnum,
+  JobTypeEnum,
   LocaleEnum,
   RoleEnum,
   TemplateFieldTypeEnum,
@@ -37,7 +38,6 @@ import type { CourseId } from '../src/course/Course';
 import { DatabaseService } from '../src/database/DatabaseService';
 import type { Job } from '../src/job/Job';
 import { BackgroundJobService } from '../src/job/BackgroundJobService';
-import { JobTypeEnum } from '../src/job/JobTypeEnum';
 import type { ParticipantId } from '../src/participant/Participant';
 import type { UserId } from '../src/user/User';
 import { DataDirectoryService } from '../src/storage/DataDirectoryService';
@@ -444,9 +444,11 @@ const checks: [string, string, boolean, string][] = [
     `${count}`,
   ],
   [
-    'Idle RSS',
-    `${mb(idle.rss)} MB`,
-    mb(idle.rss) < Targets.idleMb,
+    inContainer ? 'Idle (container anon)' : 'Idle (app RSS)',
+    inContainer
+      ? `${mb(idleMemory)} MB (RSS ${mb(idle.rss)} MB)`
+      : `${mb(idleMemory)} MB`,
+    mb(idleMemory) < Targets.idleMb,
     `< ${Targets.idleMb} MB`,
   ],
   [

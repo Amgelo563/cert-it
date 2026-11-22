@@ -99,6 +99,18 @@ export function createApiHarness(
     );
   };
 
+  /** Sends a GET to a public path under /certs, such as a certificate's PDF. */
+  const requestPublic = (path: string): Promise<Response> =>
+    Promise.resolve(
+      http
+        .getApp()
+        .request(
+          `/certs${path}`,
+          { headers: { 'x-real-ip': '198.51.100.1' } },
+          { incoming: { socket: { remoteAddress: '127.0.0.1' } } },
+        ),
+    );
+
   const createUser = async (
     data: { email?: string; role?: Role; mustChangePassword?: boolean } = {},
   ): Promise<User> =>
@@ -134,5 +146,5 @@ export function createApiHarness(
     ),
   ];
 
-  return { createUser, listRoutes, loginAs, request };
+  return { createUser, listRoutes, loginAs, request, requestPublic };
 }

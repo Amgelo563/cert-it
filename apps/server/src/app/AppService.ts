@@ -18,6 +18,8 @@ import { FontCatalogService } from '../font/catalog/FontCatalogService';
 import { FontService } from '../font/FontService';
 import { TemplateService } from '../template/TemplateService';
 import { BackgroundJobService } from '../job/BackgroundJobService';
+import { JobService } from '../job/JobService';
+import { CertificateService } from '../certificate/CertificateService';
 
 type AppServiceOptions = {
   dataDirectory: DataDirectoryService;
@@ -161,6 +163,13 @@ export class AppService {
     const auth = AuthService.create(services);
     const courses = CourseService.create(services);
     const participants = ParticipantService.create(services);
+    const jobs = BackgroundJobService.create({
+      config,
+      database,
+      dataDirectory,
+    });
+    const certificates = CertificateService.create({ ...services, jobs });
+    const jobRoutes = JobService.create({ ...services, jobs });
     const fonts = FontService.create({ ...services, dataDirectory });
     const fontCatalog = FontCatalogService.create({ ...services, fonts });
     const templates = TemplateService.create({ ...services, dataDirectory });
@@ -179,6 +188,8 @@ export class AppService {
       users,
       courses,
       participants,
+      certificates,
+      jobs: jobRoutes,
       fonts,
       fontCatalog,
       templates,
@@ -191,7 +202,7 @@ export class AppService {
       passwords,
       sessions,
       storageCleanup: StorageCleanupService.create({ database, dataDirectory }),
-      jobs: BackgroundJobService.create({ config, database, dataDirectory }),
+      jobs,
       users,
       adminPanel,
       http,

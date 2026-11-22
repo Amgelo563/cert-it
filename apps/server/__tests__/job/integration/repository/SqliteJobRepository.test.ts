@@ -4,7 +4,7 @@ import type { Course } from '../../../../src/course/Course';
 import type { DatabaseService } from '../../../../src/database/DatabaseService';
 import type { Repositories } from '../../../../src/database/Repositories';
 import type { Job } from '../../../../src/job/Job';
-import { JobTypeEnum } from '../../../../src/job/JobTypeEnum';
+import { JobTypeEnum } from '@cert-it/shared';
 import type { NewJob } from '../../../../src/job/NewJob';
 import { jobTable } from '../../../../src/job/repository/jobTable';
 import type { User } from '../../../../src/user/User';

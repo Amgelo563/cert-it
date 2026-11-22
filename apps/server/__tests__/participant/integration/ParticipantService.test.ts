@@ -86,6 +86,7 @@ describe('ParticipantService (list)', () => {
 
     expect(page.items.map((item) => item.certificate)).toEqual([
       {
+        id: certificate.id,
         code: certificate.code,
         status: 'active',
         templateVersion: 1,

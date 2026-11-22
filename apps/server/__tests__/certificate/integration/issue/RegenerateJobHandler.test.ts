@@ -11,7 +11,7 @@ import {
 import type { CertificateId } from '../../../../src/certificate/Certificate';
 import { IssueJobHandler } from '../../../../src/certificate/issue/IssueJobHandler';
 import { RegenerateJobHandler } from '../../../../src/certificate/issue/RegenerateJobHandler';
-import { JobTypeEnum } from '../../../../src/job/JobTypeEnum';
+import { JobTypeEnum } from '@cert-it/shared';
 import type { Participant } from '../../../../src/participant/Participant';
 import type { TemplateVersionId } from '../../../../src/template/TemplateVersion';
 import { CertificateJobFixture } from '../../mocks/CertificateJobFixture';

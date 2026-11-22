@@ -5,7 +5,7 @@ import { courseTable } from '../../course/repository/courseTable';
 import type { UserId } from '../../user/User';
 import { userTable } from '../../user/repository/userTable';
 import type { JobTask } from '../JobTask';
-import type { JobType } from '../JobTypeEnum';
+import type { JobType } from '@cert-it/shared';
 
 export const jobTable = sqliteTable(
   'jobs',

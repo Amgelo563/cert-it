@@ -1,5 +1,5 @@
 import type { IssueJobPayload } from './IssueJobPayload';
-import type { JobTypeEnum } from './JobTypeEnum';
+import type { JobTypeEnum } from '@cert-it/shared';
 import type { RegenerateJobPayload } from './RegenerateJobPayload';
 
 /** What a job does, with the input for it. */

@@ -2,7 +2,7 @@ import { ModelNotFoundError } from '@cert-it/data';
 import type { JobContext } from '@cert-it/jobs';
 import { Result } from 'better-result';
 import type { Job } from '../../job/Job';
-import type { JobTypeEnum } from '../../job/JobTypeEnum';
+import type { JobTypeEnum } from '@cert-it/shared';
 import { AbstractCertificateJobHandler } from './AbstractCertificateJobHandler';
 import type { CertificateJobOutput } from './CertificateJobOutput';
 import type { SkippedParticipant } from './SkippedParticipant';

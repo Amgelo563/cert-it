@@ -26,6 +26,8 @@ import { FontService } from '../font/FontService';
 import { LocaleResolver } from '../i18n/LocaleResolver';
 import { MessagesService } from '../i18n/MessagesService';
 import { ParticipantService } from '../participant/ParticipantService';
+import { CertificateService } from '../certificate/CertificateService';
+import { JobService } from '../job/JobService';
 import { TemplateService } from '../template/TemplateService';
 import { UserService } from '../user/UserService';
 import type { HttpEnv } from './HttpEnv';
@@ -43,6 +45,8 @@ type HttpServiceOptions = {
   users: UserService;
   courses: CourseService;
   participants: ParticipantService;
+  certificates: CertificateService;
+  jobs: JobService;
   fonts: FontService;
   fontCatalog: FontCatalogService;
   templates: TemplateService;
@@ -99,6 +103,10 @@ export class HttpService {
 
   protected readonly participants: ParticipantService;
 
+  protected readonly certificates: CertificateService;
+
+  protected readonly jobs: JobService;
+
   protected readonly fonts: FontService;
 
   protected readonly fontCatalog: FontCatalogService;
@@ -134,6 +142,8 @@ export class HttpService {
     this.users = options.users;
     this.courses = options.courses;
     this.participants = options.participants;
+    this.certificates = options.certificates;
+    this.jobs = options.jobs;
     this.fonts = options.fonts;
     this.fontCatalog = options.fontCatalog;
     this.templates = options.templates;
@@ -155,6 +165,8 @@ export class HttpService {
     users: UserService;
     courses: CourseService;
     participants: ParticipantService;
+    certificates: CertificateService;
+    jobs: JobService;
     fonts: FontService;
     fontCatalog: FontCatalogService;
     templates: TemplateService;
@@ -169,6 +181,8 @@ export class HttpService {
       users,
       courses,
       participants,
+      certificates,
+      jobs,
       fonts,
       fontCatalog,
       templates,
@@ -192,6 +206,8 @@ export class HttpService {
       users,
       courses,
       participants,
+      certificates,
+      jobs,
       fonts,
       fontCatalog,
       templates,
@@ -250,6 +266,8 @@ export class HttpService {
       .route(UserService.Path, this.users.getApp())
       .route(CourseService.Path, this.courses.getApp())
       .route(ParticipantService.Path, this.participants.getApp())
+      .route(CertificateService.Path, this.certificates.getApp())
+      .route(JobService.Path, this.jobs.getApp())
       .route(TemplateService.Path, this.templates.getApp())
       .route(FontService.Path, this.fonts.getApp())
       .route(FontCatalogService.Path, this.fontCatalog.getApp())

@@ -45,6 +45,16 @@ export const ApiErrorCodeEnum = {
   UnknownBasePdf: 'unknown_base_pdf',
   /** The online font catalog didn't answer as expected. */
   CatalogUnavailable: 'catalog_unavailable',
+  /** The course has no template to issue with. */
+  NoTemplate: 'no_template',
+  /** None of the participants is in the course without a certificate. */
+  NothingToIssue: 'nothing_to_issue',
+  /** The certificate is already revoked. */
+  CertificateRevoked: 'certificate_revoked',
+  /** The certificate is active, so there's nothing to reinstate. */
+  CertificateActive: 'certificate_active',
+  /** Only a failed job can run again. */
+  JobNotFailed: 'job_not_failed',
 } as const;
 
 /** The code in the body of an API error response. */

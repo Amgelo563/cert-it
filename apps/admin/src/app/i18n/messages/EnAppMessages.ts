@@ -81,6 +81,12 @@ export const EnAppMessages = {
       unknownBasePdf: 'Upload the base PDF again, then save.',
       catalogUnavailable:
         "The font catalog didn't answer. Try again later, or upload the font file.",
+      noTemplate: 'Save a template for this course first.',
+      nothingToIssue: 'Every selected participant already has a certificate.',
+      certificateRevoked:
+        'The certificate is already revoked. Reload the page.',
+      certificateActive: 'The certificate is already active. Reload the page.',
+      jobNotFailed: 'Only a failed job can be run again. Reload the page.',
     },
     network: "Couldn't reach the server. Check your connection and try again.",
     unexpected: 'Something went wrong. Try again.',
