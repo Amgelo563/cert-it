@@ -86,7 +86,7 @@ export function ParticipantsTable({
           render: (participant) => {
             const extra = Object.entries(participant.extra);
             return (
-              <Stack gap={2}>
+              <Stack gap={4}>
                 <Text size="sm" fw={500}>
                   {participant.name}
                 </Text>
@@ -124,7 +124,7 @@ export function ParticipantsTable({
               latestTemplateVersion !== null
               && templateVersion < latestTemplateVersion;
             return (
-              <Stack gap={2}>
+              <Stack gap={4}>
                 {certificate.status === CertificateStatusEnum.Active ? (
                   <StatusLabel color="teal">
                     {t('participants.certificateActive')}
@@ -134,7 +134,7 @@ export function ParticipantsTable({
                     {t('participants.certificateRevoked')}
                   </StatusLabel>
                 )}
-                <Text size="xs" c={outdated ? 'orange' : 'dimmed'}>
+                <Text size="xs" c="dimmed">
                   {outdated
                     ? t('participants.olderTemplate', {
                         version: templateVersion,

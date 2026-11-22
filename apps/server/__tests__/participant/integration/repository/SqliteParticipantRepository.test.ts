@@ -1,3 +1,7 @@
+import {
+  CertificateStatusEnum,
+  ParticipantCertificateFilterEnum,
+} from '@cert-it/shared';
 import type { DatabaseService } from '../../../../src/database/DatabaseService';
 import { afterEach, beforeEach, describe, expect, test } from 'vite-plus/test';
 import type { Repositories } from '../../../../src/database/Repositories';
@@ -148,6 +152,43 @@ describe('SqliteParticipantRepository (listByCourse search)', () => {
     ]);
     expect(page.total).toBe(2);
   });
+
+  test.each([
+    { filter: ParticipantCertificateFilterEnum.None, names: ['Cy'] },
+    { filter: ParticipantCertificateFilterEnum.Active, names: ['Ada'] },
+    { filter: ParticipantCertificateFilterEnum.Revoked, names: ['Bob'] },
+  ])(
+    'GIVEN participants in each certificate state WHEN listing  THEN answers only those',
+    ({ filter, names }) => {
+      const course = seeder.course();
+      const admin = seeder.user();
+      const version = seeder.templateVersion(course, admin);
+      seeder.certificate(seeder.participant(course, { name: 'Ada' }), version);
+      const revoked = seeder.certificate(
+        seeder.participant(course, { name: 'Bob' }),
+        version,
+      );
+      repositories.certificates
+        .update(revoked.id, {
+          status: CertificateStatusEnum.Revoked,
+          revokedAt: new Date(),
+          revokedReason: 'Duplicate',
+        })
+        .unwrap();
+      seeder.participant(course, { name: 'Cy' });
+      seeder.participant(seeder.course(), { name: 'Other' });
+
+      const page = repositories.participants.listByCourse(
+        course.id,
+        { page: 1, size: 10 },
+        undefined,
+        filter,
+      );
+
+      expect(page.items.map((participant) => participant.name)).toEqual(names);
+      expect(page.total).toBe(names.length);
+    },
+  );
 
   test('GIVEN a search with % WHEN listing THEN matches it literally', () => {
     const course = seeder.course();

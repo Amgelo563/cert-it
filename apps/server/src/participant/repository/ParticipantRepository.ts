@@ -4,6 +4,7 @@ import type {
   Page,
   PageRequest,
 } from '@cert-it/data';
+import type { ParticipantCertificateFilter } from '@cert-it/shared';
 import type { Result } from 'better-result';
 import type { CourseId } from '../../course/Course';
 import type { NormalizedEmail } from '../../util/email/NormalizedEmail';
@@ -47,11 +48,12 @@ export interface ParticipantRepository {
   /** Deletes a participant with their certificate. */
   delete(id: ParticipantId): Result<void, ModelNotFoundError>;
 
-  /** Returns a page of the participants of a course, sorted by name, optionally only those whose name or email contains the search text. */
+  /** Returns a page of the participants of a course, sorted by name, optionally only those whose name or email contains the search text, or whose certificate is in the given state. */
   listByCourse(
     courseId: CourseId,
     page: PageRequest,
     search?: string,
+    certificate?: ParticipantCertificateFilter,
   ): Page<Participant>;
 
   /** Returns the participants of a course who have no certificate, sorted by name. */

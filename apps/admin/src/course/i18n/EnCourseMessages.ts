@@ -30,6 +30,7 @@ export const EnCourseMessages = {
     tabsLabel: 'Course sections',
     tabs: {
       participants: 'Participants',
+      certificates: 'Certificates',
       template: 'Template',
       settings: 'Settings',
     },

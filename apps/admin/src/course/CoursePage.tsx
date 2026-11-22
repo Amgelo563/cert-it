@@ -3,6 +3,7 @@ import { Alert, Anchor, Group, Stack, Tabs, Text } from '@mantine/core';
 import {
   IconAlertCircle,
   IconArrowLeft,
+  IconCertificate,
   IconSettings,
   IconTemplate,
   IconUsers,
@@ -61,6 +62,7 @@ export function CoursePage() {
 
   const tabs = [
     { value: CourseTabEnum.Participants, icon: IconUsers, show: true },
+    { value: CourseTabEnum.Certificates, icon: IconCertificate, show: true },
     {
       value: CourseTabEnum.Template,
       icon: IconTemplate,

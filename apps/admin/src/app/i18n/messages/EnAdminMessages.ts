@@ -1,6 +1,7 @@
 import { EnAuditLogMessages } from '../../../audit/i18n/EnAuditLogMessages';
 import { EnAuthMessages } from '../../../auth/i18n/EnAuthMessages';
 import { EnCourseMessages } from '../../../course/i18n/EnCourseMessages';
+import { EnCertificateMessages } from '../../../course/certificates/i18n/EnCertificateMessages';
 import { EnParticipantMessages } from '../../../course/participants/i18n/EnParticipantMessages';
 import { EnHomeMessages } from '../../../home/i18n/EnHomeMessages';
 import { EnUserMessages } from '../../../user/i18n/EnUserMessages';
@@ -13,6 +14,7 @@ export const EnAdminMessages = {
   ...EnHomeMessages,
   ...EnCourseMessages,
   ...EnParticipantMessages,
+  ...EnCertificateMessages,
   ...EnUserMessages,
   ...EnAuditLogMessages,
 } satisfies AdminMessages;

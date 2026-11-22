@@ -91,6 +91,7 @@ describe('ParticipantService (list)', () => {
         status: 'active',
         templateVersion: 1,
         issueDate: certificate.issueDate,
+        revokedReason: null,
       },
       expect.objectContaining({ templateVersion: 2 }),
       null,
@@ -106,6 +107,24 @@ describe('ParticipantService (list)', () => {
     const page = (await response.json()) as ApiPage<ParticipantSummary>;
 
     expect(page.items.map((item) => item.name)).toEqual(['Ada']);
+  });
+
+  test('GIVEN a certificate filter WHEN listing THEN answers only participants in that state', async () => {
+    const { admin, course, participants, seeder } = await setup();
+    const version = seeder.templateVersion(course, admin.user);
+    seeder.certificate(seeder.participant(course, { name: 'Ada' }), version);
+    seeder.participant(course, { name: 'Bob' });
+
+    const response = await participants('GET', '?certificate=none');
+    const page = (await response.json()) as ApiPage<ParticipantSummary>;
+
+    expect(page.items.map((item) => item.name)).toEqual(['Bob']);
+  });
+
+  test('GIVEN an unknown certificate filter WHEN listing THEN answers 400', async () => {
+    const { participants } = await setup();
+
+    expect((await participants('GET', '?certificate=lost')).status).toBe(400);
   });
 
   test('GIVEN a missing course WHEN listing THEN answers 404', async () => {

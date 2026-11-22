@@ -51,6 +51,13 @@ const CourseTabRoutes: RouteObject[] = [
     }),
   },
   {
+    path: CourseTabEnum.Certificates,
+    lazy: async () => ({
+      Component: (await import('../../course/certificates/CertificatesTab'))
+        .CertificatesTab,
+    }),
+  },
+  {
     element: (
       <RequireCoursePermission permission={PermissionEnum.EditCourses} />
     ),

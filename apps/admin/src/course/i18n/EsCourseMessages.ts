@@ -30,6 +30,7 @@ export const EsCourseMessages = {
     tabsLabel: 'Secciones del curso',
     tabs: {
       participants: 'Participantes',
+      certificates: 'Certificados',
       template: 'Plantilla',
       settings: 'Configuración',
     },

@@ -25,6 +25,7 @@ export * from './api/participant/CreateParticipantRequest';
 export * from './api/participant/ImportParticipantsRequest';
 export * from './api/participant/ImportParticipantsResponse';
 export * from './api/participant/ParticipantCertificate';
+export * from './api/participant/ParticipantCertificateFilterEnum';
 export * from './api/participant/ParticipantFields';
 export * from './api/participant/ParticipantListQuery';
 export * from './api/participant/ParticipantSummary';

@@ -162,10 +162,10 @@ export class ParticipantService {
     const course = this.findCourse(c);
     if (!course) return this.error(c, ApiErrorCodeEnum.NotFound);
 
-    const { search, ...page } = query;
+    const { search, certificate, ...page } = query;
     const participants = this.database
       .getRepositories()
-      .participants.listByCourse(course.id, page, search);
+      .participants.listByCourse(course.id, page, search, certificate);
     return c.json<ApiPage<ParticipantSummary>, 200>(
       { ...participants, items: this.toSummaries(participants.items) },
       200,
@@ -315,6 +315,7 @@ export class ParticipantService {
               status: certificate.status,
               templateVersion: versions.get(certificate.templateVersionId) ?? 0,
               issueDate: certificate.issueDate,
+              revokedReason: certificate.revokedReason,
             }
           : null,
         createdAt: participant.createdAt.toISOString(),

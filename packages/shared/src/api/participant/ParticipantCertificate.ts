@@ -10,4 +10,6 @@ export type ParticipantCertificate = {
   readonly templateVersion: number;
   /** The date printed on it, as `YYYY-MM-DD`. */
   readonly issueDate: string;
+  /** Why it was revoked, or null while active. */
+  readonly revokedReason: string | null;
 };
