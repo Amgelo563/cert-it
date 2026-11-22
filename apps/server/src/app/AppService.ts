@@ -17,6 +17,7 @@ import { ParticipantService } from '../participant/ParticipantService';
 import { FontCatalogService } from '../font/catalog/FontCatalogService';
 import { FontService } from '../font/FontService';
 import { TemplateService } from '../template/TemplateService';
+import { BackgroundJobService } from '../job/BackgroundJobService';
 
 type AppServiceOptions = {
   dataDirectory: DataDirectoryService;
@@ -24,6 +25,7 @@ type AppServiceOptions = {
   passwords: PasswordHasher;
   sessions: SessionService;
   storageCleanup: StorageCleanupService;
+  jobs: BackgroundJobService;
   users: UserService;
   adminPanel: AdminPanelService;
   http: HttpService;
@@ -46,6 +48,8 @@ export class AppService {
 
   protected readonly storageCleanup: StorageCleanupService;
 
+  protected readonly jobs: BackgroundJobService;
+
   protected readonly users: UserService;
 
   protected readonly adminPanel: AdminPanelService;
@@ -58,6 +62,7 @@ export class AppService {
     this.passwords = options.passwords;
     this.sessions = options.sessions;
     this.storageCleanup = options.storageCleanup;
+    this.jobs = options.jobs;
     this.users = options.users;
     this.adminPanel = options.adminPanel;
     this.http = options.http;
@@ -104,9 +109,11 @@ export class AppService {
       await this.startUsers();
       this.sessions.start();
       this.storageCleanup.start();
+      this.jobs.start();
       await this.startAdminPanel();
       await this.http.start();
     } catch (error) {
+      await this.jobs.stop({ graceMs: 0 });
       this.database.close();
       throw error;
     }
@@ -117,6 +124,7 @@ export class AppService {
     await this.http.stop();
     this.sessions.stop();
     this.storageCleanup.stop();
+    await this.jobs.stop();
     this.database.close();
   }
 
@@ -183,6 +191,7 @@ export class AppService {
       passwords,
       sessions,
       storageCleanup: StorageCleanupService.create({ database, dataDirectory }),
+      jobs: BackgroundJobService.create({ config, database, dataDirectory }),
       users,
       adminPanel,
       http,

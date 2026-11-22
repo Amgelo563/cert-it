@@ -38,5 +38,8 @@ new JobWorker<TestJob>({
     [TestJobTypeEnum.Pid]: {
       run: () => Promise.resolve(Result.ok(process.pid)),
     },
+    [TestJobTypeEnum.Args]: {
+      run: () => Promise.resolve(Result.ok(process.argv.slice(2))),
+    },
   },
 }).start();

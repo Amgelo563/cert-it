@@ -10,6 +10,8 @@ export type JobRunnerOptions<J extends Job> = {
   queue: JobQueue<J, unknown>;
   /** Path of the worker's entry file, which starts a JobWorker. */
   workerPath: string | URL;
+  /** Arguments for the worker, which it reads from `process.argv`. @default none */
+  args?: readonly string[];
   /** Node flags for the worker. @default JobRunner.DefaultExecArgv */
   execArgv?: readonly string[];
   /** How often progress is saved at most. @default JobRunner.DefaultProgressIntervalMs */
@@ -58,6 +60,8 @@ export class JobRunner<J extends Job> {
 
   protected readonly workerPath: string | URL;
 
+  protected readonly args: readonly string[];
+
   protected readonly execArgv: readonly string[];
 
   protected readonly progressIntervalMs: number;
@@ -79,6 +83,7 @@ export class JobRunner<J extends Job> {
   constructor(options: JobRunnerOptions<J>) {
     this.queue = options.queue;
     this.workerPath = options.workerPath;
+    this.args = options.args ?? [];
     this.execArgv = options.execArgv ?? JobRunner.DefaultExecArgv;
     this.progressIntervalMs =
       options.progressIntervalMs ?? JobRunner.DefaultProgressIntervalMs;
@@ -130,7 +135,7 @@ export class JobRunner<J extends Job> {
 
   protected startWorker(): void {
     this.stderrTail = '';
-    const worker = fork(this.workerPath, [], {
+    const worker = fork(this.workerPath, [...this.args], {
       execArgv: [...this.execArgv],
       serialization: 'advanced',
       stdio: ['inherit', 'inherit', 'pipe', 'ipc'],

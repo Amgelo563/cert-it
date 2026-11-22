@@ -57,7 +57,11 @@ afterEach(async () => {
 });
 
 function createRunner(
-  options: { progressIntervalMs?: number; timeoutMs?: number } = {},
+  options: {
+    progressIntervalMs?: number;
+    timeoutMs?: number;
+    args?: string[];
+  } = {},
 ): JobRunner<TestJob> {
   return new JobRunner({
     queue,
@@ -89,6 +93,17 @@ function isAlive(pid: number): boolean {
 }
 
 describe('JobRunner (running)', () => {
+  test('GIVEN worker args WHEN running a job THEN the worker receives them', async () => {
+    runner = createRunner({ args: ['{"a":1}', 'second'] });
+    const job = add(TestJobTypeEnum.Args);
+
+    runner.start();
+
+    expect(
+      (await waitForStatus(job.id, JobStatusEnum.Completed)).output,
+    ).toEqual(['{"a":1}', 'second']);
+  });
+
   test('GIVEN pending jobs WHEN starting THEN runs them in order and saves their output and progress', async () => {
     const first = add(TestJobTypeEnum.Double, { n: 2 });
     const second = add(TestJobTypeEnum.Double, { n: 3 });

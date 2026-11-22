@@ -11,7 +11,6 @@ import {
 } from '@cert-it/shared';
 import type { CertificateCode } from '../../certificate/code/CertificateCode';
 import { type Config, ConfigSchema } from '../../config/schema/ConfigSchema';
-import { DatabaseService } from '../../database/DatabaseService';
 import { normalizeEmail } from '../../util/email/NormalizedEmail';
 import { AppService, type AppServiceInjections } from '../AppService';
 
@@ -21,7 +20,7 @@ type DevUser = {
   mustChangePassword: boolean;
 };
 
-/** The server for local development: no config file, an in-memory database with known users, and files in a temporary folder removed on stop. */
+/** The server for local development: no config file, known users, and a database and files in a temporary folder removed on stop. The generator process opens the same database, so it can't be in memory. */
 export class DevAppService extends AppService {
   /** Password of every dev user. */
   public static readonly Password = 'cert-it-dev';
@@ -72,10 +71,7 @@ export class DevAppService extends AppService {
     return new DevAppService(
       AppService.createServices({
         config,
-        injections: {
-          database: new DatabaseService({ path: ':memory:' }),
-          ...options?.injections,
-        },
+        injections: options?.injections,
       }),
     );
   }

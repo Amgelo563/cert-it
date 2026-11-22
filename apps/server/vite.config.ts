@@ -2,10 +2,11 @@ import { defineConfig } from 'vite-plus';
 
 export default defineConfig({
   pack: {
-    // the worker sits next to index.mjs, where BasePdfChecker looks for it
+    // the workers sit next to index.mjs, where BasePdfChecker and BackgroundJobService look for them
     entry: {
       index: 'src/index.ts',
       basePdfWorker: 'src/template/pdf/basePdfWorker.ts',
+      generator: 'src/generator/index.ts',
     },
     platform: 'node',
     format: ['esm'],

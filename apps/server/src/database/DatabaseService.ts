@@ -27,6 +27,12 @@ type DatabaseServiceOptions = {
    * @default the `drizzle/` folder of the nearest parent directory that has one
    */
   migrationsFolder?: string;
+  /**
+   * Whether start() applies pending migrations. Processes that share the server's database leave them to the server.
+   *
+   * @default true
+   */
+  migrate?: boolean;
 };
 
 /** An object that owns the app's SQLite database and gives access to its repositories. */
@@ -37,15 +43,18 @@ export class DatabaseService {
 
   protected readonly migrationsFolder: string | null;
 
+  protected readonly migrate: boolean;
+
   protected database: SqliteDatabase<Repositories> | null = null;
 
   constructor(options: DatabaseServiceOptions) {
     this.path = options.path;
     this.migrationsFolder = options.migrationsFolder ?? null;
+    this.migrate = options.migrate ?? true;
   }
 
   /**
-   * Opens the database and applies pending migrations.
+   * Opens the database and applies pending migrations, unless `migrate` is false.
    *
    * @throws {StartupError} If the migrations or the file can't be found or opened, or a migration fails or leaves rows pointing at missing rows.
    */
@@ -55,7 +64,9 @@ export class DatabaseService {
     try {
       database = SqliteDatabase.create<Repositories>({
         path: this.path,
-        migrationsFolder: this.migrationsFolder ?? this.findMigrationsFolder(),
+        migrationsFolder: this.migrate
+          ? (this.migrationsFolder ?? this.findMigrationsFolder())
+          : undefined,
         createRepositories: (db) => this.createRepositories(db),
       });
       database.start();
@@ -67,6 +78,11 @@ export class DatabaseService {
     }
 
     this.database = database;
+  }
+
+  /** Returns the path of the database file, or `:memory:`. */
+  public getPath(): string {
+    return this.path;
   }
 
   /** Closes the database, if it's open. */

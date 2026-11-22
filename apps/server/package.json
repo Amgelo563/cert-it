@@ -14,7 +14,8 @@
     "build": "vp pack",
     "start": "node dist/index.mjs",
     "test": "vp test",
-    "bench": "node --expose-gc bench/bench.mjs",
+    "bench": "pnpm --filter @cert-it/server... build && pnpm bench:run",
+    "bench:run": "vp pack bench/bench.ts --no-config --no-dts -d bench/dist --no-report && node --expose-gc bench/dist/bench.mjs",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
