@@ -174,3 +174,7 @@ rclone.conf
 # OS files
 .DS_Store
 Thumbs.db
+
+# fake Vite build the server's tests read
+!apps/server/__tests__/page/fixtures/publicBuild/.vite
+

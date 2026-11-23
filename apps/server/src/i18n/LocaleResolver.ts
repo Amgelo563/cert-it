@@ -5,7 +5,8 @@ type LocaleResolverOptions = {
   defaultLocale: Locale;
 };
 
-type LocaleSources = {
+/** Where a page's language can come from, in order of preference. */
+export type LocaleSources = {
   /** Language picked in the switcher, from the query. */
   query?: string | undefined;
   /** Language picked earlier, from the cookie. */

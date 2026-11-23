@@ -6,9 +6,11 @@ import { AuthService } from '../auth/AuthService';
 import { PasswordHasher } from '../auth/password/PasswordHasher';
 import { SessionService } from '../auth/session/SessionService';
 import { CertificateFileService } from '../certificate/file/CertificateFileService';
+import { CertificatePageService } from '../certificate/page/CertificatePageService';
 import type { Config } from '../config/schema/ConfigSchema';
 import { DatabaseService } from '../database/DatabaseService';
 import { HttpService } from '../http/HttpService';
+import { PublicAssetsService } from '../page/PublicAssetsService';
 import { DataDirectoryService } from '../storage/DataDirectoryService';
 import { StorageCleanupService } from '../storage/StorageCleanupService';
 import { UserService } from '../user/UserService';
@@ -31,12 +33,16 @@ type AppServiceOptions = {
   jobs: BackgroundJobService;
   users: UserService;
   adminPanel: AdminPanelService;
+  publicAssets: PublicAssetsService;
   http: HttpService;
 };
 
 /** Services that can replace the defaults, such as an in-memory database. */
 export type AppServiceInjections = Partial<
-  Pick<AppServiceOptions, 'dataDirectory' | 'database' | 'passwords'>
+  Pick<
+    AppServiceOptions,
+    'dataDirectory' | 'database' | 'passwords' | 'publicAssets'
+  >
 >;
 
 /** The whole server: its services, started and stopped in order. */
@@ -57,6 +63,8 @@ export class AppService {
 
   protected readonly adminPanel: AdminPanelService;
 
+  protected readonly publicAssets: PublicAssetsService;
+
   protected readonly http: HttpService;
 
   constructor(options: AppServiceOptions) {
@@ -68,6 +76,7 @@ export class AppService {
     this.jobs = options.jobs;
     this.users = options.users;
     this.adminPanel = options.adminPanel;
+    this.publicAssets = options.publicAssets;
     this.http = options.http;
   }
 
@@ -114,6 +123,7 @@ export class AppService {
       this.storageCleanup.start();
       this.jobs.start();
       await this.startAdminPanel();
+      this.publicAssets.start();
       await this.http.start();
     } catch (error) {
       await this.jobs.stop({ graceMs: 0 });
@@ -187,6 +197,8 @@ export class AppService {
     const fontCatalog = FontCatalogService.create({ ...services, fonts });
     const templates = TemplateService.create({ ...services, dataDirectory });
     const adminPanel = AdminPanelService.create({ config });
+    const publicAssets =
+      injections?.publicAssets ?? PublicAssetsService.create({ config });
     const certificateFiles = CertificateFileService.create({
       config,
       database,
@@ -197,6 +209,12 @@ export class AppService {
       database,
       adminPanel,
       certificateFiles,
+      certificatePages: CertificatePageService.create({
+        config,
+        database,
+        assets: publicAssets,
+      }),
+      publicAssets,
       auth,
       users,
       courses,
@@ -219,6 +237,7 @@ export class AppService {
       jobs,
       users,
       adminPanel,
+      publicAssets,
       http,
     };
   }

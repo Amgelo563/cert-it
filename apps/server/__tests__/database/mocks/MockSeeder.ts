@@ -36,13 +36,18 @@ export class MockSeeder {
   }
 
   public course(
-    options: Partial<Pick<Course, 'name' | 'lookupEnabled' | 'active'>> = {},
+    options: Partial<
+      Pick<
+        Course,
+        'name' | 'locale' | 'dateFormat' | 'lookupEnabled' | 'active'
+      >
+    > = {},
   ): Course {
     return this.repositories.courses
       .create({
         name: options.name ?? `Course ${this.next()}`,
-        locale: LocaleEnum.En,
-        dateFormat: 'MMMM D, YYYY',
+        locale: options.locale ?? LocaleEnum.En,
+        dateFormat: options.dateFormat ?? 'MMMM D, YYYY',
         lookupEnabled: options.lookupEnabled,
         active: options.active,
       })

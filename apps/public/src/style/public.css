@@ -1,0 +1,441 @@
+/* Public pages: certificate and lookup. No inline styles, so everything lives here. */
+
+:root {
+  color-scheme: light dark;
+  --bg: var(--neutral-1);
+  --surface: #fff;
+  --text: var(--neutral-9);
+  --muted: var(--neutral-6);
+  --border: var(--neutral-2);
+  --accent: var(--brand);
+  --accent-text: #fff;
+  --valid: #146c2e;
+  --valid-bg: #e3f4e8;
+  --revoked: #a4161a;
+  --revoked-bg: #fbe5e5;
+  --focus: var(--brand-4);
+  --skeleton: var(--neutral-2);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: var(--dark-7);
+    --surface: var(--dark-6);
+    --text: var(--dark-0);
+    --muted: var(--dark-1);
+    --border: var(--dark-4);
+    --accent: var(--brand-on-dark);
+    --accent-text: #fff;
+    --valid: #8ad5a0;
+    --valid-bg: #163a22;
+    --revoked: #f4a3a5;
+    --revoked-bg: #47181a;
+    --skeleton: var(--dark-4);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.container {
+  width: 100%;
+  max-width: 88rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* header and footer */
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.site-header .container {
+  display: flex;
+  align-items: center;
+  min-height: 3.5rem;
+}
+
+.site-org {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.site-footer {
+  margin-top: auto;
+  padding: 1.5rem 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* certificate page */
+
+.certificate {
+  display: grid;
+  grid-template-areas:
+    'summary'
+    'preview'
+    'actions'
+    'details';
+  gap: 1.25rem;
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+@media (min-width: 64rem) {
+  .certificate {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      'preview summary'
+      'preview details'
+      'actions details';
+    column-gap: 2rem;
+    padding-top: 2rem;
+  }
+}
+
+.certificate-revoked {
+  max-width: 44rem;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
+  grid-template-areas:
+    'summary'
+    'notice'
+    'details';
+}
+
+.certificate-summary {
+  grid-area: summary;
+}
+
+.certificate-preview {
+  grid-area: preview;
+}
+
+.certificate-actions {
+  grid-area: actions;
+}
+
+.certificate-details {
+  grid-area: details;
+  align-self: start;
+}
+
+.certificate-notice {
+  grid-area: notice;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0 0 0.75rem;
+  padding: 0.25rem 0.75rem 0.25rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.status svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: none;
+}
+
+.status-valid {
+  background: var(--valid-bg);
+  color: var(--valid);
+}
+
+.status-revoked {
+  background: var(--revoked-bg);
+  color: var(--revoked);
+}
+
+.holder {
+  margin: 0;
+  font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.course {
+  margin: 0.375rem 0 0;
+  color: var(--muted);
+  font-size: 1.0625rem;
+}
+
+/* preview */
+
+.preview {
+  margin: 0;
+}
+
+.preview-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  /* A4 landscape until the page's own size is known */
+  aspect-ratio: 297 / 210;
+  overflow: hidden;
+  border-radius: calc(var(--radius) * 0.5);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.preview-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.preview-canvas[hidden],
+.preview-fallback[hidden],
+.preview-loading[hidden] {
+  display: none;
+}
+
+/* like Mantine's Skeleton: a gray block fading in and out */
+.preview-frame.is-loading::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--skeleton);
+  animation: skeleton-fade 1500ms linear infinite;
+}
+
+@keyframes skeleton-fade {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview-frame.is-loading::before {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+.preview-loading {
+  position: relative;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.preview-frame:not(.is-loading) .preview-loading {
+  display: none;
+}
+
+/* covers the skeleton, also when it comes from <noscript> */
+.preview-fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--surface);
+  text-align: center;
+}
+
+.preview-fallback p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.preview-fallback a {
+  font-weight: 500;
+}
+
+/* actions */
+
+/* phones: the two buttons share the row in equal halves */
+.certificate-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.certificate-actions .button {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+}
+
+@media (min-width: 40rem) {
+  .certificate-actions .button {
+    flex: none;
+  }
+}
+
+/* the narrowest phones get tighter buttons, so both labels and icons still fit */
+@media (max-width: 21.25rem) {
+  .certificate-actions .button {
+    gap: 0.375rem;
+    padding: 0 0.5rem;
+  }
+
+  .certificate-actions .button svg {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0 0.875rem;
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 0.75);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:hover {
+  border-color: var(--muted);
+}
+
+.button[hidden] {
+  display: none;
+}
+
+.button svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: none;
+}
+
+/* the main brand shade in both schemes: white text on the lighter dark-scheme shade misses AA */
+.button-primary {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--accent-text);
+}
+
+.button-primary:hover {
+  border-color: var(--brand);
+  filter: brightness(1.1);
+}
+
+/* details */
+
+.details {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.details div + div {
+  margin-top: 0.875rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--border);
+}
+
+.details dt {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.details dd {
+  margin: 0.125rem 0 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.code {
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.notice {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  background: var(--revoked-bg);
+  color: var(--text);
+}
+
+.notice p {
+  margin: 0;
+}
+
+.notice p + p {
+  margin-top: 0.5rem;
+}
+
+/* not found */
+
+.message {
+  max-width: 36rem;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+.message h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+}
+
+.message p {
+  margin: 0;
+  color: var(--muted);
+}

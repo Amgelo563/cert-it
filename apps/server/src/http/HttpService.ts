@@ -17,6 +17,7 @@ import { AuditLogService } from '../audit/AuditLogService';
 import { AuthService } from '../auth/AuthService';
 import { createCsrfGuard } from '../auth/csrf/createCsrfGuard';
 import type { CertificateFileService } from '../certificate/file/CertificateFileService';
+import type { CertificatePageService } from '../certificate/page/CertificatePageService';
 import type { Config } from '../config/schema/ConfigSchema';
 import { CourseService } from '../course/CourseService';
 import type { DatabaseService } from '../database/DatabaseService';
@@ -29,6 +30,7 @@ import { ParticipantService } from '../participant/ParticipantService';
 import { CertificateService } from '../certificate/CertificateService';
 import { CertificateExportService } from '../certificate/export/CertificateExportService';
 import { JobService } from '../job/JobService';
+import { PublicAssetsService } from '../page/PublicAssetsService';
 import { TemplateService } from '../template/TemplateService';
 import { UserService } from '../user/UserService';
 import type { HttpEnv } from './HttpEnv';
@@ -42,6 +44,8 @@ type HttpServiceOptions = {
   messages: MessagesService;
   adminPanel: AdminPanelService;
   certificateFiles: CertificateFileService;
+  certificatePages: CertificatePageService;
+  publicAssets: PublicAssetsService;
   auth: AuthService;
   users: UserService;
   courses: CourseService;
@@ -97,6 +101,10 @@ export class HttpService {
 
   protected readonly certificateFiles: CertificateFileService;
 
+  protected readonly certificatePages: CertificatePageService;
+
+  protected readonly publicAssets: PublicAssetsService;
+
   protected readonly auth: AuthService;
 
   protected readonly users: UserService;
@@ -142,6 +150,8 @@ export class HttpService {
     this.messages = options.messages;
     this.adminPanel = options.adminPanel;
     this.certificateFiles = options.certificateFiles;
+    this.certificatePages = options.certificatePages;
+    this.publicAssets = options.publicAssets;
     this.auth = options.auth;
     this.users = options.users;
     this.courses = options.courses;
@@ -166,6 +176,8 @@ export class HttpService {
     database: DatabaseService;
     adminPanel: AdminPanelService;
     certificateFiles: CertificateFileService;
+    certificatePages: CertificatePageService;
+    publicAssets: PublicAssetsService;
     auth: AuthService;
     users: UserService;
     courses: CourseService;
@@ -183,6 +195,8 @@ export class HttpService {
       database,
       adminPanel,
       certificateFiles,
+      certificatePages,
+      publicAssets,
       auth,
       users,
       courses,
@@ -209,6 +223,8 @@ export class HttpService {
       messages: new MessagesService(),
       adminPanel,
       certificateFiles,
+      certificatePages,
+      publicAssets,
       auth,
       users,
       courses,
@@ -307,7 +323,9 @@ export class HttpService {
 
     app.get('/', (c) => c.text('Hello Hono!'));
     app.route(AdminPanelService.Path, this.adminPanel.getApp());
+    app.route(PublicAssetsService.Path, this.publicAssets.getApp());
     app.route('/', this.certificateFiles.getApp());
+    app.route('/', this.certificatePages.getApp());
 
     return root;
   }
@@ -345,14 +363,13 @@ export class HttpService {
         });
       }
 
-      c.set(
-        'locale',
-        this.locales.resolve({
-          query: chosen ?? undefined,
-          cookie: getCookie(c, LocaleCookieName),
-          acceptLanguage: c.req.header('accept-language'),
-        }),
-      );
+      const sources = {
+        query: chosen ?? undefined,
+        cookie: getCookie(c, LocaleCookieName),
+        acceptLanguage: c.req.header('accept-language'),
+      };
+      c.set('locale', this.locales.resolve(sources));
+      c.set('localeSources', sources);
       c.set('messages', this.messages);
       await next();
     };

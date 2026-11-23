@@ -5,6 +5,7 @@ Hono process that serves everything.
 - **API** under `{base_path}/api/` for the admin panel.
 - **Public pages** rendered with Hono JSX: the certificate page (`/c/{code}`) and the certificate lookup. They work under a strict CSP: no inline scripts or styles.
 - **Admin panel files**: the built [`apps/admin`](../admin) SPA, served under `{base_path}/admin/` so nginx can give it its own CSP.
+- **Public pages' files**: the built [`apps/public`](../public) scripts, styles and pdf.js, served under `{base_path}/static/` as immutable, precompressed files. Pages find them through the build's manifest.
 - **Certificate PDFs**: served after a status check, either streamed by the app or handed to nginx with `X-Accel-Redirect` (`files.serve`).
 - **PDF generation** in a child process started on demand with a capped heap, which exits when no jobs are left.
 

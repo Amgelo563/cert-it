@@ -125,7 +125,7 @@ export class CertificateExportService {
   }
 
   // revoked PDFs aren't served, so they aren't exported either
-  protected async zip(c: Context<AuthEnv>) {
+  protected async zip(c: Context<AuthEnv>): Promise<Response> {
     const course = this.findCourse(c);
     if (!course) return this.error(c, ApiErrorCodeEnum.NotFound);
 

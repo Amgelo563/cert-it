@@ -11,6 +11,7 @@ import {
 } from '@cert-it/shared';
 import type { CertificateCode } from '../../certificate/code/CertificateCode';
 import { type Config, ConfigSchema } from '../../config/schema/ConfigSchema';
+import { PublicAssetsService } from '../../page/PublicAssetsService';
 import { normalizeEmail } from '../../util/email/NormalizedEmail';
 import { AppService, type AppServiceInjections } from '../AppService';
 
@@ -71,7 +72,14 @@ export class DevAppService extends AppService {
     return new DevAppService(
       AppService.createServices({
         config,
-        injections: options?.injections,
+        injections: {
+          // pnpm dev rebuilds the public pages' files in watch mode
+          publicAssets: PublicAssetsService.create({
+            config,
+            injections: { rereadManifest: true },
+          }),
+          ...options?.injections,
+        },
       }),
     );
   }

@@ -1,0 +1,9 @@
+{
+  "src/certificate/certificatePage.ts": {
+    "file": "assets/certificate-abc123.js",
+    "name": "certificate",
+    "src": "src/certificate/certificatePage.ts",
+    "isEntry": true,
+    "css": ["assets/certificate-def456.css"]
+  }
+}

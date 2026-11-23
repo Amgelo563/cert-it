@@ -17,6 +17,7 @@ import { MessagesService } from '../../../src/i18n/MessagesService';
 import type { User } from '../../../src/user/User';
 import { normalizeEmail } from '../../../src/util/email/NormalizedEmail';
 import { createAuthOptions } from '../../auth/mocks/createAuthOptions';
+import { createPublicPageOptions } from '../../page/mocks/createPublicPageOptions';
 import { sessionCookie } from '../../auth/mocks/createAuthApp';
 
 export type ApiRequestInit = {
@@ -60,6 +61,7 @@ export function createApiHarness(
       database,
       fileServer: new AccelFileServer({ siteUrl }),
     }),
+    ...createPublicPageOptions(database, siteUrl),
     ...createAuthOptions(database, siteUrl, options),
     compressor: new ResponseCompressor(),
     revalidator: new ResponseRevalidator(),
@@ -100,13 +102,16 @@ export function createApiHarness(
   };
 
   /** Sends a GET to a public path under /certs, such as a certificate's PDF. */
-  const requestPublic = (path: string): Promise<Response> =>
+  const requestPublic = (
+    path: string,
+    headers: Record<string, string> = {},
+  ): Promise<Response> =>
     Promise.resolve(
       http
         .getApp()
         .request(
           `/certs${path}`,
-          { headers: { 'x-real-ip': '198.51.100.1' } },
+          { headers: { 'x-real-ip': '198.51.100.1', ...headers } },
           { incoming: { socket: { remoteAddress: '127.0.0.1' } } },
         ),
     );

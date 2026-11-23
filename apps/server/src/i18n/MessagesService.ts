@@ -22,7 +22,8 @@ export class MessagesService {
     return this.format(this.get(locale).certificate.issuedBy, { org });
   }
 
-  protected format(text: string, values: Record<string, string>): string {
+  /** Replaces the `{key}` placeholders of a text with the given values, leaving unknown ones as written. */
+  public format(text: string, values: Record<string, string>): string {
     return text.replace(
       MessagesService.PlaceholderPattern,
       (match, key: string) => values[key] ?? match,

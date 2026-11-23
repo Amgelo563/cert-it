@@ -17,6 +17,7 @@ import { HttpService } from '../../../src/http/HttpService';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
 import { MessagesService } from '../../../src/i18n/MessagesService';
 import { createAuthOptions } from '../../auth/mocks/createAuthOptions';
+import { createPublicPageOptions } from '../../page/mocks/createPublicPageOptions';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
 import { AdminBuildScript, createAdminBuild } from '../mocks/createAdminBuild';
 
@@ -58,6 +59,7 @@ function createHttp(adminPanel: AdminPanelService, baseUrl: string) {
       database,
       fileServer: new AccelFileServer({ siteUrl }),
     }),
+    ...createPublicPageOptions(database, siteUrl),
     ...createAuthOptions(database, siteUrl),
     compressor: new ResponseCompressor(),
     revalidator: new ResponseRevalidator(),
