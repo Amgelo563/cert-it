@@ -34,6 +34,8 @@ export type Messages = {
     copyLink: string;
     linkCopied: string;
     addToLinkedIn: string;
+    /** Read after links that open in a new tab, for screen readers. */
+    opensInNewTab: string;
     /** Shown with the link when the browser won't let the page copy it. */
     copyLinkManually: string;
     /** Shown in place of the preview without JavaScript or when drawing fails. */

@@ -3,7 +3,7 @@ type LanguageSwitcherOptions = {
   details: HTMLDetailsElement;
 };
 
-/** Closes the language menu on a click outside it or on Escape, as the admin panel's does. */
+/** Closes the language menu on a click outside it, on Escape, or when focus leaves it, as the admin panel's does. */
 export class LanguageSwitcher {
   protected readonly details: HTMLDetailsElement;
 
@@ -21,6 +21,11 @@ export class LanguageSwitcher {
 
       this.close();
       this.details.querySelector('summary')?.focus();
+    });
+    
+    this.details.addEventListener('focusout', (event) => {
+      const next = event.relatedTarget as Node | null;
+      if (next && !this.details.contains(next)) this.close();
     });
   }
 

@@ -215,6 +215,9 @@ describe('CertificatePageService (LinkedIn)', () => {
     const link = linkedInLink(page);
 
     expect(page).toContain('Add to LinkedIn');
+    expect(page).toContain(
+      '<span class="visually-hidden"> (opens in a new tab)</span>',
+    );
     expect(page).toContain('target="_blank" rel="noopener noreferrer"');
     expect(link?.origin).toBe('https://www.linkedin.com');
     expect(Object.fromEntries(link?.searchParams ?? [])).toEqual({
@@ -333,9 +336,8 @@ describe('CertificatePageService (language)', () => {
     ).text();
 
     expect(page).toContain(
-      '<summary class="language-switcher-button" aria-label="Idioma">',
+      '</svg><span class="visually-hidden">Idioma: </span>ES</summary>',
     );
-    expect(page).toContain('</svg>ES</summary>');
     expect(page).toContain(
       '<a href="?lang=es" hreflang="es" lang="es" aria-current="true">Español<svg',
     );

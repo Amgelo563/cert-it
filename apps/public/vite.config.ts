@@ -44,7 +44,6 @@ function themeVariables(): Plugin {
         ...shades('neutral', ThemeValues.neutralShades),
         ...shades('dark', ThemeValues.darkShades),
         `--brand: var(--brand-${ThemeValues.brandShadeIndex});`,
-        `--brand-on-dark: var(--brand-${ThemeValues.brandShadeIndexDark});`,
         `--radius: ${ThemeValues.radiusPx}px;`,
         `--shadow-sm: ${ThemeValues.shadows.small};`,
         `--shadow-md: ${ThemeValues.shadows.medium};`,

@@ -27,6 +27,7 @@ export const EsMessages = {
     copyLink: 'Copiar enlace',
     linkCopied: 'Enlace copiado',
     addToLinkedIn: 'Añadir a LinkedIn',
+    opensInNewTab: '(se abre en una pestaña nueva)',
     copyLinkManually: 'Copia este enlace:',
     previewUnavailable: 'No se puede mostrar la vista previa aquí.',
     viewPdf: 'Abrir el PDF',

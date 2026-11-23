@@ -46,6 +46,7 @@ export function LookupPage(props: LookupPageProps) {
                     id="lookup-message"
                     class="lookup-message notice"
                     role="alert"
+                    tabindex={-1}
                   >
                     {message}
                   </p>

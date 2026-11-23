@@ -107,6 +107,7 @@ export function CertificatePage(props: CertificatePageProps) {
               >
                 <LinkedInIcon />
                 {texts.addToLinkedIn}
+                <span class="visually-hidden"> {texts.opensInNewTab}</span>
               </a>
             )}
           </div>

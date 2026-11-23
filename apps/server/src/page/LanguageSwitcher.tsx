@@ -14,8 +14,10 @@ export function LanguageSwitcher(props: LanguageSwitcherProps) {
 
   return (
     <details class="language-switcher" data-language-switcher>
-      <summary class="language-switcher-button" aria-label={label}>
+      {/* the name keeps the visible code, so voice control finds it */}
+      <summary class="language-switcher-button">
         <LanguageIcon />
+        <span class="visually-hidden">{label}: </span>
         {locale.toUpperCase()}
       </summary>
       <nav class="language-switcher-menu" aria-label={label}>

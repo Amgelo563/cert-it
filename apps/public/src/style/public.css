@@ -7,6 +7,8 @@
   --text: var(--neutral-9);
   --muted: var(--neutral-6);
   --border: var(--neutral-2);
+  /* edges of inputs, 3:1 on the surface so the field shows */
+  --control-border: var(--dark-2);
   --accent: var(--brand);
   --accent-text: #fff;
   --valid: #146c2e;
@@ -15,6 +17,7 @@
   --revoked-bg: #fbe5e5;
   --focus: var(--brand-4);
   --skeleton: var(--neutral-2);
+  --skeleton-text: var(--muted);
   --hover: var(--neutral-1);
 }
 
@@ -25,13 +28,17 @@
     --text: var(--dark-0);
     --muted: var(--dark-1);
     --border: var(--dark-4);
-    --accent: var(--brand-on-dark);
+    --control-border: var(--dark-3);
+    /* the dark-scheme brand shade is under 4.5:1 on the surface, so text links go a step lighter */
+    --accent: var(--brand-3);
     --accent-text: #fff;
     --valid: #8ad5a0;
     --valid-bg: #163a22;
     --revoked: #f4a3a5;
     --revoked-bg: #47181a;
     --skeleton: var(--dark-4);
+    --skeleton-text: var(--text);
+    --focus: var(--brand-3);
     --hover: var(--dark-5);
   }
 }
@@ -348,7 +355,7 @@ a {
 .preview-loading {
   position: relative;
   margin: 0;
-  color: var(--muted);
+  color: var(--skeleton-text);
   font-size: 0.875rem;
   font-weight: 500;
 }
@@ -577,6 +584,11 @@ a {
   margin-bottom: 1.25rem;
 }
 
+/* focused by the script so screen readers read it; not a control, so no ring */
+.lookup-message:focus {
+  outline: none;
+}
+
 .lookup-form {
   display: flex;
   flex-direction: column;
@@ -715,7 +727,7 @@ a {
   width: 100%;
   min-height: 2.5rem;
   padding: 0 0.75rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--control-border);
   border-radius: calc(var(--radius) * 0.75);
   background: var(--bg);
   color: var(--text);
