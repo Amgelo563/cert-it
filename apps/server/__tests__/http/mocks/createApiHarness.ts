@@ -17,7 +17,10 @@ import { MessagesService } from '../../../src/i18n/MessagesService';
 import type { User } from '../../../src/user/User';
 import { normalizeEmail } from '../../../src/util/email/NormalizedEmail';
 import { createAuthOptions } from '../../auth/mocks/createAuthOptions';
-import { createPublicPageOptions } from '../../page/mocks/createPublicPageOptions';
+import {
+  createPublicPageOptions,
+  type LinkPreviewSettings,
+} from '../../page/mocks/createPublicPageOptions';
 import { sessionCookie } from '../../auth/mocks/createAuthApp';
 
 export type ApiRequestInit = {
@@ -39,7 +42,9 @@ const passwords = new PasswordHasher();
 /** The whole HttpService under the /certs base path, with helpers to call its API as a browser would. */
 export function createApiHarness(
   database: DatabaseService,
-  options: Parameters<typeof createAuthOptions>[2] = {},
+  options: Parameters<typeof createAuthOptions>[2] & {
+    linkPreviews?: LinkPreviewSettings;
+  } = {},
 ) {
   const siteUrl = new SiteUrl({ baseUrl: `${ApiHarnessOrigin}/certs` });
   const http = new HttpService({
@@ -61,7 +66,10 @@ export function createApiHarness(
       database,
       fileServer: new AccelFileServer({ siteUrl }),
     }),
-    ...createPublicPageOptions(database, siteUrl),
+    ...createPublicPageOptions(database, siteUrl, {
+      dataDirectory: options.dataDirectory,
+      ...options.linkPreviews,
+    }),
     ...createAuthOptions(database, siteUrl, options),
     compressor: new ResponseCompressor(),
     revalidator: new ResponseRevalidator(),

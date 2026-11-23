@@ -17,6 +17,8 @@ export const EnMessages = {
     description: 'Certificate of {name} for {course}.',
     valid: 'Valid certificate',
     revoked: 'Revoked certificate',
+    validStatus: 'Valid',
+    revokedStatus: 'Revoked',
     course: 'Course',
     issueDate: 'Issue date',
     issuer: 'Issued by',

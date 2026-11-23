@@ -32,6 +32,7 @@ import { CertificateService } from '../certificate/CertificateService';
 import { CertificateExportService } from '../certificate/export/CertificateExportService';
 import { JobService } from '../job/JobService';
 import { PublicAssetsService } from '../page/PublicAssetsService';
+import type { LinkPreviewService } from '../page/preview/LinkPreviewService';
 import { TemplateService } from '../template/TemplateService';
 import { UserService } from '../user/UserService';
 import type { HttpEnv } from './HttpEnv';
@@ -48,6 +49,7 @@ type HttpServiceOptions = {
   certificatePages: CertificatePageService;
   lookupPages: LookupPageService;
   publicAssets: PublicAssetsService;
+  linkPreviews: LinkPreviewService;
   auth: AuthService;
   users: UserService;
   courses: CourseService;
@@ -109,6 +111,8 @@ export class HttpService {
 
   protected readonly publicAssets: PublicAssetsService;
 
+  protected readonly linkPreviews: LinkPreviewService;
+
   protected readonly auth: AuthService;
 
   protected readonly users: UserService;
@@ -157,6 +161,7 @@ export class HttpService {
     this.certificatePages = options.certificatePages;
     this.lookupPages = options.lookupPages;
     this.publicAssets = options.publicAssets;
+    this.linkPreviews = options.linkPreviews;
     this.auth = options.auth;
     this.users = options.users;
     this.courses = options.courses;
@@ -184,6 +189,7 @@ export class HttpService {
     certificatePages: CertificatePageService;
     lookupPages: LookupPageService;
     publicAssets: PublicAssetsService;
+    linkPreviews: LinkPreviewService;
     auth: AuthService;
     users: UserService;
     courses: CourseService;
@@ -204,6 +210,7 @@ export class HttpService {
       certificatePages,
       lookupPages,
       publicAssets,
+      linkPreviews,
       auth,
       users,
       courses,
@@ -233,6 +240,7 @@ export class HttpService {
       certificatePages,
       lookupPages,
       publicAssets,
+      linkPreviews,
       auth,
       users,
       courses,
@@ -331,6 +339,7 @@ export class HttpService {
 
     app.route(AdminPanelService.Path, this.adminPanel.getApp());
     app.route(PublicAssetsService.Path, this.publicAssets.getApp());
+    app.route('/', this.linkPreviews.getApp());
     app.route('/', this.certificateFiles.getApp());
     app.route('/', this.certificatePages.getApp());
     app.route('/', this.lookupPages.getApp());

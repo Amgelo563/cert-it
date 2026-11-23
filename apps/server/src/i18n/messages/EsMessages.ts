@@ -17,6 +17,8 @@ export const EsMessages = {
     description: 'Certificado de {name} por {course}.',
     valid: 'Certificado válido',
     revoked: 'Certificado revocado',
+    validStatus: 'Válido',
+    revokedStatus: 'Revocado',
     course: 'Curso',
     issueDate: 'Fecha de emisión',
     issuer: 'Emitido por',

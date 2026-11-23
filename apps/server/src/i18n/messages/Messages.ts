@@ -22,6 +22,10 @@ export type Messages = {
     description: string;
     valid: string;
     revoked: string;
+    /** The {status} placeholder of the configured link preview texts. */
+    validStatus: string;
+    /** The {status} placeholder of the configured link preview texts. */
+    revokedStatus: string;
     course: string;
     issueDate: string;
     issuer: string;

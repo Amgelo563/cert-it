@@ -7,6 +7,7 @@ import type { Course, CourseId } from '../../course/Course';
 import type { DatabaseService } from '../../database/DatabaseService';
 import type { HttpEnv } from '../../http/HttpEnv';
 import type { PublicAssetsService } from '../../page/PublicAssetsService';
+import type { LinkPreviewService } from '../../page/preview/LinkPreviewService';
 import { PublicLayout } from '../../page/PublicLayout';
 import { normalizeEmail } from '../../util/email/NormalizedEmail';
 import { CertificatePageService } from '../page/CertificatePageService';
@@ -15,6 +16,7 @@ import { LookupPage } from './LookupPage';
 type LookupPageServiceOptions = {
   database: DatabaseService;
   assets: PublicAssetsService;
+  previews: LinkPreviewService;
   siteUrl: SiteUrl;
   /** Limits searches per client IP. */
   limiter: RateLimiter;
@@ -44,6 +46,8 @@ export class LookupPageService {
 
   protected readonly assets: PublicAssetsService;
 
+  protected readonly previews: LinkPreviewService;
+
   protected readonly siteUrl: SiteUrl;
 
   protected readonly limiter: RateLimiter;
@@ -57,6 +61,7 @@ export class LookupPageService {
   constructor(options: LookupPageServiceOptions) {
     this.database = options.database;
     this.assets = options.assets;
+    this.previews = options.previews;
     this.siteUrl = options.siteUrl;
     this.limiter = options.limiter;
     this.csrf = options.csrf;
@@ -68,9 +73,10 @@ export class LookupPageService {
     config: Config;
     database: DatabaseService;
     assets: PublicAssetsService;
+    previews: LinkPreviewService;
     injections?: Partial<LookupPageServiceOptions>;
   }): LookupPageService {
-    const { config, database, assets, injections } = options;
+    const { config, database, assets, previews, injections } = options;
     const { maxRequests, windowMinutes } = config.lookup.rateLimit;
     const siteUrl =
       injections?.siteUrl ?? new SiteUrl({ baseUrl: config.site.baseUrl });
@@ -78,6 +84,7 @@ export class LookupPageService {
     return new LookupPageService({
       database: injections?.database ?? database,
       assets: injections?.assets ?? assets,
+      previews: injections?.previews ?? previews,
       siteUrl,
       limiter:
         injections?.limiter
@@ -173,15 +180,21 @@ export class LookupPageService {
     const texts = messages.get(locale).lookupPage;
     const courses = this.database.getRepositories().courses.listForLookup();
     const org = { org: this.orgName };
+    const description = messages.format(texts.description, org);
 
     return c.html(
       html`<!doctype html>${(
           <PublicLayout
             locale={locale}
             title={texts.title}
-            description={messages.format(texts.description, org)}
+            description={description}
             orgName={this.orgName}
             assets={this.assets.getPage(LookupPageService.AssetsEntry)}
+            preview={this.previews.getPreview({
+              path: LookupPageService.Path,
+              title: texts.title,
+              description,
+            })}
           >
             <LookupPage
               texts={texts}

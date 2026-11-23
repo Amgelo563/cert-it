@@ -7,6 +7,7 @@ import type { DatabaseService } from '../../database/DatabaseService';
 import type { HttpEnv } from '../../http/HttpEnv';
 import { LocaleResolver } from '../../i18n/LocaleResolver';
 import type { PublicAssetsService } from '../../page/PublicAssetsService';
+import type { LinkPreviewService } from '../../page/preview/LinkPreviewService';
 import { PublicLayout } from '../../page/PublicLayout';
 import type { CertificateCode } from '../code/CertificateCode';
 import { CertificateFileService } from '../file/CertificateFileService';
@@ -16,6 +17,7 @@ import { CertificatePage } from './CertificatePage';
 type CertificatePageServiceOptions = {
   database: DatabaseService;
   assets: PublicAssetsService;
+  previews: LinkPreviewService;
   siteUrl: SiteUrl;
   locales: LocaleResolver;
   /** Name of the issuing organization, as in site.org_name. */
@@ -37,6 +39,8 @@ export class CertificatePageService {
 
   protected readonly assets: PublicAssetsService;
 
+  protected readonly previews: LinkPreviewService;
+
   protected readonly siteUrl: SiteUrl;
 
   protected readonly locales: LocaleResolver;
@@ -48,6 +52,7 @@ export class CertificatePageService {
   constructor(options: CertificatePageServiceOptions) {
     this.database = options.database;
     this.assets = options.assets;
+    this.previews = options.previews;
     this.siteUrl = options.siteUrl;
     this.locales = options.locales;
     this.orgName = options.orgName;
@@ -58,13 +63,15 @@ export class CertificatePageService {
     config: Config;
     database: DatabaseService;
     assets: PublicAssetsService;
+    previews: LinkPreviewService;
     injections?: Partial<CertificatePageServiceOptions>;
   }): CertificatePageService {
-    const { config, database, assets, injections } = options;
+    const { config, database, assets, previews, injections } = options;
 
     return new CertificatePageService({
       database: injections?.database ?? database,
       assets: injections?.assets ?? assets,
+      previews: injections?.previews ?? previews,
       siteUrl:
         injections?.siteUrl ?? new SiteUrl({ baseUrl: config.site.baseUrl }),
       locales:
@@ -120,16 +127,32 @@ export class CertificatePageService {
             reason: certificate.revokedReason,
           }
         : null;
+    const issueDate = dates.format(certificate.issueDate);
+    const title = messages.format(texts.title, names);
+    const description = messages.format(texts.description, names);
+    const preview = this.previews.getCertificatePreview({
+      path: pagePath,
+      title,
+      description,
+      values: {
+        ...names,
+        org: this.orgName,
+        date: issueDate,
+        code,
+        status: revoked ? texts.revokedStatus : texts.validStatus,
+      },
+    });
 
     c.header('Cache-Control', CertificatePageService.CacheControl);
     return c.html(
       html`<!doctype html>${(
           <PublicLayout
             locale={locale}
-            title={messages.format(texts.title, names)}
-            description={messages.format(texts.description, names)}
+            title={title}
+            description={description}
             orgName={this.orgName}
             assets={this.assets.getPage(CertificatePageService.AssetsEntry)}
+            preview={preview}
           >
             <CertificatePage
               texts={texts}
@@ -137,7 +160,7 @@ export class CertificatePageService {
               code={code}
               holderName={participant.name}
               courseName={course.name}
-              issueDate={dates.format(certificate.issueDate)}
+              issueDate={issueDate}
               orgName={this.orgName}
               pageUrl={this.siteUrl.url(pagePath)}
               pdfPath={this.siteUrl.path(

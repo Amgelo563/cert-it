@@ -12,6 +12,7 @@ import type { Config } from '../config/schema/ConfigSchema';
 import { DatabaseService } from '../database/DatabaseService';
 import { HttpService } from '../http/HttpService';
 import { PublicAssetsService } from '../page/PublicAssetsService';
+import { LinkPreviewService } from '../page/preview/LinkPreviewService';
 import { DataDirectoryService } from '../storage/DataDirectoryService';
 import { StorageCleanupService } from '../storage/StorageCleanupService';
 import { UserService } from '../user/UserService';
@@ -35,6 +36,7 @@ type AppServiceOptions = {
   users: UserService;
   adminPanel: AdminPanelService;
   publicAssets: PublicAssetsService;
+  linkPreviews: LinkPreviewService;
   http: HttpService;
 };
 
@@ -66,6 +68,8 @@ export class AppService {
 
   protected readonly publicAssets: PublicAssetsService;
 
+  protected readonly linkPreviews: LinkPreviewService;
+
   protected readonly http: HttpService;
 
   constructor(options: AppServiceOptions) {
@@ -78,6 +82,7 @@ export class AppService {
     this.users = options.users;
     this.adminPanel = options.adminPanel;
     this.publicAssets = options.publicAssets;
+    this.linkPreviews = options.linkPreviews;
     this.http = options.http;
   }
 
@@ -125,6 +130,7 @@ export class AppService {
       this.jobs.start();
       await this.startAdminPanel();
       this.publicAssets.start();
+      this.linkPreviews.start();
       await this.http.start();
     } catch (error) {
       await this.jobs.stop({ graceMs: 0 });
@@ -200,6 +206,7 @@ export class AppService {
     const adminPanel = AdminPanelService.create({ config });
     const publicAssets =
       injections?.publicAssets ?? PublicAssetsService.create({ config });
+    const linkPreviews = LinkPreviewService.create({ config, dataDirectory });
     const certificateFiles = CertificateFileService.create({
       config,
       database,
@@ -214,13 +221,16 @@ export class AppService {
         config,
         database,
         assets: publicAssets,
+        previews: linkPreviews,
       }),
       lookupPages: LookupPageService.create({
         config,
         database,
         assets: publicAssets,
+        previews: linkPreviews,
       }),
       publicAssets,
+      linkPreviews,
       auth,
       users,
       courses,
@@ -244,6 +254,7 @@ export class AppService {
       users,
       adminPanel,
       publicAssets,
+      linkPreviews,
       http,
     };
   }
