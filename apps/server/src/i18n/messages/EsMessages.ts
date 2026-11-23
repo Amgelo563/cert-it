@@ -23,7 +23,7 @@ export const EsMessages = {
     issueDate: 'Fecha de emisión',
     issuer: 'Emitido por',
     code: 'Código del certificado',
-    download: 'Descargar PDF',
+    download: 'Descargar',
     copyLink: 'Copiar enlace',
     linkCopied: 'Enlace copiado',
     addToLinkedIn: 'Añadir a LinkedIn',

@@ -138,7 +138,7 @@ export const EnCourseMessages = {
         "These fields use a font without some of its characters, so they'd print as blanks. Pick another font, or fix the name.",
       failed: "The preview couldn't be generated: {reason}",
       imageAlt: 'The certificate as it would be printed',
-      download: 'Download PDF',
+      download: 'Download',
       sampleFile: 'Sample certificate',
     },
   },

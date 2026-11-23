@@ -138,7 +138,7 @@ export const EsCourseMessages = {
         'Estos campos usan una fuente a la que le faltan algunos de sus caracteres, así que saldrían en blanco. Elige otra fuente o corrige el nombre.',
       failed: 'No se pudo generar la vista previa: {reason}',
       imageAlt: 'El certificado tal como se imprimiría',
-      download: 'Descargar PDF',
+      download: 'Descargar',
       sampleFile: 'Certificado de ejemplo',
     },
   },

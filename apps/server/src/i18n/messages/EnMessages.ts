@@ -23,7 +23,7 @@ export const EnMessages = {
     issueDate: 'Issue date',
     issuer: 'Issued by',
     code: 'Certificate code',
-    download: 'Download PDF',
+    download: 'Download',
     copyLink: 'Copy link',
     linkCopied: 'Link copied',
     addToLinkedIn: 'Add to LinkedIn',
