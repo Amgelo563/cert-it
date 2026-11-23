@@ -13,6 +13,9 @@ import { CertificateCodeGenerator } from '../../../../src/certificate/code/Certi
 import { IssueJobHandler } from '../../../../src/certificate/issue/IssueJobHandler';
 import { JobTypeEnum } from '@cert-it/shared';
 import type { ParticipantId } from '../../../../src/participant/Participant';
+import { readPdfCredential } from '../../../credential/mocks/readPdfCredential';
+import { StubIssuerKeyService } from '../../../credential/mocks/StubIssuerKeyService';
+import { verifyJwt } from '../../../credential/mocks/verifyJwt';
 import { CertificateJobFixture } from '../../mocks/CertificateJobFixture';
 
 const CodePattern = /^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{2}$/;
@@ -71,6 +74,38 @@ describe('IssueJobHandler (run)', () => {
       expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
     }
     expect(context.setProgress.mock.calls).toEqual([[0, 2], [1], [2]]);
+  });
+
+  test('GIVEN a participant WHEN issuing THEN the PDF carries its signed credential, pointing at its status list index', async () => {
+    await fixture.templateVersion();
+    const ana = fixture.seed.participant(fixture.course, { name: 'Ana Pérez' });
+
+    await new IssueJobHandler(fixture.handlerOptions()).run(
+      issueJob([ana.id]),
+      createContext(),
+    );
+
+    const certificate = fixture.database
+      .getRepositories()
+      .certificates.findByParticipant(ana.id)!;
+    const attached = await readPdfCredential(
+      readFileSync(
+        fixture.dataDirectory.getCertificatePath(
+          fixture.course.id,
+          certificate.code,
+        ),
+      ),
+    );
+    expect(attached?.name).toBe(`${certificate.code}.jwt`);
+    const { payload } = verifyJwt(
+      attached!.jwt,
+      StubIssuerKeyService.sharedKey().getPublicJwk(),
+    );
+    expect(payload).toMatchObject({
+      jti: `${CertificateJobFixture.BaseUrl}/c/${certificate.code}`,
+      validFrom: '2026-11-20T00:00:00Z',
+      credentialStatus: { statusListIndex: String(certificate.id) },
+    });
   });
 
   test("GIVEN a name the font can't draw WHEN running THEN skips that participant with the missing characters and issues the rest", async () => {

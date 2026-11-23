@@ -26,6 +26,7 @@ import { CertificateExportService } from '../../../src/certificate/export/Certif
 import { JobService } from '../../../src/job/JobService';
 import { QueueOnlyJobService } from '../../job/mocks/QueueOnlyJobService';
 import { UserService } from '../../../src/user/UserService';
+import { createTestCredentials } from '../../credential/mocks/createTestCredentials';
 
 /** Returns the options of ApiService, with rate limits that tests can reach. Without a data directory, file routes use one that is never created. */
 export function createAuthOptions(
@@ -109,6 +110,7 @@ export function createAuthOptions(
     guard,
     dataDirectory,
     siteUrl,
+    credentials: createTestCredentials(database, siteUrl).signer,
     log: () => {},
   });
   const jobs = new JobService({

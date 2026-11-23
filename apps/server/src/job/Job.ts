@@ -6,5 +6,5 @@ import type { JobTask } from './JobTask';
 /** A background job that generates the certificates of a course. Its progress and total count certificates. */
 export type Job = JobOf<JobTask> & {
   readonly courseId: CourseId;
-  readonly createdBy: UserId;
+  readonly createdBy: UserId | null;
 };

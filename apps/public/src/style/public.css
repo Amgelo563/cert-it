@@ -427,6 +427,99 @@ a {
   }
 }
 
+/* download: a split button, whose main part downloads the PDF and whose toggle opens every format */
+.download {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.certificate-actions .download-main {
+  flex: 1 1 auto;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.download-options {
+  display: flex;
+}
+
+.certificate-actions .download-toggle {
+  flex: none;
+  padding: 0 0.625rem;
+  border-left-color: color-mix(in srgb, var(--accent-text) 40%, var(--brand));
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  list-style: none;
+}
+
+.download-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.download-options[open] .download-toggle svg {
+  transform: rotate(180deg);
+}
+
+/* as the language menu, under the whole split button */
+.download-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 10;
+  width: max-content;
+  min-width: 100%;
+  max-width: min(20rem, calc(100vw - 2rem));
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 0.75);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.download-menu a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: calc(var(--radius) * 0.5);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.download-menu a:hover {
+  background: var(--hover);
+}
+
+.download-menu svg {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+}
+
+.download-format {
+  display: flex;
+  flex-direction: column;
+}
+
+.download-hint {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+@media (min-width: 40rem) {
+  .download {
+    flex: none;
+  }
+}
+
 .button {
   display: inline-flex;
   align-items: center;

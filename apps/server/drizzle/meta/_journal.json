@@ -15,6 +15,13 @@
       "when": 1795197504027,
       "tag": "0001_jobs_package",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1795450070927,
+      "tag": "0002_app_created_jobs",
+      "breakpoints": true
     }
   ]
 }

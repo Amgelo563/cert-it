@@ -14,6 +14,9 @@ import { RegenerateJobHandler } from '../../../../src/certificate/issue/Regenera
 import { JobTypeEnum } from '@cert-it/shared';
 import type { Participant } from '../../../../src/participant/Participant';
 import type { TemplateVersionId } from '../../../../src/template/TemplateVersion';
+import { readPdfCredential } from '../../../credential/mocks/readPdfCredential';
+import { StubIssuerKeyService } from '../../../credential/mocks/StubIssuerKeyService';
+import { verifyJwt } from '../../../credential/mocks/verifyJwt';
 import { CertificateJobFixture } from '../../mocks/CertificateJobFixture';
 
 let fixture: CertificateJobFixture;
@@ -83,6 +86,39 @@ describe('RegenerateJobHandler (run)', () => {
     });
     expect(readFileSync(path).equals(before)).toBe(false);
     expect(context.setProgress.mock.calls).toEqual([[0, 1], [1]]);
+  });
+
+  test('GIVEN a renamed participant WHEN regenerating THEN the PDF carries a credential with the new name', async () => {
+    const version = await fixture.templateVersion();
+    const participant = fixture.seed.participant(fixture.course, {
+      name: 'Ana',
+    });
+    const [certificate] = await issue([participant]);
+    fixture.database
+      .getRepositories()
+      .participants.update(participant.id, { name: 'Ana Pérez' })
+      .unwrap();
+
+    await new RegenerateJobHandler(fixture.handlerOptions()).run(
+      regenerateJob([certificate!.id], version.id),
+      { setProgress: vi.fn<JobContext['setProgress']>() },
+    );
+
+    const attached = await readPdfCredential(
+      readFileSync(
+        fixture.dataDirectory.getCertificatePath(
+          fixture.course.id,
+          certificate!.code,
+        ),
+      ),
+    );
+    const { payload } = verifyJwt(
+      attached!.jwt,
+      StubIssuerKeyService.sharedKey().getPublicJwk(),
+    );
+    expect(payload['credentialSubject'].identifier[0].identityHash).toBe(
+      'Ana Pérez',
+    );
   });
 
   test("GIVEN a name the new version's font can't draw WHEN regenerating THEN skips it and keeps its version", async () => {

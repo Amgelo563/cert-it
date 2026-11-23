@@ -7,12 +7,14 @@ import { LocaleEnum } from '@cert-it/shared';
 import { LookupPageService } from '../../../src/certificate/lookup/LookupPageService';
 import { CertificatePageService } from '../../../src/certificate/page/CertificatePageService';
 import { LinkedInProfileLink } from '../../../src/certificate/page/LinkedInProfileLink';
+import type { CredentialService } from '../../../src/credential/CredentialService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
 import { MessagesService } from '../../../src/i18n/MessagesService';
 import { LinkPreviewService } from '../../../src/page/preview/LinkPreviewService';
 import { PublicAssetsService } from '../../../src/page/PublicAssetsService';
 import { DataDirectoryService } from '../../../src/storage/DataDirectoryService';
+import { createTestCredentials } from '../../credential/mocks/createTestCredentials';
 
 /** Fake build of apps/public, shaped like Vite's output. */
 export const PublicBuildDirectory = fileURLToPath(
@@ -50,7 +52,7 @@ export type LinkPreviewSettings = Partial<
 /** Theme color of the default config. */
 export const LinkPreviewThemeColor = '#0050b4';
 
-/** The public pages' services of HttpService, started on the fake build. */
+/** The public pages' services of HttpService, started on the fake build, with the credential routes. */
 export function createPublicPageOptions(
   database: DatabaseService,
   siteUrl: SiteUrl,
@@ -61,6 +63,7 @@ export function createPublicPageOptions(
   linkPreviews: LinkPreviewService;
   certificatePages: CertificatePageService;
   lookupPages: LookupPageService;
+  credentials: CredentialService;
 } {
   const publicAssets = new PublicAssetsService({
     directory: PublicBuildDirectory,
@@ -110,5 +113,6 @@ export function createPublicPageOptions(
       csrf: new CsrfGuard({ origin: siteUrl.getOrigin() }),
       orgName: PublicPageOrgName,
     }),
+    credentials: createTestCredentials(database, siteUrl).service,
   };
 }

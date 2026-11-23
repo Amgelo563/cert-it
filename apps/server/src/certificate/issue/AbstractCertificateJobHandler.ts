@@ -6,13 +6,16 @@ import {
   type TemplateContent,
   type TemplateValues,
 } from '@cert-it/shared';
+import { PDFDocument } from '@pdfme/pdf-lib';
 import type { Result } from 'better-result';
 import type { Course } from '../../course/Course';
+import type { CredentialSigner } from '../../credential/CredentialSigner';
 import type { DatabaseService } from '../../database/DatabaseService';
 import type { Job } from '../../job/Job';
 import type { Participant } from '../../participant/Participant';
 import type { DataDirectoryService } from '../../storage/DataDirectoryService';
 import type { TemplateVersion } from '../../template/TemplateVersion';
+import type { CertificateId } from '../Certificate';
 import type { CertificateCode } from '../code/CertificateCode';
 import { CertificateRenderer } from '../render/CertificateRenderer';
 import type { CertificateJobOutput } from './CertificateJobOutput';
@@ -23,10 +26,14 @@ export type CertificateJobHandlerOptions = {
   dataDirectory: DataDirectoryService;
   /** Builds the public page URL that QR codes point to. */
   siteUrl: SiteUrl;
+  /** Signs the credential each PDF carries as an attachment. */
+  credentials: CredentialSigner;
 };
 
 /** A certificate to render, once its participant and values are known. */
 export type CertificateToRender = {
+  /** Null before the certificate is stored, which leaves its PDF without a credential. */
+  readonly id: CertificateId | null;
   readonly participant: Participant;
   readonly code: CertificateCode;
   /** The date to print, as `YYYY-MM-DD`. */
@@ -38,16 +45,24 @@ export abstract class AbstractCertificateJobHandler<
   J extends Job,
   E extends Error,
 > implements JobHandler<J, CertificateJobOutput, E> {
+  protected static readonly CredentialAttachment = {
+    mimeType: 'application/jwt',
+    description: 'Open Badges 3.0 verifiable credential',
+  };
+
   protected readonly database: DatabaseService;
 
   protected readonly dataDirectory: DataDirectoryService;
 
   protected readonly siteUrl: SiteUrl;
 
+  protected readonly credentials: CredentialSigner;
+
   constructor(options: CertificateJobHandlerOptions) {
     this.database = options.database;
     this.dataDirectory = options.dataDirectory;
     this.siteUrl = options.siteUrl;
+    this.credentials = options.credentials;
   }
 
   public abstract run(
@@ -91,12 +106,60 @@ export abstract class AbstractCertificateJobHandler<
       return { participantId: participant.id, name: participant.name, missing };
     }
 
-    const pdf = await renderer.render(values);
+    const rendered = await renderer.render(values);
+    const pdf =
+      certificate.id === null
+        ? rendered
+        : await this.attachCredential(rendered, course, {
+            ...certificate,
+            id: certificate.id,
+          });
     await this.dataDirectory.writeFile(
       this.dataDirectory.getCertificatePath(course.id, certificate.code),
       pdf,
     );
     return null;
+  }
+
+  /**
+   * Adds the credential to a stored PDF, once its certificate has an ID.
+   *
+   * @throws {Error} If the PDF can't be read, parsed or written.
+   */
+  protected async storeCredential(
+    course: Course,
+    certificate: CertificateToRender & { readonly id: CertificateId },
+  ): Promise<void> {
+    const path = this.dataDirectory.getCertificatePath(
+      course.id,
+      certificate.code,
+    );
+    const pdf = await this.attachCredential(
+      await readFile(path),
+      course,
+      certificate,
+    );
+    await this.dataDirectory.writeFile(path, pdf);
+  }
+
+  // as an embedded file, so the PDF carries its own proof
+  protected async attachCredential(
+    pdf: Uint8Array,
+    course: Course,
+    certificate: CertificateToRender & { readonly id: CertificateId },
+  ): Promise<Uint8Array> {
+    const jwt = this.credentials.signCertificate({
+      certificate,
+      course,
+      participant: certificate.participant,
+    });
+    const document = await PDFDocument.load(pdf, { updateMetadata: false });
+    await document.attach(
+      new TextEncoder().encode(jwt),
+      `${certificate.code}.jwt`,
+      AbstractCertificateJobHandler.CredentialAttachment,
+    );
+    return document.save();
   }
 
   protected valuesOf(

@@ -35,6 +35,7 @@ import {
 } from '@cert-it/shared';
 import { Hono } from 'hono';
 import type { CourseId } from '../src/course/Course';
+import { IssuerKeyService } from '../src/credential/key/IssuerKeyService';
 import { DatabaseService } from '../src/database/DatabaseService';
 import type { Job } from '../src/job/Job';
 import { BackgroundJobService } from '../src/job/BackgroundJobService';
@@ -290,6 +291,12 @@ if (args.seed) {
   database.start();
   const seeded = await seed(database, dataDirectory, basePdfPath);
   database.close();
+  // the server creates it on its first start, before any job runs
+  await new IssuerKeyService({
+    path: dataDirectory.getIssuerKeyPath(),
+    createMissing: true,
+    log: () => {},
+  }).start();
   process.send!(seeded, () => process.exit(0));
   await new Promise(() => {});
 }
@@ -329,6 +336,7 @@ const jobs = new BackgroundJobService({
     databasePath: database.getPath(),
     dataDir: dataDirectory.getRoot(),
     baseUrl: BaseUrl,
+    orgName: 'Bench',
   }),
   workerPath,
 });

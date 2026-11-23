@@ -58,6 +58,7 @@ export class BackgroundJobService {
         databasePath: database.getPath(),
         dataDir: dataDirectory.getRoot(),
         baseUrl: config.site.baseUrl,
+        orgName: config.site.orgName,
       }),
       ...injections,
     });

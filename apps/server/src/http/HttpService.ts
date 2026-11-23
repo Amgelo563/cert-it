@@ -16,6 +16,7 @@ import { CertificateFileService } from '../certificate/file/CertificateFileServi
 import { LookupPageService } from '../certificate/lookup/LookupPageService';
 import { CertificatePageService } from '../certificate/page/CertificatePageService';
 import type { Config } from '../config/schema/ConfigSchema';
+import type { CredentialService } from '../credential/CredentialService';
 import type { DatabaseService } from '../database/DatabaseService';
 import { StartupError } from '../error/StartupError';
 import { LocaleResolver } from '../i18n/LocaleResolver';
@@ -39,6 +40,7 @@ type HttpServiceOptions = {
   lookupPages: LookupPageService;
   publicAssets: PublicAssetsService;
   linkPreviews: LinkPreviewService;
+  credentials: CredentialService;
   api: ApiService;
   compressor: ResponseCompressor;
   revalidator: ResponseRevalidator;
@@ -89,6 +91,8 @@ export class HttpService {
 
   protected readonly linkPreviews: LinkPreviewService;
 
+  protected readonly credentials: CredentialService;
+
   protected readonly api: ApiService;
 
   protected readonly compressor: ResponseCompressor;
@@ -114,6 +118,7 @@ export class HttpService {
     this.lookupPages = options.lookupPages;
     this.publicAssets = options.publicAssets;
     this.linkPreviews = options.linkPreviews;
+    this.credentials = options.credentials;
     this.api = options.api;
     this.compressor = options.compressor;
     this.revalidator = options.revalidator;
@@ -129,6 +134,7 @@ export class HttpService {
     adminPanel: AdminPanelService;
     publicAssets: PublicAssetsService;
     linkPreviews: LinkPreviewService;
+    credentials: CredentialService;
     injections?: Partial<HttpServiceOptions>;
   }): HttpService {
     const { config, dataDirectory, injections } = options;
@@ -161,6 +167,7 @@ export class HttpService {
       lookupPages: injections?.lookupPages ?? LookupPageService.create(pages),
       publicAssets: assets,
       linkPreviews: previews,
+      credentials: injections?.credentials ?? options.credentials,
       api: injections?.api ?? options.api,
       compressor: injections?.compressor ?? new ResponseCompressor(),
       revalidator: injections?.revalidator ?? new ResponseRevalidator(),
@@ -228,6 +235,7 @@ export class HttpService {
     app.route(PublicAssetsService.Path, this.publicAssets.getApp());
     app.route('/', this.linkPreviews.getApp());
     app.route('/', this.certificateFiles.getApp());
+    app.route('/', this.credentials.getApp());
     app.route('/', this.certificatePages.getApp());
     app.route('/', this.lookupPages.getApp());
 

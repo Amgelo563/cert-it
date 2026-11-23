@@ -16,6 +16,8 @@ type CertificatePageProps = {
   linkedInUrl: string | null;
   /** Path of the PDF, shown inline. */
   pdfPath: string;
+  /** Path of the signed Open Badges credential, always downloaded. */
+  credentialPath: string;
   /** Null while the certificate is active. */
   revoked: { date: string; reason: string | null } | null;
 };
@@ -78,13 +80,11 @@ export function CertificatePage(props: CertificatePageProps) {
           </figure>
 
           <div class="certificate-actions">
-            <a
-              class="button button-primary"
-              href={`${props.pdfPath}?download=1`}
-            >
-              <DownloadIcon />
-              {texts.download}
-            </a>
+            <DownloadMenu
+              texts={texts}
+              pdfUrl={`${props.pdfPath}?download=1`}
+              credentialUrl={props.credentialPath}
+            />
             <button
               type="button"
               class="button"
@@ -136,6 +136,54 @@ export function CertificatePage(props: CertificatePageProps) {
   );
 }
 
+// a split button: the main part downloads the PDF, the menu offers every format; opens without JavaScript
+function DownloadMenu(props: {
+  texts: Messages['certificatePage'];
+  pdfUrl: string;
+  credentialUrl: string;
+}) {
+  const { texts } = props;
+
+  return (
+    <div class="download">
+      <a class="button button-primary download-main" href={props.pdfUrl}>
+        <DownloadIcon />
+        {texts.download}
+      </a>
+      <details class="download-options" data-menu>
+        <summary
+          class="button button-primary download-toggle"
+          aria-label={texts.downloadOptions}
+        >
+          <ChevronIcon />
+        </summary>
+        <ul class="download-menu">
+          <li>
+            {/* the default, as the main button downloads it */}
+            <a href={props.pdfUrl} aria-current="true">
+              <span class="download-format">
+                {texts.downloadPdf}
+                <span class="download-hint">{texts.downloadPdfHint}</span>
+              </span>
+              <SelectedIcon />
+            </a>
+          </li>
+          <li>
+            <a href={props.credentialUrl} download>
+              <span class="download-format">
+                {texts.downloadCredential}
+                <span class="download-hint">
+                  {texts.downloadCredentialHint}
+                </span>
+              </span>
+            </a>
+          </li>
+        </ul>
+      </details>
+    </div>
+  );
+}
+
 // covers the skeleton when there's no preview: without JavaScript, or when drawing fails
 function PreviewFallback(props: {
   texts: Messages['certificatePage'];
@@ -180,6 +228,39 @@ function CrossIcon() {
     >
       <circle cx="12" cy="12" r="9" />
       <path d="m9.5 9.5 5 5m0-5-5 5" />
+    </svg>
+  );
+}
+
+// as the language menu marks its current choice
+function SelectedIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 12l5 5l10 -10" />
+    </svg>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="m6 9 6 6 6-6" />
     </svg>
   );
 }

@@ -3,6 +3,7 @@ import { CertificateStatusEnum, CourseDateFormatter } from '@cert-it/shared';
 import { type Context, Hono } from 'hono';
 import { html } from 'hono/html';
 import type { Config } from '../../config/schema/ConfigSchema';
+import { OpenBadgeBuilder } from '../../credential/OpenBadgeBuilder';
 import type { DatabaseService } from '../../database/DatabaseService';
 import type { HttpEnv } from '../../http/HttpEnv';
 import { LocaleResolver } from '../../i18n/LocaleResolver';
@@ -190,6 +191,9 @@ export class CertificatePageService {
               linkedInUrl={linkedInUrl}
               pdfPath={this.siteUrl.path(
                 CertificateFileService.Path.replace(':code', code),
+              )}
+              credentialPath={this.siteUrl.path(
+                OpenBadgeBuilder.CredentialPath.replace(':code', code),
               )}
               revoked={revoked}
             />

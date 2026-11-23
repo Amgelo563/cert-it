@@ -85,7 +85,7 @@ export class IssueJobHandler extends AbstractCertificateJobHandler<
     return Result.ok({ rendered, skipped });
   }
 
-  // the file goes first, so a crash leaves an unused file rather than a certificate without one
+  // the file goes first, so a crash leaves an unused file rather than a certificate without one; at worst a PDF without its credential
   protected async issue(
     renderer: CertificateRenderer,
     course: Course,
@@ -93,7 +93,11 @@ export class IssueJobHandler extends AbstractCertificateJobHandler<
     data: { participant: Participant; issueDate: string },
   ): Promise<SkippedParticipant | null> {
     const code = this.createUnusedCode();
-    const skip = await this.renderAndStore(renderer, course, { ...data, code });
+    const skip = await this.renderAndStore(renderer, course, {
+      ...data,
+      code,
+      id: null,
+    });
     if (skip) return skip;
 
     const created = this.database.getRepositories().certificates.create({
@@ -110,6 +114,12 @@ export class IssueJobHandler extends AbstractCertificateJobHandler<
       throw created.error;
     }
 
+    // the credential's status entry needs the ID, so it's added once the row exists
+    await this.storeCredential(course, {
+      ...data,
+      code,
+      id: created.value.id,
+    });
     return null;
   }
 

@@ -24,6 +24,11 @@ export const EnMessages = {
     issuer: 'Issued by',
     code: 'Certificate code',
     download: 'Download',
+    downloadOptions: 'More download options',
+    downloadPdf: 'PDF',
+    downloadPdfHint: 'To print or share',
+    downloadCredential: 'Verifiable credential',
+    downloadCredentialHint: 'Open Badges 3.0, for digital wallets',
     copyLink: 'Copy link',
     linkCopied: 'Link copied',
     addToLinkedIn: 'Add to LinkedIn',
@@ -36,6 +41,10 @@ export const EnMessages = {
     revokedOn: 'This certificate was revoked on {date}.',
     revokedReason: 'Reason: {reason}',
     revokedHelp: 'If you think this is a mistake, contact {org}.',
+  },
+  credential: {
+    achievementDescription: 'Certificate for {course}, issued by {org}.',
+    criteria: 'Awarded by {org} to participants of {course}.',
   },
   lookupPage: {
     title: 'Find my certificate',

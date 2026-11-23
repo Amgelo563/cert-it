@@ -1,14 +1,23 @@
-type LanguageSwitcherOptions = {
-  /** The `[data-language-switcher]` details element. */
+type DetailsMenuOptions = {
+  /** The `[data-menu]` details element. */
   details: HTMLDetailsElement;
 };
 
-/** Closes the language menu on a click outside it, on Escape, or when focus leaves it, as the admin panel's does. */
-export class LanguageSwitcher {
+/** Closes a details menu on a click outside it or on one of its links, on Escape, or when focus leaves it, as the admin panel's menus do. */
+export class DetailsMenu {
   protected readonly details: HTMLDetailsElement;
 
-  constructor(options: LanguageSwitcherOptions) {
+  constructor(options: DetailsMenuOptions) {
     this.details = options.details;
+  }
+
+  /** Starts every `details[data-menu]` of the page. */
+  public static startAll(): void {
+    for (const details of document.querySelectorAll<HTMLDetailsElement>(
+      'details[data-menu]',
+    )) {
+      new DetailsMenu({ details }).start();
+    }
   }
 
   /** Listens for clicks and keys while the page is open. */
@@ -21,6 +30,11 @@ export class LanguageSwitcher {
 
       this.close();
       this.details.querySelector('summary')?.focus();
+    });
+
+    // a download keeps the page, so the menu would stay open
+    this.details.addEventListener('click', (event) => {
+      if ((event.target as Element).closest('a')) this.close();
     });
 
     this.details.addEventListener('focusout', (event) => {

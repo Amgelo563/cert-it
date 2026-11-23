@@ -8,6 +8,7 @@ import { PasswordHasher } from '../../auth/password/PasswordHasher';
 import type { SessionService } from '../../auth/session/SessionService';
 import { CertificateService } from '../../certificate/CertificateService';
 import { CertificateExportService } from '../../certificate/export/CertificateExportService';
+import type { CredentialSigner } from '../../credential/CredentialSigner';
 import type { Config } from '../../config/schema/ConfigSchema';
 import { CourseService } from '../../course/CourseService';
 import type { DatabaseService } from '../../database/DatabaseService';
@@ -88,6 +89,8 @@ export class ApiService {
     dataDirectory: DataDirectoryService;
     sessions: SessionService;
     backgroundJobs: BackgroundJobService;
+    /** Signs the credentials the certificate exports include. */
+    credentials: CredentialSigner;
     /** Also takes the dependencies shared by the default services. */
     injections?: Partial<ApiServiceOptions> & {
       passwords?: PasswordHasher;
@@ -100,6 +103,7 @@ export class ApiService {
       dataDirectory,
       sessions,
       backgroundJobs,
+      credentials,
       injections,
     } = options;
     const passwords = injections?.passwords ?? new PasswordHasher();
@@ -132,7 +136,11 @@ export class ApiService {
         }),
       certificateExports:
         injections?.certificateExports
-        ?? CertificateExportService.create({ ...services, dataDirectory }),
+        ?? CertificateExportService.create({
+          ...services,
+          dataDirectory,
+          credentials,
+        }),
       jobs:
         injections?.jobs
         ?? JobService.create({ ...services, jobs: backgroundJobs }),

@@ -11,9 +11,11 @@ type DataDirectoryServiceOptions = {
   root: string;
 };
 
-/** The directory that holds the database and every stored file: `app.db`, `fonts/`, `templates/` and `certificates/`. */
+/** The directory that holds the database and every stored file: `app.db`, `site.json`, `fonts/`, `templates/`, `certificates/` and `keys/`. */
 export class DataDirectoryService {
   protected static readonly DatabaseFileName = 'app.db';
+
+  protected static readonly SiteRecordFileName = 'site.json';
 
   protected static readonly FontsFolder = 'fonts';
 
@@ -21,15 +23,19 @@ export class DataDirectoryService {
 
   protected static readonly CertificatesFolder = 'certificates';
 
+  protected static readonly KeysFolder = 'keys';
+
+  protected static readonly IssuerKeyFileName = 'issuer.pem';
+
   protected readonly directory: ManagedDirectory;
 
   constructor(options: DataDirectoryServiceOptions) {
-    const { FontsFolder, TemplatesFolder, CertificatesFolder } =
+    const { FontsFolder, TemplatesFolder, CertificatesFolder, KeysFolder } =
       DataDirectoryService;
 
     this.directory = new ManagedDirectory({
       root: options.root,
-      folders: [FontsFolder, TemplatesFolder, CertificatesFolder],
+      folders: [FontsFolder, TemplatesFolder, CertificatesFolder, KeysFolder],
     });
   }
 
@@ -66,6 +72,11 @@ export class DataDirectoryService {
 
   public getDatabasePath(): string {
     return this.directory.resolve(DataDirectoryService.DatabaseFileName);
+  }
+
+  /** Returns the path of the file that records the address certificates were issued under. */
+  public getSiteRecordPath(): string {
+    return this.directory.resolve(DataDirectoryService.SiteRecordFileName);
   }
 
   /** Returns the path of a stored font, given its file name (`<sha256>.<ext>`). */
@@ -155,6 +166,14 @@ export class DataDirectoryService {
       DataDirectoryService.CertificatesFolder,
       String(courseId),
       `${code}.pdf`,
+    );
+  }
+
+  /** Returns the path of the private key that signs verifiable credentials. */
+  public getIssuerKeyPath(): string {
+    return this.directory.resolve(
+      DataDirectoryService.KeysFolder,
+      DataDirectoryService.IssuerKeyFileName,
     );
   }
 }

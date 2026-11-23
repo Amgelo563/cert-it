@@ -4,7 +4,21 @@ site:
   #   https://certs.example.org
   #   https://example.org/certs
   # Required.
+  #
+  # Certificates keep the address they were issued under: their QR codes and
+  # verifiable credentials point to it. Once any is issued, the app won't
+  # start with a different base_url until the move is confirmed through
+  # previous_base_url below.
   base_url: https://certs.example.org
+
+  # The base_url certificates were issued under, to confirm a move to a new
+  # one. Before setting it, redirect every path under the old address to the
+  # same path under the new one: printed QR codes and credentials already
+  # handed out keep using the old address. The app then renders every
+  # certificate again with the new address. It only confirms a move from
+  # the address the app recorded, so it can stay set afterwards.
+  # Empty: none.
+  previous_base_url: ''
 
   # Issuing organization, shown on the public certificate pages.
   # Required.

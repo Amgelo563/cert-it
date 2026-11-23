@@ -1,20 +1,31 @@
 import { SiteUrl } from '@cert-it/hono';
 import { AdminPanelService } from '../admin/AdminPanelService';
+import { AuditLogService } from '../audit/AuditLogService';
+import { AuthGuard } from '../auth/AuthGuard';
 import { PasswordHasher } from '../auth/password/PasswordHasher';
+import { CertificateRegenerator } from '../certificate/regenerate/CertificateRegenerator';
 import { SessionService } from '../auth/session/SessionService';
 import type { Config } from '../config/schema/ConfigSchema';
+import { CredentialService } from '../credential/CredentialService';
+import { CredentialSigner } from '../credential/CredentialSigner';
+import { IssuerKeyService } from '../credential/key/IssuerKeyService';
+import { OpenBadgeBuilder } from '../credential/OpenBadgeBuilder';
 import { DatabaseService } from '../database/DatabaseService';
 import { ApiService } from '../http/api/ApiService';
 import { HttpService } from '../http/HttpService';
+import { MessagesService } from '../i18n/MessagesService';
 import { BackgroundJobService } from '../job/BackgroundJobService';
 import { PublicAssetsService } from '../page/PublicAssetsService';
 import { LinkPreviewService } from '../page/preview/LinkPreviewService';
+import { BaseUrlService } from '../site/BaseUrlService';
 import { DataDirectoryService } from '../storage/DataDirectoryService';
 import { StorageCleanupService } from '../storage/StorageCleanupService';
 
 type AppServiceOptions = {
   dataDirectory: DataDirectoryService;
   database: DatabaseService;
+  baseUrls: BaseUrlService;
+  issuerKeys: IssuerKeyService;
   passwords: PasswordHasher;
   sessions: SessionService;
   storageCleanup: StorageCleanupService;
@@ -40,6 +51,10 @@ export class AppService {
 
   protected readonly database: DatabaseService;
 
+  protected readonly baseUrls: BaseUrlService;
+
+  protected readonly issuerKeys: IssuerKeyService;
+
   protected readonly passwords: PasswordHasher;
 
   protected readonly sessions: SessionService;
@@ -61,6 +76,8 @@ export class AppService {
   constructor(options: AppServiceOptions) {
     this.dataDirectory = options.dataDirectory;
     this.database = options.database;
+    this.baseUrls = options.baseUrls;
+    this.issuerKeys = options.issuerKeys;
     this.passwords = options.passwords;
     this.sessions = options.sessions;
     this.storageCleanup = options.storageCleanup;
@@ -92,22 +109,33 @@ export class AppService {
       injections?.database
       ?? new DatabaseService({ path: dataDirectory.getDatabasePath() });
     const passwords = injections?.passwords ?? new PasswordHasher();
-    const sessions = new SessionService({
-      database,
-      siteUrl: new SiteUrl({ baseUrl: config.site.baseUrl }),
+    const siteUrl = new SiteUrl({ baseUrl: config.site.baseUrl });
+    const sessions = new SessionService({ database, siteUrl });
+    const issuerKeys = new IssuerKeyService({
+      path: dataDirectory.getIssuerKeyPath(),
+      createMissing: true,
     });
+    const badges = new OpenBadgeBuilder({
+      siteUrl,
+      orgName: config.site.orgName,
+      messages: new MessagesService(),
+    });
+    const signer = new CredentialSigner({ keys: issuerKeys, builder: badges });
     const jobs = BackgroundJobService.create({
       config,
       database,
       dataDirectory,
     });
+    const guard = new AuthGuard({ sessions });
+    const auditLog = new AuditLogService({ database, guard });
     const api = ApiService.create({
       config,
       database,
       dataDirectory,
       sessions,
       backgroundJobs: jobs,
-      injections: { passwords },
+      credentials: signer,
+      injections: { passwords, guard, auditLog },
     });
     const adminPanel = AdminPanelService.create({ config });
     const publicAssets =
@@ -121,11 +149,24 @@ export class AppService {
       adminPanel,
       publicAssets,
       linkPreviews,
+      credentials: new CredentialService({
+        database,
+        signer,
+        builder: badges,
+      }),
     });
 
     return {
       dataDirectory,
       database,
+      baseUrls: new BaseUrlService({
+        baseUrl: config.site.baseUrl,
+        previousBaseUrl: config.site.previousBaseUrl ?? null,
+        database,
+        dataDirectory,
+        regenerator: CertificateRegenerator.create({ auditLog, jobs }),
+      }),
+      issuerKeys,
       passwords,
       sessions,
       storageCleanup: StorageCleanupService.create({ database, dataDirectory }),
@@ -169,10 +210,15 @@ export class AppService {
     try {
       this.dataDirectory.start();
       this.database.start();
+      // before anything is issued under a new address
+      await this.baseUrls.start();
+      // before the jobs, whose generator only reads the key
+      await this.issuerKeys.start();
       await this.startUsers();
       this.sessions.start();
       this.storageCleanup.start();
       this.jobs.start();
+      await this.baseUrls.completeMove();
       await this.startAdminPanel();
       this.publicAssets.start();
       this.linkPreviews.start();

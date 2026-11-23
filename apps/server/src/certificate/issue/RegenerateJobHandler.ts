@@ -53,6 +53,7 @@ export class RegenerateJobHandler extends AbstractCertificateJobHandler<
       // deleted since the job was added
       if (certificate && participant) {
         const skip = await this.renderAndStore(renderer, course, {
+          id: certificate.id,
           participant,
           code: certificate.code,
           issueDate: certificate.issueDate,

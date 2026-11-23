@@ -42,6 +42,7 @@ const DefaultTrustedProxies = [
 export const ConfigSchema = strictObject({
   site: strictObject({
     baseUrl: url({ protocol: /^https?$/ }),
+    previousBaseUrl: blank(url({ protocol: /^https?$/ }).optional()),
     orgName: string().trim().min(1).max(100),
     linkedinOrgId: blank(
       preprocess(

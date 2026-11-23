@@ -12,6 +12,7 @@ import {
   getTableColumns,
   inArray,
   ne,
+  sql,
 } from 'drizzle-orm';
 import type { CourseId } from '../../course/Course';
 import type { ParticipantId } from '../../participant/Participant';
@@ -19,7 +20,7 @@ import { participantTable } from '../../participant/repository/participantTable'
 import type { TemplateVersionId } from '../../template/TemplateVersion';
 import type { NormalizedEmail } from '../../util/email/NormalizedEmail';
 import type { CertificateCode } from '../code/CertificateCode';
-import type { Certificate } from '../Certificate';
+import type { Certificate, CertificateId } from '../Certificate';
 import type { CertificateCounts } from '../CertificateCounts';
 import type { CertificateRepository } from './CertificateRepository';
 import { certificateTable } from './certificateTable';
@@ -86,6 +87,10 @@ export class SqliteCertificateRepository
     });
   }
 
+  public listAll(): Certificate[] {
+    return this.findMany();
+  }
+
   public listAllByCourse(courseId: CourseId): Certificate[] {
     return this.findMany({ where: eq(certificateTable.courseId, courseId) });
   }
@@ -100,6 +105,23 @@ export class SqliteCertificateRepository
         ne(certificateTable.templateVersionId, templateVersionId),
       ),
     });
+  }
+
+  public listActiveIds(): CertificateId[] {
+    return this.db
+      .select({ id: certificateTable.id })
+      .from(certificateTable)
+      .where(eq(certificateTable.status, CertificateStatusEnum.Active))
+      .all()
+      .map(({ id }) => id);
+  }
+
+  // AUTOINCREMENT keeps the highest ID in sqlite_sequence, even once its row is deleted
+  public findHighestId(): number {
+    const row = this.db.get<{ seq: number } | undefined>(
+      sql`SELECT seq FROM sqlite_sequence WHERE name = 'certificates'`,
+    );
+    return row?.seq ?? 0;
   }
 
   public countByCourses(

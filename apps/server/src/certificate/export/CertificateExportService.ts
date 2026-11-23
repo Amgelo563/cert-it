@@ -14,6 +14,8 @@ import type { AuthEnv } from '../../auth/AuthEnv';
 import type { AuthGuard } from '../../auth/AuthGuard';
 import type { Config } from '../../config/schema/ConfigSchema';
 import type { Course, CourseId } from '../../course/Course';
+import type { CredentialSigner } from '../../credential/CredentialSigner';
+import { OpenBadgeBuilder } from '../../credential/OpenBadgeBuilder';
 import type { DatabaseService } from '../../database/DatabaseService';
 import { apiError } from '../../http/api/apiError';
 import { attachmentDisposition } from '../../http/attachmentDisposition';
@@ -28,6 +30,8 @@ type CertificateExportServiceOptions = {
   dataDirectory: DataDirectoryService;
   /** Builds the public URLs in the CSV. */
   siteUrl: SiteUrl;
+  /** Signs the credential next to each PDF in the ZIP. */
+  credentials: CredentialSigner;
   /** @default console.error */
   log?: (line: string) => void;
 };
@@ -38,7 +42,7 @@ type ExportRow = {
   participant: Participant;
 };
 
-/** Serves a course's certificate exports to Editors: its active PDFs as a streamed ZIP, and a CSV of every code and URL. */
+/** Serves a course's certificate exports to Editors: its active PDFs and their signed credentials as a streamed ZIP, and a CSV of every code and URL. */
 export class CertificateExportService {
   /** Path of the routes, relative to the base path. */
   public static readonly Path = '/api/courses/:courseId/certificates/export';
@@ -57,6 +61,7 @@ export class CertificateExportService {
     'issue_date',
     'template_version',
     'url',
+    'credential_url',
     'revoked_reason',
   ];
 
@@ -73,6 +78,8 @@ export class CertificateExportService {
 
   protected readonly siteUrl: SiteUrl;
 
+  protected readonly credentials: CredentialSigner;
+
   protected readonly log: (line: string) => void;
 
   protected readonly app: ReturnType<CertificateExportService['createApp']>;
@@ -82,6 +89,7 @@ export class CertificateExportService {
     this.guard = options.guard;
     this.dataDirectory = options.dataDirectory;
     this.siteUrl = options.siteUrl;
+    this.credentials = options.credentials;
     this.log = options.log ?? console.error;
     this.app = this.createApp();
   }
@@ -91,6 +99,7 @@ export class CertificateExportService {
     database: DatabaseService;
     guard: AuthGuard;
     dataDirectory: DataDirectoryService;
+    credentials: CredentialSigner;
     injections?: Partial<CertificateExportServiceOptions>;
   }): CertificateExportService {
     const { config, injections, ...defaults } = options;
@@ -145,10 +154,20 @@ export class CertificateExportService {
         continue;
       }
       // PDFs are compressed already
-      zip.addFile(path, this.entryName(participant, certificate), {
+      zip.addFile(path, this.entryName(participant, certificate, 'pdf'), {
         compress: false,
         mtime: file.mtime,
       });
+      const jwt = this.credentials.signCertificate({
+        certificate,
+        course,
+        participant,
+      });
+      zip.addBuffer(
+        Buffer.from(jwt),
+        this.entryName(participant, certificate, 'jwt'),
+        { mtime: file.mtime },
+      );
     }
     zip.end();
 
@@ -190,6 +209,15 @@ export class CertificateExportService {
         certificate.issueDate,
         String(versions.get(certificate.templateVersionId) ?? ''),
         this.siteUrl.url(`/c/${certificate.code}`),
+        // served only while active, as the PDF
+        certificate.status === CertificateStatusEnum.Active
+          ? this.siteUrl.url(
+              OpenBadgeBuilder.CredentialPath.replace(
+                ':code',
+                certificate.code,
+              ),
+            )
+          : '',
         certificate.revokedReason ?? '',
       ]),
     ]);
@@ -225,15 +253,19 @@ export class CertificateExportService {
   }
 
   // the code keeps names unique, even for two participants with the same name
-  protected entryName(participant: Participant, certificate: Certificate) {
+  protected entryName(
+    participant: Participant,
+    certificate: Certificate,
+    extension: 'pdf' | 'jwt',
+  ) {
     const name = participant.name
       .replace(CertificateExportService.UnsafeNameCharacters, '')
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, CertificateExportService.MaxNameLength);
     return name
-      ? `${name} - ${certificate.code}.pdf`
-      : `${certificate.code}.pdf`;
+      ? `${name} - ${certificate.code}.${extension}`
+      : `${certificate.code}.${extension}`;
   }
 
   protected findCourse(c: Context<AuthEnv>): Course | null {

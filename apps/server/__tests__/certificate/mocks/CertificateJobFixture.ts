@@ -21,6 +21,7 @@ import type { User } from '../../../src/user/User';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
 import { MockSeeder } from '../../database/mocks/MockSeeder';
 import { readFontFixture } from '../../font/mocks/readFontFixture';
+import { createTestCredentials } from '../../credential/mocks/createTestCredentials';
 
 /** A database and data directory with a course, an editor and a stored font, for the certificate job handlers. */
 export class CertificateJobFixture {
@@ -55,10 +56,12 @@ export class CertificateJobFixture {
 
   /** Returns the options every handler takes. */
   public handlerOptions(): CertificateJobHandlerOptions {
+    const siteUrl = new SiteUrl({ baseUrl: CertificateJobFixture.BaseUrl });
     return {
       database: this.database,
       dataDirectory: this.dataDirectory,
-      siteUrl: new SiteUrl({ baseUrl: CertificateJobFixture.BaseUrl }),
+      siteUrl,
+      credentials: createTestCredentials(this.database, siteUrl).signer,
     };
   }
 

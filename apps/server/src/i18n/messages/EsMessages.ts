@@ -24,6 +24,11 @@ export const EsMessages = {
     issuer: 'Emitido por',
     code: 'Código del certificado',
     download: 'Descargar',
+    downloadOptions: 'Más opciones de descarga',
+    downloadPdf: 'PDF',
+    downloadPdfHint: 'Para imprimir o compartir',
+    downloadCredential: 'Credencial verificable',
+    downloadCredentialHint: 'Open Badges 3.0, para billeteras digitales',
     copyLink: 'Copiar enlace',
     linkCopied: 'Enlace copiado',
     addToLinkedIn: 'Añadir a LinkedIn',
@@ -36,6 +41,10 @@ export const EsMessages = {
     revokedOn: 'Este certificado fue revocado el {date}.',
     revokedReason: 'Motivo: {reason}',
     revokedHelp: 'Si crees que es un error, contacta a {org}.',
+  },
+  credential: {
+    achievementDescription: 'Certificado de {course}, emitido por {org}.',
+    criteria: 'Otorgado por {org} a los participantes de {course}.',
   },
   lookupPage: {
     title: 'Buscar mi certificado',

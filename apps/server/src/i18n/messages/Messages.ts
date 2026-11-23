@@ -30,7 +30,14 @@ export type Messages = {
     issueDate: string;
     issuer: string;
     code: string;
+    /** The main download button, which downloads the PDF. */
     download: string;
+    /** Accessible label of the button that opens the other download formats. */
+    downloadOptions: string;
+    downloadPdf: string;
+    downloadPdfHint: string;
+    downloadCredential: string;
+    downloadCredentialHint: string;
     copyLink: string;
     linkCopied: string;
     addToLinkedIn: string;
@@ -51,6 +58,13 @@ export type Messages = {
     revokedReason: string;
     /** Placeholders: {org}. */
     revokedHelp: string;
+  };
+  /** Texts inside the Open Badges credentials, in the course's language. */
+  credential: {
+    /** Placeholders: {course}, {org}. */
+    achievementDescription: string;
+    /** Placeholders: {course}, {org}. */
+    criteria: string;
   };
   /** The public "Find my certificate" page. */
   lookupPage: {

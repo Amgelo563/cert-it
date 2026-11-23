@@ -64,6 +64,9 @@ export interface CertificateRepository {
   /** Returns a page of the certificates of a course, newest first. */
   listByCourse(courseId: CourseId, page: PageRequest): Page<Certificate>;
 
+  /** Returns every certificate, of every course, oldest first. */
+  listAll(): Certificate[];
+
   /** Returns every certificate of a course, oldest first. */
   listAllByCourse(courseId: CourseId): Certificate[];
 
@@ -72,6 +75,12 @@ export interface CertificateRepository {
     courseId: CourseId,
     templateVersionId: TemplateVersionId,
   ): Certificate[];
+
+  /** Returns the IDs of every active certificate, in any course. */
+  listActiveIds(): CertificateId[];
+
+  /** Returns the highest ID ever given to a certificate, deleted ones included, or 0 if there's been none. IDs are never reused. */
+  findHighestId(): number;
 
   /** Returns the number of certificates of each given course in each status, leaving out courses with none. */
   countByCourses(

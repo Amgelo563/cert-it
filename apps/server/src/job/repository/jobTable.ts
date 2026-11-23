@@ -15,8 +15,8 @@ export const jobTable = sqliteTable(
       .notNull()
       .references(() => courseTable.id, { onDelete: 'cascade' })
       .$type<CourseId>(),
+    // null for jobs the app adds on its own
     createdBy: integer('created_by')
-      .notNull()
       .references(() => userTable.id)
       .$type<UserId>(),
   },

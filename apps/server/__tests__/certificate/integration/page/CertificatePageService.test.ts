@@ -88,7 +88,7 @@ describe('CertificatePageService (active certificate)', () => {
     expect(page).toContain(certificate.code);
   });
 
-  test('GIVEN an active certificate WHEN opening its page THEN links the preview, download and copy link', async () => {
+  test('GIVEN an active certificate WHEN opening its page THEN links the preview, both downloads and copy link', async () => {
     const certificate = issue();
 
     const page = await (
@@ -100,6 +100,10 @@ describe('CertificatePageService (active certificate)', () => {
     expect(page).toContain(
       `href="/certs/c/${certificate.code}/pdf?download=1"`,
     );
+    expect(page).toContain(
+      `href="/certs/c/${certificate.code}/credential" download`,
+    );
+    expect(page).toContain('aria-label="More download options"');
     expect(page).toContain(
       `data-copy-link="${ApiHarnessOrigin}/certs/c/${certificate.code}"`,
     );
@@ -191,7 +195,7 @@ describe('CertificatePageService (revoked certificate)', () => {
     expect(page).not.toContain('Valid certificate');
   });
 
-  test('GIVEN a revoked certificate WHEN opening its page THEN offers no PDF, preview or copy link', async () => {
+  test('GIVEN a revoked certificate WHEN opening its page THEN offers no PDF, credential, preview or copy link', async () => {
     const certificate = issue();
     revoke(certificate, 'Issued by mistake');
 
@@ -200,6 +204,7 @@ describe('CertificatePageService (revoked certificate)', () => {
     ).text();
 
     expect(page).not.toContain('/pdf');
+    expect(page).not.toContain('/credential');
     expect(page).not.toContain('data-preview');
     expect(page).not.toContain('data-copy-link');
   });

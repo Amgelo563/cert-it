@@ -4,6 +4,8 @@ export type GeneratorSettings = {
   readonly databasePath: string;
   /** Path of the data directory. */
   readonly dataDir: string;
-  /** Public address of the app, for the URLs in QR codes. */
+  /** Public address of the app, for the URLs in QR codes and credentials. */
   readonly baseUrl: string;
+  /** Name of the issuing organization, for the credentials. */
+  readonly orgName: string;
 };

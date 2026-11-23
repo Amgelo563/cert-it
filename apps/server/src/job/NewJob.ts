@@ -7,5 +7,6 @@ export type NewJob = JobTask & {
   courseId: CourseId;
   /** The number of certificates to process. */
   total: number;
-  createdBy: UserId;
+  /** Null when the app adds it on its own. */
+  createdBy: UserId | null;
 };

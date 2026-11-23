@@ -41,7 +41,8 @@ export class CertificateRegenerator {
     courseId: CourseId;
     certificates: readonly Certificate[];
     version: TemplateVersion;
-    userId: UserId;
+    /** Null when the app regenerates on its own. */
+    userId: UserId | null;
   }): Job {
     const { courseId, certificates, version, userId } = options;
     const job = this.jobs

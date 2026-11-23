@@ -58,7 +58,7 @@ async function setup() {
 }
 
 describe('CertificateExportService (zip)', () => {
-  test('GIVEN active, revoked and missing PDFs WHEN downloading the ZIP THEN streams only the active ones that exist, named after the participant', async () => {
+  test('GIVEN active, revoked and missing PDFs WHEN downloading the ZIP THEN streams only the active ones that exist with their credentials, named after the participant', async () => {
     const { ada, download, missing, revoked } = await setup();
 
     const response = await download('zip');
@@ -72,6 +72,7 @@ describe('CertificateExportService (zip)', () => {
     );
     expect(bytes.subarray(0, 4).toString('latin1')).toBe('PK\u0003\u0004');
     expect(text).toContain(`Ada Lovelace - ${ada.code}.pdf`);
+    expect(text).toContain(`Ada Lovelace - ${ada.code}.jwt`);
     expect(text).toContain('%PDF-1.7');
     expect(text).not.toContain(revoked.code);
     expect(text).not.toContain(missing.code);
@@ -89,7 +90,7 @@ describe('CertificateExportService (zip)', () => {
 });
 
 describe('CertificateExportService (csv)', () => {
-  test('GIVEN certificates in each state WHEN exporting the CSV THEN lists every one by name with its public URL', async () => {
+  test('GIVEN certificates in each state WHEN exporting the CSV THEN lists every one by name with its public URL, and the credential URL of active ones', async () => {
     const { ada, download, missing, revoked } = await setup();
 
     const response = await download('csv');
@@ -103,10 +104,10 @@ describe('CertificateExportService (csv)', () => {
       'text/csv; charset=utf-8',
     );
     expect(lines).toEqual([
-      'name,email,code,status,issue_date,template_version,url,revoked_reason',
-      `'=Cy,cy@example.org,${missing.code},active,2026-11-18,1,https://example.org/certs/c/${missing.code},`,
-      `Ada / Lovelace,ada@example.org,${ada.code},active,2026-11-18,1,https://example.org/certs/c/${ada.code},`,
-      `Bob,bob@example.org,${revoked.code},revoked,2026-11-18,1,https://example.org/certs/c/${revoked.code},"Duplicate, sent twice"`,
+      'name,email,code,status,issue_date,template_version,url,credential_url,revoked_reason',
+      `'=Cy,cy@example.org,${missing.code},active,2026-11-18,1,https://example.org/certs/c/${missing.code},https://example.org/certs/c/${missing.code}/credential,`,
+      `Ada / Lovelace,ada@example.org,${ada.code},active,2026-11-18,1,https://example.org/certs/c/${ada.code},https://example.org/certs/c/${ada.code}/credential,`,
+      `Bob,bob@example.org,${revoked.code},revoked,2026-11-18,1,https://example.org/certs/c/${revoked.code},,"Duplicate, sent twice"`,
       '',
     ]);
   });

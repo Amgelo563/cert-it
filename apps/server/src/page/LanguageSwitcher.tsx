@@ -13,7 +13,7 @@ export function LanguageSwitcher(props: LanguageSwitcherProps) {
   const label = messages.get(locale).language.switcherLabel;
 
   return (
-    <details class="language-switcher" data-language-switcher>
+    <details class="language-switcher" data-menu>
       {/* the name keeps the visible code, so voice control finds it */}
       <summary class="language-switcher-button">
         <LanguageIcon />

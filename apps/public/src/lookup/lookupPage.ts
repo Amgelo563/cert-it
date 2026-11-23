@@ -2,12 +2,8 @@
 import '@fontsource-variable/inter/wght.css';
 import 'virtual:theme.css';
 import '../style/public.css';
-import { LanguageSwitcher } from '../language/LanguageSwitcher';
+import { DetailsMenu } from '../menu/DetailsMenu';
 
-for (const details of document.querySelectorAll<HTMLDetailsElement>(
-  'details[data-language-switcher]',
-)) {
-  new LanguageSwitcher({ details }).start();
-}
+DetailsMenu.startAll();
 
 document.getElementById('lookup-message')?.focus();
