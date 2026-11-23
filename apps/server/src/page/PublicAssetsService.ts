@@ -24,6 +24,8 @@ type ManifestEntry = {
   file: string;
   name?: string;
   isEntry?: boolean;
+  /** Manifest keys of the chunks it imports. */
+  imports?: string[];
   css?: string[];
 };
 
@@ -136,10 +138,30 @@ export class PublicAssetsService {
 
       entries.set(entry.name, {
         script: this.url(entry.file),
-        styles: (entry.css ?? []).map((file) => this.url(file)),
+        styles: PublicAssetsService.collectStyles(manifest, entry).map((file) =>
+          this.url(file),
+        ),
       });
     }
     return entries;
+  }
+
+  // styles shared by several pages belong to the chunks they import, so those come first
+  protected static collectStyles(
+    manifest: Record<string, ManifestEntry>,
+    entry: ManifestEntry,
+    seen = new Set<ManifestEntry>(),
+  ): string[] {
+    if (seen.has(entry)) return [];
+    seen.add(entry);
+
+    const imported = (entry.imports ?? []).flatMap((key) => {
+      const chunk = manifest[key];
+      return chunk
+        ? PublicAssetsService.collectStyles(manifest, chunk, seen)
+        : [];
+    });
+    return [...new Set([...imported, ...(entry.css ?? [])])];
   }
 
   // the manifest and anything outside the served folders stay private

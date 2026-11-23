@@ -1,16 +1,21 @@
 {
+  "_shared-jkl012.js": {
+    "file": "assets/shared-jkl012.js",
+    "name": "shared",
+    "css": ["assets/certificate-def456.css"]
+  },
   "src/certificate/certificatePage.ts": {
     "file": "assets/certificate-abc123.js",
     "name": "certificate",
     "src": "src/certificate/certificatePage.ts",
     "isEntry": true,
-    "css": ["assets/certificate-def456.css"]
+    "imports": ["_shared-jkl012.js"]
   },
   "src/lookup/lookupPage.ts": {
     "file": "assets/lookup-ghi789.js",
     "name": "lookup",
     "src": "src/lookup/lookupPage.ts",
     "isEntry": true,
-    "css": ["assets/certificate-def456.css"]
+    "imports": ["_shared-jkl012.js"]
   }
 }

@@ -325,6 +325,25 @@ describe('CertificatePageService (language)', () => {
     expect(page).toContain('18 de noviembre de 2026');
   });
 
+  test('GIVEN a Spanish course WHEN opening the page THEN the switcher links each language and marks Spanish as current', async () => {
+    const certificate = issue(spanishCourse);
+
+    const page = await (
+      await harness.requestPublic(`/c/${certificate.code}`)
+    ).text();
+
+    expect(page).toContain(
+      '<summary class="language-switcher-button" aria-label="Idioma">',
+    );
+    expect(page).toContain('</svg>ES</summary>');
+    expect(page).toContain(
+      '<a href="?lang=es" hreflang="es" lang="es" aria-current="true">Español<svg',
+    );
+    expect(page).toContain(
+      '<a href="?lang=en" hreflang="en" lang="en">English</a>',
+    );
+  });
+
   test('GIVEN a language cookie WHEN opening the page THEN it wins over the course language', async () => {
     const certificate = issue(spanishCourse);
 

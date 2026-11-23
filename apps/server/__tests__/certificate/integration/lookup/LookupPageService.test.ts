@@ -66,6 +66,21 @@ describe('LookupPageService (page)', () => {
     );
   });
 
+  test('GIVEN the page WHEN opening it with ?lang=es THEN shows it in Spanish with the language switcher', async () => {
+    seeder.course();
+
+    const page = await (await harness.requestPublic('/?lang=es')).text();
+
+    expect(page).toContain('<html lang="es">');
+    expect(page).toContain(
+      '<nav class="language-switcher-menu" aria-label="Idioma">',
+    );
+    expect(page).toContain('href="?lang=en"');
+    expect(page).toContain(
+      '<a href="?lang=es" hreflang="es" lang="es" aria-current="true">',
+    );
+  });
+
   test('GIVEN the page WHEN opening it THEN links the lookup styles without inline code', async () => {
     seeder.course();
 

@@ -186,6 +186,7 @@ export class LookupPageService {
       html`<!doctype html>${(
           <PublicLayout
             locale={locale}
+            messages={messages}
             title={texts.title}
             description={description}
             orgName={this.orgName}

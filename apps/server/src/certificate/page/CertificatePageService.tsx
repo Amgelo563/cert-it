@@ -171,6 +171,7 @@ export class CertificatePageService {
       html`<!doctype html>${(
           <PublicLayout
             locale={locale}
+            messages={messages}
             title={title}
             description={description}
             orgName={this.orgName}
@@ -207,6 +208,7 @@ export class CertificatePageService {
       html`<!doctype html>${(
           <PublicLayout
             locale={locale}
+            messages={messages}
             title={texts.certificateNotFound}
             orgName={this.orgName}
             assets={this.assets.getPage(CertificatePageService.AssetsEntry)}

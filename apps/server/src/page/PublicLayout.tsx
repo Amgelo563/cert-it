@@ -1,10 +1,13 @@
 import type { Locale } from '@cert-it/shared';
 import type { Child } from 'hono/jsx';
+import type { MessagesService } from '../i18n/MessagesService';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import type { LinkPreview } from './preview/LinkPreview';
 import type { PublicPageAssets } from './PublicPageAssets';
 
 type PublicLayoutProps = {
   locale: Locale;
+  messages: MessagesService;
   title: string;
   description?: string | undefined;
   /** Name of the issuing organization, shown in the header. */
@@ -17,8 +20,16 @@ type PublicLayoutProps = {
 
 /** The HTML shell of the public pages: no inline scripts or styles, so it works under the domain's strict CSP. */
 export function PublicLayout(props: PublicLayoutProps) {
-  const { locale, title, description, orgName, assets, preview, children } =
-    props;
+  const {
+    locale,
+    messages,
+    title,
+    description,
+    orgName,
+    assets,
+    preview,
+    children,
+  } = props;
 
   return (
     <html lang={locale}>
@@ -39,6 +50,7 @@ export function PublicLayout(props: PublicLayoutProps) {
         <header class="site-header">
           <div class="container">
             <span class="site-org">{orgName}</span>
+            <LanguageSwitcher locale={locale} messages={messages} />
           </div>
         </header>
         {children}
