@@ -1,7 +1,6 @@
 import { once } from 'node:events';
 import {
   ClientIpResolver,
-  type CsrfGuard,
   ResponseCompressor,
   ResponseRevalidator,
   SiteUrl,
@@ -13,28 +12,18 @@ import { type Context, Hono, type MiddlewareHandler } from 'hono';
 import { getCookie, setCookie } from 'hono/cookie';
 import { secureHeaders } from 'hono/secure-headers';
 import { AdminPanelService } from '../admin/AdminPanelService';
-import { AuditLogService } from '../audit/AuditLogService';
-import { AuthService } from '../auth/AuthService';
-import { createCsrfGuard } from '../auth/csrf/createCsrfGuard';
-import type { CertificateFileService } from '../certificate/file/CertificateFileService';
-import type { LookupPageService } from '../certificate/lookup/LookupPageService';
-import type { CertificatePageService } from '../certificate/page/CertificatePageService';
+import { CertificateFileService } from '../certificate/file/CertificateFileService';
+import { LookupPageService } from '../certificate/lookup/LookupPageService';
+import { CertificatePageService } from '../certificate/page/CertificatePageService';
 import type { Config } from '../config/schema/ConfigSchema';
-import { CourseService } from '../course/CourseService';
 import type { DatabaseService } from '../database/DatabaseService';
 import { StartupError } from '../error/StartupError';
-import { FontCatalogService } from '../font/catalog/FontCatalogService';
-import { FontService } from '../font/FontService';
 import { LocaleResolver } from '../i18n/LocaleResolver';
 import { MessagesService } from '../i18n/MessagesService';
-import { ParticipantService } from '../participant/ParticipantService';
-import { CertificateService } from '../certificate/CertificateService';
-import { CertificateExportService } from '../certificate/export/CertificateExportService';
-import { JobService } from '../job/JobService';
 import { PublicAssetsService } from '../page/PublicAssetsService';
 import type { LinkPreviewService } from '../page/preview/LinkPreviewService';
-import { TemplateService } from '../template/TemplateService';
-import { UserService } from '../user/UserService';
+import type { DataDirectoryService } from '../storage/DataDirectoryService';
+import type { ApiService } from './api/ApiService';
 import type { HttpEnv } from './HttpEnv';
 
 type HttpServiceOptions = {
@@ -50,18 +39,7 @@ type HttpServiceOptions = {
   lookupPages: LookupPageService;
   publicAssets: PublicAssetsService;
   linkPreviews: LinkPreviewService;
-  auth: AuthService;
-  users: UserService;
-  courses: CourseService;
-  participants: ParticipantService;
-  certificates: CertificateService;
-  certificateExports: CertificateExportService;
-  jobs: JobService;
-  fonts: FontService;
-  fontCatalog: FontCatalogService;
-  templates: TemplateService;
-  auditLog: AuditLogService;
-  csrf: CsrfGuard;
+  api: ApiService;
   compressor: ResponseCompressor;
   revalidator: ResponseRevalidator;
   /** @default console.log */
@@ -81,8 +59,6 @@ export class HttpService {
   protected static readonly HstsMaxAgeSeconds = 31_536_000;
 
   protected static readonly HealthPath = '/healthz';
-
-  protected static readonly ApiPath = '/api';
 
   /** Query parameter the language switcher links set. */
   protected static readonly LocaleParam = 'lang';
@@ -113,37 +89,13 @@ export class HttpService {
 
   protected readonly linkPreviews: LinkPreviewService;
 
-  protected readonly auth: AuthService;
-
-  protected readonly users: UserService;
-
-  protected readonly courses: CourseService;
-
-  protected readonly participants: ParticipantService;
-
-  protected readonly certificates: CertificateService;
-
-  protected readonly certificateExports: CertificateExportService;
-
-  protected readonly jobs: JobService;
-
-  protected readonly fonts: FontService;
-
-  protected readonly fontCatalog: FontCatalogService;
-
-  protected readonly templates: TemplateService;
-
-  protected readonly auditLog: AuditLogService;
-
-  protected readonly csrf: CsrfGuard;
+  protected readonly api: ApiService;
 
   protected readonly compressor: ResponseCompressor;
 
   protected readonly revalidator: ResponseRevalidator;
 
   protected readonly log: (line: string) => void;
-
-  protected readonly api: ReturnType<HttpService['createApi']>;
 
   protected readonly app: Hono<HttpEnv>;
 
@@ -162,99 +114,57 @@ export class HttpService {
     this.lookupPages = options.lookupPages;
     this.publicAssets = options.publicAssets;
     this.linkPreviews = options.linkPreviews;
-    this.auth = options.auth;
-    this.users = options.users;
-    this.courses = options.courses;
-    this.participants = options.participants;
-    this.certificates = options.certificates;
-    this.certificateExports = options.certificateExports;
-    this.jobs = options.jobs;
-    this.fonts = options.fonts;
-    this.fontCatalog = options.fontCatalog;
-    this.templates = options.templates;
-    this.auditLog = options.auditLog;
-    this.csrf = options.csrf;
+    this.api = options.api;
     this.compressor = options.compressor;
     this.revalidator = options.revalidator;
     this.log = options.log ?? console.log;
-    this.api = this.createApi();
     this.app = this.createApp();
   }
 
   public static create(options: {
     config: Config;
     database: DatabaseService;
+    dataDirectory: DataDirectoryService;
+    api: ApiService;
     adminPanel: AdminPanelService;
-    certificateFiles: CertificateFileService;
-    certificatePages: CertificatePageService;
-    lookupPages: LookupPageService;
     publicAssets: PublicAssetsService;
     linkPreviews: LinkPreviewService;
-    auth: AuthService;
-    users: UserService;
-    courses: CourseService;
-    participants: ParticipantService;
-    certificates: CertificateService;
-    certificateExports: CertificateExportService;
-    jobs: JobService;
-    fonts: FontService;
-    fontCatalog: FontCatalogService;
-    templates: TemplateService;
-    auditLog: AuditLogService;
+    injections?: Partial<HttpServiceOptions>;
   }): HttpService {
-    const {
-      config,
-      database,
-      adminPanel,
-      certificateFiles,
-      certificatePages,
-      lookupPages,
-      publicAssets,
-      linkPreviews,
-      auth,
-      users,
-      courses,
-      participants,
-      certificates,
-      certificateExports,
-      jobs,
-      fonts,
-      fontCatalog,
-      templates,
-      auditLog,
-    } = options;
-    const siteUrl = new SiteUrl({ baseUrl: config.site.baseUrl });
+    const { config, dataDirectory, injections } = options;
+    const database = injections?.database ?? options.database;
+    const assets = injections?.publicAssets ?? options.publicAssets;
+    const previews = injections?.linkPreviews ?? options.linkPreviews;
+    const pages = { config, database, assets, previews };
 
     return new HttpService({
-      port: config.server.port,
-      siteUrl,
-      clientIps: new ClientIpResolver({
-        trustedProxies: config.server.trustedProxies,
-        getConnInfo,
-      }),
+      port: injections?.port ?? config.server.port,
+      siteUrl:
+        injections?.siteUrl ?? new SiteUrl({ baseUrl: config.site.baseUrl }),
+      clientIps:
+        injections?.clientIps
+        ?? new ClientIpResolver({
+          trustedProxies: config.server.trustedProxies,
+          getConnInfo,
+        }),
       database,
-      locales: new LocaleResolver({ defaultLocale: config.site.defaultLocale }),
-      messages: new MessagesService(),
-      adminPanel,
-      certificateFiles,
-      certificatePages,
-      lookupPages,
-      publicAssets,
-      linkPreviews,
-      auth,
-      users,
-      courses,
-      participants,
-      certificates,
-      certificateExports,
-      jobs,
-      fonts,
-      fontCatalog,
-      templates,
-      auditLog,
-      csrf: createCsrfGuard(siteUrl),
-      compressor: new ResponseCompressor(),
-      revalidator: new ResponseRevalidator(),
+      locales:
+        injections?.locales
+        ?? new LocaleResolver({ defaultLocale: config.site.defaultLocale }),
+      messages: injections?.messages ?? new MessagesService(),
+      adminPanel: injections?.adminPanel ?? options.adminPanel,
+      certificateFiles:
+        injections?.certificateFiles
+        ?? CertificateFileService.create({ config, database, dataDirectory }),
+      certificatePages:
+        injections?.certificatePages ?? CertificatePageService.create(pages),
+      lookupPages: injections?.lookupPages ?? LookupPageService.create(pages),
+      publicAssets: assets,
+      linkPreviews: previews,
+      api: injections?.api ?? options.api,
+      compressor: injections?.compressor ?? new ResponseCompressor(),
+      revalidator: injections?.revalidator ?? new ResponseRevalidator(),
+      log: injections?.log,
     });
   }
 
@@ -294,27 +204,6 @@ export class HttpService {
     return this.app;
   }
 
-  /** Returns the API routes, mounted under the base path, typed for the admin panel as CertItApi. */
-  public getApi(): HttpService['api'] {
-    return this.api;
-  }
-
-  // chained, so hono/client can infer the routes' types
-  protected createApi() {
-    return new Hono<HttpEnv>({ strict: false })
-      .route(AuthService.Path, this.auth.getApp())
-      .route(UserService.Path, this.users.getApp())
-      .route(CourseService.Path, this.courses.getApp())
-      .route(ParticipantService.Path, this.participants.getApp())
-      .route(CertificateExportService.Path, this.certificateExports.getApp())
-      .route(CertificateService.Path, this.certificates.getApp())
-      .route(JobService.Path, this.jobs.getApp())
-      .route(TemplateService.Path, this.templates.getApp())
-      .route(FontService.Path, this.fonts.getApp())
-      .route(FontCatalogService.Path, this.fontCatalog.getApp())
-      .route(AuditLogService.Path, this.auditLog.getApp());
-  }
-
   protected createApp(): Hono<HttpEnv> {
     const root = new Hono<HttpEnv>({ strict: false });
     const app = root.basePath(this.siteUrl.getBasePath());
@@ -334,9 +223,7 @@ export class HttpService {
       app.get(HttpService.HealthPath, (c) => this.healthz(c));
     }
 
-    app.use(`${HttpService.ApiPath}/*`, this.csrf.middleware(), this.noStore());
-    app.route('/', this.api);
-
+    app.route('/', this.api.getApp());
     app.route(AdminPanelService.Path, this.adminPanel.getApp());
     app.route(PublicAssetsService.Path, this.publicAssets.getApp());
     app.route('/', this.linkPreviews.getApp());
@@ -411,16 +298,6 @@ export class HttpService {
         'Content-Security-Policy',
         isAdmin ? HttpService.AdminCsp : HttpService.PublicCsp,
       );
-    };
-  }
-
-  // API answers are per user and change with every write, unless a route says otherwise
-  protected noStore(): MiddlewareHandler<HttpEnv> {
-    return async (c, next) => {
-      await next();
-      if (!c.res.headers.has('Cache-Control')) {
-        c.header('Cache-Control', 'no-store');
-      }
     };
   }
 

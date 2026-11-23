@@ -27,7 +27,7 @@ import { JobService } from '../../../src/job/JobService';
 import { QueueOnlyJobService } from '../../job/mocks/QueueOnlyJobService';
 import { UserService } from '../../../src/user/UserService';
 
-/** Returns the API service options of HttpService, with rate limits that tests can reach. Without a data directory, file routes use one that is never created. */
+/** Returns the options of ApiService, with rate limits that tests can reach. Without a data directory, file routes use one that is never created. */
 export function createAuthOptions(
   database: DatabaseService,
   siteUrl: SiteUrl,

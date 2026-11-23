@@ -1,30 +1,16 @@
-import { SiteUrl } from '@cert-it/hono';
-import { AdminPanelService } from '../admin/AdminPanelService';
-import { AuditLogService } from '../audit/AuditLogService';
-import { AuthGuard } from '../auth/AuthGuard';
-import { AuthService } from '../auth/AuthService';
-import { PasswordHasher } from '../auth/password/PasswordHasher';
-import { SessionService } from '../auth/session/SessionService';
-import { CertificateFileService } from '../certificate/file/CertificateFileService';
-import { LookupPageService } from '../certificate/lookup/LookupPageService';
-import { CertificatePageService } from '../certificate/page/CertificatePageService';
-import type { Config } from '../config/schema/ConfigSchema';
-import { DatabaseService } from '../database/DatabaseService';
-import { HttpService } from '../http/HttpService';
-import { PublicAssetsService } from '../page/PublicAssetsService';
-import { LinkPreviewService } from '../page/preview/LinkPreviewService';
-import { DataDirectoryService } from '../storage/DataDirectoryService';
-import { StorageCleanupService } from '../storage/StorageCleanupService';
-import { UserService } from '../user/UserService';
-import { CourseService } from '../course/CourseService';
-import { ParticipantService } from '../participant/ParticipantService';
-import { FontCatalogService } from '../font/catalog/FontCatalogService';
-import { FontService } from '../font/FontService';
-import { TemplateService } from '../template/TemplateService';
-import { BackgroundJobService } from '../job/BackgroundJobService';
-import { JobService } from '../job/JobService';
-import { CertificateService } from '../certificate/CertificateService';
-import { CertificateExportService } from '../certificate/export/CertificateExportService';
+import { SiteUrl } from "@cert-it/hono";
+import { AdminPanelService } from "../admin/AdminPanelService";
+import { PasswordHasher } from "../auth/password/PasswordHasher";
+import { SessionService } from "../auth/session/SessionService";
+import type { Config } from "../config/schema/ConfigSchema";
+import { DatabaseService } from "../database/DatabaseService";
+import { ApiService } from "../http/api/ApiService";
+import { HttpService } from "../http/HttpService";
+import { BackgroundJobService } from "../job/BackgroundJobService";
+import { PublicAssetsService } from "../page/PublicAssetsService";
+import { LinkPreviewService } from "../page/preview/LinkPreviewService";
+import { DataDirectoryService } from "../storage/DataDirectoryService";
+import { StorageCleanupService } from "../storage/StorageCleanupService";
 
 type AppServiceOptions = {
   dataDirectory: DataDirectoryService;
@@ -33,7 +19,7 @@ type AppServiceOptions = {
   sessions: SessionService;
   storageCleanup: StorageCleanupService;
   jobs: BackgroundJobService;
-  users: UserService;
+  api: ApiService;
   adminPanel: AdminPanelService;
   publicAssets: PublicAssetsService;
   linkPreviews: LinkPreviewService;
@@ -44,7 +30,7 @@ type AppServiceOptions = {
 export type AppServiceInjections = Partial<
   Pick<
     AppServiceOptions,
-    'dataDirectory' | 'database' | 'passwords' | 'publicAssets'
+    "dataDirectory" | "database" | "passwords" | "publicAssets"
   >
 >;
 
@@ -62,7 +48,7 @@ export class AppService {
 
   protected readonly jobs: BackgroundJobService;
 
-  protected readonly users: UserService;
+  protected readonly api: ApiService;
 
   protected readonly adminPanel: AdminPanelService;
 
@@ -79,7 +65,7 @@ export class AppService {
     this.sessions = options.sessions;
     this.storageCleanup = options.storageCleanup;
     this.jobs = options.jobs;
-    this.users = options.users;
+    this.api = options.api;
     this.adminPanel = options.adminPanel;
     this.publicAssets = options.publicAssets;
     this.linkPreviews = options.linkPreviews;
@@ -93,6 +79,65 @@ export class AppService {
     return new AppService(AppService.createServices(options));
   }
 
+  // wires the services together, for create and subclasses
+  protected static createServices(options: {
+    config: Config;
+    injections?: AppServiceInjections;
+  }): AppServiceOptions {
+    const { config, injections } = options;
+    const dataDirectory =
+      injections?.dataDirectory ??
+      new DataDirectoryService({ root: config.server.dataDir });
+    const database =
+      injections?.database ??
+      new DatabaseService({ path: dataDirectory.getDatabasePath() });
+    const passwords = injections?.passwords ?? new PasswordHasher();
+    const sessions = new SessionService({
+      database,
+      siteUrl: new SiteUrl({ baseUrl: config.site.baseUrl }),
+    });
+    const jobs = BackgroundJobService.create({
+      config,
+      database,
+      dataDirectory,
+    });
+    const api = ApiService.create({
+      config,
+      database,
+      dataDirectory,
+      sessions,
+      backgroundJobs: jobs,
+      injections: { passwords },
+    });
+    const adminPanel = AdminPanelService.create({ config });
+    const publicAssets =
+      injections?.publicAssets ?? PublicAssetsService.create({ config });
+    const linkPreviews = LinkPreviewService.create({ config, dataDirectory });
+    const http = HttpService.create({
+      config,
+      database,
+      dataDirectory,
+      api,
+      adminPanel,
+      publicAssets,
+      linkPreviews,
+    });
+
+    return {
+      dataDirectory,
+      database,
+      passwords,
+      sessions,
+      storageCleanup: StorageCleanupService.create({ database, dataDirectory }),
+      jobs,
+      api,
+      adminPanel,
+      publicAssets,
+      linkPreviews,
+      http,
+    };
+  }
+
   /** Starts the app as the process's main program: exits if it can't start, and stops cleanly on SIGTERM or SIGINT. */
   public async run(): Promise<void> {
     try {
@@ -102,7 +147,7 @@ export class AppService {
       process.exit(1);
     }
 
-    for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+    for (const signal of ["SIGTERM", "SIGINT"] as const) {
       process.once(signal, () => {
         this.stop().then(
           () => process.exit(0),
@@ -150,112 +195,10 @@ export class AppService {
 
   // creates the first Admin on an empty database
   protected async startUsers(): Promise<void> {
-    await this.users.start();
+    await this.api.start();
   }
 
   protected async startAdminPanel(): Promise<void> {
     await this.adminPanel.start();
-  }
-
-  // wires the services together, for create and subclasses
-  protected static createServices(options: {
-    config: Config;
-    injections?: AppServiceInjections;
-  }): AppServiceOptions {
-    const { config, injections } = options;
-    const dataDirectory =
-      injections?.dataDirectory
-      ?? new DataDirectoryService({ root: config.server.dataDir });
-    const database =
-      injections?.database
-      ?? new DatabaseService({ path: dataDirectory.getDatabasePath() });
-    const passwords = injections?.passwords ?? new PasswordHasher();
-    const sessions = new SessionService({
-      database,
-      siteUrl: new SiteUrl({ baseUrl: config.site.baseUrl }),
-    });
-    const guard = new AuthGuard({ sessions });
-    const auditLog = new AuditLogService({ database, guard });
-    const services = { config, database, passwords, sessions, guard, auditLog };
-    const users = UserService.create(services);
-    const auth = AuthService.create(services);
-    const jobs = BackgroundJobService.create({
-      config,
-      database,
-      dataDirectory,
-    });
-    const courses = CourseService.create({ ...services, dataDirectory });
-    const participants = ParticipantService.create({
-      ...services,
-      dataDirectory,
-      jobs,
-    });
-    const certificates = CertificateService.create({
-      ...services,
-      dataDirectory,
-      jobs,
-    });
-    const certificateExports = CertificateExportService.create({
-      ...services,
-      dataDirectory,
-    });
-    const jobRoutes = JobService.create({ ...services, jobs });
-    const fonts = FontService.create({ ...services, dataDirectory });
-    const fontCatalog = FontCatalogService.create({ ...services, fonts });
-    const templates = TemplateService.create({ ...services, dataDirectory });
-    const adminPanel = AdminPanelService.create({ config });
-    const publicAssets =
-      injections?.publicAssets ?? PublicAssetsService.create({ config });
-    const linkPreviews = LinkPreviewService.create({ config, dataDirectory });
-    const certificateFiles = CertificateFileService.create({
-      config,
-      database,
-      dataDirectory,
-    });
-    const http = HttpService.create({
-      config,
-      database,
-      adminPanel,
-      certificateFiles,
-      certificatePages: CertificatePageService.create({
-        config,
-        database,
-        assets: publicAssets,
-        previews: linkPreviews,
-      }),
-      lookupPages: LookupPageService.create({
-        config,
-        database,
-        assets: publicAssets,
-        previews: linkPreviews,
-      }),
-      publicAssets,
-      linkPreviews,
-      auth,
-      users,
-      courses,
-      participants,
-      certificates,
-      certificateExports,
-      jobs: jobRoutes,
-      fonts,
-      fontCatalog,
-      templates,
-      auditLog,
-    });
-
-    return {
-      dataDirectory,
-      database,
-      passwords,
-      sessions,
-      storageCleanup: StorageCleanupService.create({ database, dataDirectory }),
-      jobs,
-      users,
-      adminPanel,
-      publicAssets,
-      linkPreviews,
-      http,
-    };
   }
 }

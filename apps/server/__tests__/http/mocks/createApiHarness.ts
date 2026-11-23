@@ -11,6 +11,7 @@ import { PasswordHasher } from '../../../src/auth/password/PasswordHasher';
 import { AccelFileServer } from '../../../src/certificate/file/AccelFileServer';
 import { CertificateFileService } from '../../../src/certificate/file/CertificateFileService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
+import { ApiService } from '../../../src/http/api/ApiService';
 import { HttpService } from '../../../src/http/HttpService';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
 import { MessagesService } from '../../../src/i18n/MessagesService';
@@ -47,6 +48,7 @@ export function createApiHarness(
   } = {},
 ) {
   const siteUrl = new SiteUrl({ baseUrl: `${ApiHarnessOrigin}/certs` });
+  const api = new ApiService(createAuthOptions(database, siteUrl, options));
   const http = new HttpService({
     port: 0,
     siteUrl,
@@ -70,7 +72,7 @@ export function createApiHarness(
       dataDirectory: options.dataDirectory,
       ...options.linkPreviews,
     }),
-    ...createAuthOptions(database, siteUrl, options),
+    api,
     compressor: new ResponseCompressor(),
     revalidator: new ResponseRevalidator(),
     log: () => {},
@@ -175,8 +177,8 @@ export function createApiHarness(
   /** The API's routes as `METHOD /path`, relative to /certs/api, without middleware entries. */
   const listRoutes = (): string[] => [
     ...new Set(
-      http
-        .getApi()
+      api
+        .getApp()
         .routes.filter(({ method }) => method !== 'ALL')
         .map(({ method, path }) => `${method} ${path.replace(/^\/api/, '')}`),
     ),

@@ -3,25 +3,26 @@ import {
   ResponseCompressor,
   ResponseRevalidator,
   SiteUrl,
-} from '@cert-it/hono';
-import { getConnInfo } from '@hono/node-server/conninfo';
-import { createServer, type Server } from 'node:net';
-import { once } from 'node:events';
-import { LocaleEnum } from '@cert-it/shared';
-import { afterAll, afterEach, describe, expect, test } from 'vite-plus/test';
-import { AdminPanelService } from '../../../src/admin/AdminPanelService';
-import { AccelFileServer } from '../../../src/certificate/file/AccelFileServer';
-import { CertificateFileService } from '../../../src/certificate/file/CertificateFileService';
-import type { DatabaseService } from '../../../src/database/DatabaseService';
-import { StartupError } from '../../../src/error/StartupError';
-import { HttpService } from '../../../src/http/HttpService';
-import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
-import { MessagesService } from '../../../src/i18n/MessagesService';
-import { createAuthOptions } from '../../auth/mocks/createAuthOptions';
-import { createPublicPageOptions } from '../../page/mocks/createPublicPageOptions';
-import { createAdminBuild } from '../../admin/mocks/createAdminBuild';
-import { createTestDatabase } from '../../database/mocks/createTestDatabase';
-import { MockSeeder } from '../../database/mocks/MockSeeder';
+} from "@cert-it/hono";
+import { getConnInfo } from "@hono/node-server/conninfo";
+import { createServer, type Server } from "node:net";
+import { once } from "node:events";
+import { LocaleEnum } from "@cert-it/shared";
+import { afterAll, afterEach, describe, expect, test } from "vite-plus/test";
+import { AdminPanelService } from "../../../src/admin/AdminPanelService";
+import { AccelFileServer } from "../../../src/certificate/file/AccelFileServer";
+import { CertificateFileService } from "../../../src/certificate/file/CertificateFileService";
+import type { DatabaseService } from "../../../src/database/DatabaseService";
+import { StartupError } from "../../../src/error/StartupError";
+import { ApiService } from "../../../src/http/api/ApiService";
+import { HttpService } from "../../../src/http/HttpService";
+import { LocaleResolver } from "../../../src/i18n/LocaleResolver";
+import { MessagesService } from "../../../src/i18n/MessagesService";
+import { createAuthOptions } from "../../auth/mocks/createAuthOptions";
+import { createPublicPageOptions } from "../../page/mocks/createPublicPageOptions";
+import { createAdminBuild } from "../../admin/mocks/createAdminBuild";
+import { createTestDatabase } from "../../database/mocks/createTestDatabase";
+import { MockSeeder } from "../../database/mocks/MockSeeder";
 
 const databases: DatabaseService[] = [];
 const adminBuild = createAdminBuild();
@@ -53,7 +54,7 @@ function createHttp(
     port: 0,
     siteUrl,
     clientIps: new ClientIpResolver({
-      trustedProxies: ['127.0.0.0/8'],
+      trustedProxies: ["127.0.0.0/8"],
       getConnInfo,
     }),
     database,
@@ -65,7 +66,7 @@ function createHttp(
       fileServer: new AccelFileServer({ siteUrl }),
     }),
     ...createPublicPageOptions(database, siteUrl),
-    ...createAuthOptions(database, siteUrl),
+    api: new ApiService(createAuthOptions(database, siteUrl)),
     compressor: new ResponseCompressor(),
     revalidator: new ResponseRevalidator(),
     log: (line) => lines.push(line),
@@ -76,7 +77,7 @@ function request(
   http: HttpService,
   path: string,
   headers: Record<string, string> = {},
-  remoteAddress = '127.0.0.1',
+  remoteAddress = "127.0.0.1",
 ): Promise<Response> {
   return Promise.resolve(
     http
@@ -86,24 +87,24 @@ function request(
 }
 
 describe.each([
-  { baseUrl: 'https://certs.example.org', base: '' },
-  { baseUrl: 'https://example.org/certs', base: '/certs' },
-])('HttpService ($baseUrl)', ({ baseUrl, base }) => {
-  test('GIVEN a started database WHEN requesting healthz under the base path THEN answers ok', async () => {
+  { baseUrl: "https://certs.example.org", base: "" },
+  { baseUrl: "https://example.org/certs", base: "/certs" },
+])("HttpService ($baseUrl)", ({ baseUrl, base }) => {
+  test("GIVEN a started database WHEN requesting healthz under the base path THEN answers ok", async () => {
     const response = await request(createHttp(baseUrl), `${base}/healthz`);
 
     expect(response.status).toBe(200);
-    expect(await response.text()).toBe('ok');
-    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.text()).toBe("ok");
+    expect(response.headers.get("cache-control")).toBe("no-store");
   });
 
-  test('GIVEN any base path WHEN requesting healthz at the root THEN answers ok', async () => {
-    const response = await request(createHttp(baseUrl), '/healthz');
+  test("GIVEN any base path WHEN requesting healthz at the root THEN answers ok", async () => {
+    const response = await request(createHttp(baseUrl), "/healthz");
 
     expect(response.status).toBe(200);
   });
 
-  test('GIVEN a closed database WHEN requesting healthz THEN answers 503', async () => {
+  test("GIVEN a closed database WHEN requesting healthz THEN answers 503", async () => {
     const http = createHttp(baseUrl);
     databases.at(-1)?.close();
 
@@ -112,7 +113,7 @@ describe.each([
     expect(response.status).toBe(503);
   });
 
-  test('GIVEN an active certificate WHEN requesting its PDF under the base path THEN hands it to nginx untouched by compression or ETags', async () => {
+  test("GIVEN an active certificate WHEN requesting its PDF under the base path THEN hands it to nginx untouched by compression or ETags", async () => {
     const database = createTestDatabase();
     const seeder = new MockSeeder(database.getRepositories());
     const course = seeder.course();
@@ -124,66 +125,66 @@ describe.each([
     const response = await request(
       createHttp(baseUrl, [], database),
       `${base}/c/${certificate.code}/pdf`,
-      { 'Accept-Encoding': 'gzip' },
+      { "Accept-Encoding": "gzip" },
     );
 
     expect(response.status).toBe(200);
-    expect(response.headers.get('x-accel-redirect')).toBe(
+    expect(response.headers.get("x-accel-redirect")).toBe(
       `${base}/_files/${course.id}/${certificate.code}.pdf`,
     );
-    expect(response.headers.get('content-encoding')).toBeNull();
-    expect(response.headers.get('etag')).toBeNull();
+    expect(response.headers.get("content-encoding")).toBeNull();
+    expect(response.headers.get("etag")).toBeNull();
   });
 
-  test('GIVEN a public page WHEN requesting it THEN sends the security headers and the public CSP', async () => {
+  test("GIVEN a public page WHEN requesting it THEN sends the security headers and the public CSP", async () => {
     const response = await request(createHttp(baseUrl), `${base}/`);
 
     expect(response.status).toBe(200);
-    expect(response.headers.get('x-frame-options')).toBe('SAMEORIGIN');
-    expect(response.headers.get('x-content-type-options')).toBe('nosniff');
-    expect(response.headers.get('content-security-policy')).toBe(
+    expect(response.headers.get("x-frame-options")).toBe("SAMEORIGIN");
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(response.headers.get("content-security-policy")).toBe(
       HttpService.PublicCsp,
     );
   });
 
-  test.each(['/admin', '/admin/', '/admin/x'])(
-    'GIVEN the admin path %s WHEN requesting it THEN sends the admin CSP',
+  test.each(["/admin", "/admin/", "/admin/x"])(
+    "GIVEN the admin path %s WHEN requesting it THEN sends the admin CSP",
     async (path) => {
       const response = await request(createHttp(baseUrl), `${base}${path}`);
 
-      expect(response.headers.get('content-security-policy')).toBe(
+      expect(response.headers.get("content-security-policy")).toBe(
         HttpService.AdminCsp,
       );
     },
   );
 
-  test('GIVEN a path that only starts like admin WHEN requesting it THEN sends the public CSP', async () => {
+  test("GIVEN a path that only starts like admin WHEN requesting it THEN sends the public CSP", async () => {
     const response = await request(
       createHttp(baseUrl),
       `${base}/administrator`,
     );
 
-    expect(response.headers.get('content-security-policy')).toBe(
+    expect(response.headers.get("content-security-policy")).toBe(
       HttpService.PublicCsp,
     );
   });
 
-  test.skipIf(base !== '')(
-    'GIVEN an HTTPS base URL WHEN requesting THEN sends HSTS without includeSubDomains',
+  test.skipIf(base !== "")(
+    "GIVEN an HTTPS base URL WHEN requesting THEN sends HSTS without includeSubDomains",
     async () => {
       const response = await request(createHttp(baseUrl), `${base}/`);
-      const hsts = response.headers.get('strict-transport-security');
+      const hsts = response.headers.get("strict-transport-security");
 
       expect(hsts).toMatch(/^max-age=\d+$/);
     },
   );
 
-  test('GIVEN a request through a trusted proxy WHEN logged THEN shows the forwarded IP and no query', async () => {
+  test("GIVEN a request through a trusted proxy WHEN logged THEN shows the forwarded IP and no query", async () => {
     const lines: string[] = [];
     const http = createHttp(baseUrl, lines);
 
     await request(http, `${base}/?email=a@b.c`, {
-      'x-real-ip': '198.51.100.7',
+      "x-real-ip": "198.51.100.7",
     });
 
     expect(lines).toEqual([
@@ -193,25 +194,25 @@ describe.each([
     ]);
   });
 
-  test('GIVEN a healthz request WHEN handled THEN is not logged', async () => {
+  test("GIVEN a healthz request WHEN handled THEN is not logged", async () => {
     const lines: string[] = [];
     const http = createHttp(baseUrl, lines);
 
     await request(http, `${base}/healthz`);
-    await request(http, '/healthz');
+    await request(http, "/healthz");
 
     expect(lines).toEqual([]);
   });
 });
 
 describe.each([
-  { baseUrl: 'https://certs.example.org', base: '', cookiePath: '/' },
+  { baseUrl: "https://certs.example.org", base: "", cookiePath: "/" },
   {
-    baseUrl: 'https://example.org/certs',
-    base: '/certs',
-    cookiePath: '/certs',
+    baseUrl: "https://example.org/certs",
+    base: "/certs",
+    cookiePath: "/certs",
   },
-])('HttpService (locale, $baseUrl)', ({ baseUrl, base, cookiePath }) => {
+])("HttpService (locale, $baseUrl)", ({ baseUrl, base, cookiePath }) => {
   // answers with the resolved locale and a text in it, to see what the middleware set
   function createLocaleHttp(): HttpService {
     const http = createHttp(baseUrl);
@@ -219,75 +220,75 @@ describe.each([
       .getApp()
       .get(`${base}/locale`, (c) =>
         c.text(
-          `${c.get('locale')} ${c.get('messages').get(c.get('locale')).language.name}`,
+          `${c.get("locale")} ${c.get("messages").get(c.get("locale")).language.name}`,
         ),
       );
     return http;
   }
 
-  test('GIVEN a supported ?lang= WHEN requesting THEN uses it and saves it in a cookie under the base path', async () => {
+  test("GIVEN a supported ?lang= WHEN requesting THEN uses it and saves it in a cookie under the base path", async () => {
     const response = await request(
       createLocaleHttp(),
       `${base}/locale?lang=es`,
     );
-    const cookie = response.headers.get('set-cookie') ?? '';
+    const cookie = response.headers.get("set-cookie") ?? "";
 
-    expect(await response.text()).toBe('es Español');
+    expect(await response.text()).toBe("es Español");
     expect(cookie).toMatch(/^lang=es;/);
     expect(cookie).toContain(`Path=${cookiePath};`);
-    expect(cookie).toContain('Secure');
-    expect(cookie).toContain('SameSite=Lax');
-    expect(cookie).not.toContain('HttpOnly');
+    expect(cookie).toContain("Secure");
+    expect(cookie).toContain("SameSite=Lax");
+    expect(cookie).not.toContain("HttpOnly");
   });
 
-  test('GIVEN an unsupported ?lang= WHEN requesting THEN sets no cookie and falls back', async () => {
+  test("GIVEN an unsupported ?lang= WHEN requesting THEN sets no cookie and falls back", async () => {
     const response = await request(
       createLocaleHttp(),
       `${base}/locale?lang=fr`,
       {
-        'accept-language': 'es-PE,es;q=0.9',
+        "accept-language": "es-PE,es;q=0.9",
       },
     );
 
-    expect(await response.text()).toBe('es Español');
-    expect(response.headers.get('set-cookie')).toBeNull();
+    expect(await response.text()).toBe("es Español");
+    expect(response.headers.get("set-cookie")).toBeNull();
   });
 
-  test('GIVEN a lang cookie and another browser language WHEN requesting THEN prefers the cookie', async () => {
+  test("GIVEN a lang cookie and another browser language WHEN requesting THEN prefers the cookie", async () => {
     const response = await request(createLocaleHttp(), `${base}/locale`, {
-      cookie: 'lang=es',
-      'accept-language': 'en',
+      cookie: "lang=es",
+      "accept-language": "en",
     });
 
-    expect(await response.text()).toBe('es Español');
+    expect(await response.text()).toBe("es Español");
   });
 
-  test('GIVEN no preference WHEN requesting THEN uses the default locale', async () => {
+  test("GIVEN no preference WHEN requesting THEN uses the default locale", async () => {
     const response = await request(createLocaleHttp(), `${base}/locale`);
 
-    expect(await response.text()).toBe('en English');
+    expect(await response.text()).toBe("en English");
   });
 });
 
-describe('HttpService (base path)', () => {
-  test('GIVEN a base path WHEN requesting a route outside it THEN answers 404 with security headers', async () => {
+describe("HttpService (base path)", () => {
+  test("GIVEN a base path WHEN requesting a route outside it THEN answers 404 with security headers", async () => {
     const response = await request(
-      createHttp('https://example.org/certs'),
-      '/',
+      createHttp("https://example.org/certs"),
+      "/",
     );
 
     expect(response.status).toBe(404);
-    expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
   });
 
-  test('GIVEN an HTTP base URL WHEN requesting THEN sends no HSTS', async () => {
-    const response = await request(createHttp('http://localhost:3000'), '/');
+  test("GIVEN an HTTP base URL WHEN requesting THEN sends no HSTS", async () => {
+    const response = await request(createHttp("http://localhost:3000"), "/");
 
-    expect(response.headers.get('strict-transport-security')).toBeNull();
+    expect(response.headers.get("strict-transport-security")).toBeNull();
   });
 });
 
-describe('HttpService (start)', () => {
+describe("HttpService (start)", () => {
   let blocker: Server | null = null;
 
   afterEach(() => {
@@ -295,15 +296,15 @@ describe('HttpService (start)', () => {
     blocker = null;
   });
 
-  test('GIVEN a taken port WHEN starting THEN throws a StartupError naming the port', async () => {
+  test("GIVEN a taken port WHEN starting THEN throws a StartupError naming the port", async () => {
     blocker = createServer().listen(0);
-    await once(blocker, 'listening');
+    await once(blocker, "listening");
     const address = blocker.address();
-    const port = typeof address === 'object' && address ? address.port : 0;
+    const port = typeof address === "object" && address ? address.port : 0;
 
     const database = createTestDatabase();
     databases.push(database);
-    const siteUrl = new SiteUrl({ baseUrl: 'https://certs.example.org' });
+    const siteUrl = new SiteUrl({ baseUrl: "https://certs.example.org" });
     const http = new HttpService({
       port,
       siteUrl,
@@ -317,7 +318,7 @@ describe('HttpService (start)', () => {
         fileServer: new AccelFileServer({ siteUrl }),
       }),
       ...createPublicPageOptions(database, siteUrl),
-      ...createAuthOptions(database, siteUrl),
+      api: new ApiService(createAuthOptions(database, siteUrl)),
       compressor: new ResponseCompressor(),
       revalidator: new ResponseRevalidator(),
       log: () => {},
