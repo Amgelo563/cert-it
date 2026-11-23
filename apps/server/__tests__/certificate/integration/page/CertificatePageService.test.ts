@@ -15,6 +15,7 @@ import {
 } from '../../../http/mocks/createApiHarness';
 import {
   PublicBuildFiles,
+  PublicPageLinkedInOrgId,
   PublicPageOrgName,
 } from '../../../page/mocks/createPublicPageOptions';
 
@@ -47,6 +48,14 @@ function issue(
     seeder.participant(course, { name: holder ?? 'Jürgen Müller', email }),
     seeder.templateVersion(course, seeder.user()),
   );
+}
+
+// the LinkedIn button's link, with its HTML escaping undone
+function linkedInLink(page: string): URL | null {
+  const href = /<a class="button button-linkedin" href="([^"]+)"/.exec(
+    page,
+  )?.[1];
+  return href ? new URL(href.replaceAll('&amp;', '&')) : null;
 }
 
 function revoke(certificate: Certificate, reason: string): void {
@@ -193,6 +202,63 @@ describe('CertificatePageService (revoked certificate)', () => {
     expect(page).not.toContain('/pdf');
     expect(page).not.toContain('data-preview');
     expect(page).not.toContain('data-copy-link');
+  });
+});
+
+describe('CertificatePageService (LinkedIn)', () => {
+  test('GIVEN site.linkedin_org_id WHEN opening an active certificate THEN links to LinkedIn with its details, in a new tab', async () => {
+    const certificate = issue();
+
+    const page = await (
+      await harness.requestPublic(`/c/${certificate.code}`)
+    ).text();
+    const link = linkedInLink(page);
+
+    expect(page).toContain('Add to LinkedIn');
+    expect(page).toContain('target="_blank" rel="noopener noreferrer"');
+    expect(link?.origin).toBe('https://www.linkedin.com');
+    expect(Object.fromEntries(link?.searchParams ?? [])).toEqual({
+      startTask: 'CERTIFICATION_NAME',
+      name: 'Applied Statistics',
+      organizationId: PublicPageLinkedInOrgId,
+      issueYear: '2026',
+      issueMonth: '11',
+      certUrl: `${ApiHarnessOrigin}/certs/c/${certificate.code}`,
+      certId: certificate.code,
+    });
+  });
+
+  test('GIVEN no site.linkedin_org_id WHEN opening an active certificate THEN shows no LinkedIn button', async () => {
+    harness = createApiHarness(database, { linkedinOrgId: null });
+    const certificate = issue();
+
+    const page = await (
+      await harness.requestPublic(`/c/${certificate.code}`)
+    ).text();
+
+    expect(page).not.toContain('linkedin');
+    expect(page).not.toContain('Add to LinkedIn');
+  });
+
+  test('GIVEN a revoked certificate WHEN opening its page THEN shows no LinkedIn button', async () => {
+    const certificate = issue();
+    revoke(certificate, 'Issued by mistake');
+
+    const page = await (
+      await harness.requestPublic(`/c/${certificate.code}`)
+    ).text();
+
+    expect(page).not.toContain('linkedin.com');
+  });
+
+  test('GIVEN a Spanish course WHEN opening its page THEN labels the button in Spanish', async () => {
+    const certificate = issue({ locale: LocaleEnum.Es });
+
+    const page = await (
+      await harness.requestPublic(`/c/${certificate.code}`)
+    ).text();
+
+    expect(page).toContain('Añadir a LinkedIn');
   });
 });
 

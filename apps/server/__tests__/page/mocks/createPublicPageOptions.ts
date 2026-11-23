@@ -6,6 +6,7 @@ import { CsrfGuard, RateLimiter, type SiteUrl } from '@cert-it/hono';
 import { LocaleEnum } from '@cert-it/shared';
 import { LookupPageService } from '../../../src/certificate/lookup/LookupPageService';
 import { CertificatePageService } from '../../../src/certificate/page/CertificatePageService';
+import { LinkedInProfileLink } from '../../../src/certificate/page/LinkedInProfileLink';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
 import { MessagesService } from '../../../src/i18n/MessagesService';
@@ -29,6 +30,9 @@ export const PublicBuildFiles = {
 /** The org name the public pages show. */
 export const PublicPageOrgName = 'Acme Institute';
 
+/** The site.linkedin_org_id of the public pages, unless a test leaves it out. */
+export const PublicPageLinkedInOrgId = '1234567';
+
 /** Lookups allowed per client IP, as in the default config. */
 export const LookupMaxRequests = 10;
 
@@ -51,6 +55,7 @@ export function createPublicPageOptions(
   database: DatabaseService,
   siteUrl: SiteUrl,
   previewSettings: LinkPreviewSettings = {},
+  linkedinOrgId: string | null = PublicPageLinkedInOrgId,
 ): {
   publicAssets: PublicAssetsService;
   linkPreviews: LinkPreviewService;
@@ -89,6 +94,9 @@ export function createPublicPageOptions(
       siteUrl,
       locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
       orgName: PublicPageOrgName,
+      linkedIn: linkedinOrgId
+        ? new LinkedInProfileLink({ organizationId: linkedinOrgId })
+        : null,
     }),
     lookupPages: new LookupPageService({
       database,

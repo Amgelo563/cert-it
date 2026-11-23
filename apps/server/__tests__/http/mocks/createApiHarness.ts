@@ -45,6 +45,8 @@ export function createApiHarness(
   database: DatabaseService,
   options: Parameters<typeof createAuthOptions>[2] & {
     linkPreviews?: LinkPreviewSettings;
+    /** Null hides the LinkedIn button. */
+    linkedinOrgId?: string | null;
   } = {},
 ) {
   const siteUrl = new SiteUrl({ baseUrl: `${ApiHarnessOrigin}/certs` });
@@ -68,10 +70,12 @@ export function createApiHarness(
       database,
       fileServer: new AccelFileServer({ siteUrl }),
     }),
-    ...createPublicPageOptions(database, siteUrl, {
-      dataDirectory: options.dataDirectory,
-      ...options.linkPreviews,
-    }),
+    ...createPublicPageOptions(
+      database,
+      siteUrl,
+      { dataDirectory: options.dataDirectory, ...options.linkPreviews },
+      options.linkedinOrgId,
+    ),
     api,
     compressor: new ResponseCompressor(),
     revalidator: new ResponseRevalidator(),

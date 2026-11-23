@@ -298,9 +298,10 @@ a {
 
 /* actions */
 
-/* phones: the two buttons share the row in equal halves */
+/* phones: download and copy link share the row in equal halves */
 .certificate-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
@@ -308,6 +309,11 @@ a {
   flex: 1 1 0;
   min-width: 0;
   justify-content: center;
+}
+
+/* phones put it on its own row, under download and copy link */
+.certificate-actions .button-linkedin {
+  flex-basis: 100%;
 }
 
 @media (min-width: 40rem) {

@@ -13,6 +13,7 @@ import type { CertificateCode } from '../code/CertificateCode';
 import { CertificateFileService } from '../file/CertificateFileService';
 import { CertificateNotFound } from './CertificateNotFound';
 import { CertificatePage } from './CertificatePage';
+import { LinkedInProfileLink } from './LinkedInProfileLink';
 
 type CertificatePageServiceOptions = {
   database: DatabaseService;
@@ -22,6 +23,8 @@ type CertificatePageServiceOptions = {
   locales: LocaleResolver;
   /** Name of the issuing organization, as in site.org_name. */
   orgName: string;
+  /** Null without site.linkedin_org_id, which hides the button. */
+  linkedIn: LinkedInProfileLink | null;
 };
 
 /** Serves the public page of each certificate at `{base_path}/c/{code}`, for active and revoked ones. */
@@ -47,6 +50,8 @@ export class CertificatePageService {
 
   protected readonly orgName: string;
 
+  protected readonly linkedIn: LinkedInProfileLink | null;
+
   protected readonly app: Hono<HttpEnv>;
 
   constructor(options: CertificatePageServiceOptions) {
@@ -56,6 +61,7 @@ export class CertificatePageService {
     this.siteUrl = options.siteUrl;
     this.locales = options.locales;
     this.orgName = options.orgName;
+    this.linkedIn = options.linkedIn;
     this.app = this.createApp();
   }
 
@@ -78,6 +84,15 @@ export class CertificatePageService {
         injections?.locales
         ?? new LocaleResolver({ defaultLocale: config.site.defaultLocale }),
       orgName: injections?.orgName ?? config.site.orgName,
+      // an injected null turns the button off, so only undefined falls back to the config
+      linkedIn:
+        injections?.linkedIn !== undefined
+          ? injections.linkedIn
+          : config.site.linkedinOrgId
+            ? new LinkedInProfileLink({
+                organizationId: config.site.linkedinOrgId,
+              })
+            : null,
     });
   }
 
@@ -128,6 +143,14 @@ export class CertificatePageService {
           }
         : null;
     const issueDate = dates.format(certificate.issueDate);
+    const pageUrl = this.siteUrl.url(pagePath);
+    const linkedInUrl =
+      this.linkedIn?.build({
+        name: course.name,
+        issueDate: certificate.issueDate,
+        code,
+        url: pageUrl,
+      }) ?? null;
     const title = messages.format(texts.title, names);
     const description = messages.format(texts.description, names);
     const preview = this.previews.getCertificatePreview({
@@ -162,7 +185,8 @@ export class CertificatePageService {
               courseName={course.name}
               issueDate={issueDate}
               orgName={this.orgName}
-              pageUrl={this.siteUrl.url(pagePath)}
+              pageUrl={pageUrl}
+              linkedInUrl={linkedInUrl}
               pdfPath={this.siteUrl.path(
                 CertificateFileService.Path.replace(':code', code),
               )}

@@ -26,6 +26,7 @@ export const EnMessages = {
     download: 'Download PDF',
     copyLink: 'Copy link',
     linkCopied: 'Link copied',
+    addToLinkedIn: 'Add to LinkedIn',
     copyLinkManually: 'Copy this link:',
     previewUnavailable: "The preview can't be shown here.",
     viewPdf: 'Open the PDF',

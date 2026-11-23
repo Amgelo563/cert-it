@@ -10,9 +10,10 @@ site:
   # Required.
   org_name: 'Example Org'
 
-  # LinkedIn organization ID for the "Add to Profile" button. Without it, the
-  # button adds the certificate with the organization's name only.
-  # Empty: none.
+  # LinkedIn organization ID for the "Add to Profile" button on certificate
+  # pages: the number in the admin URL of the organization's LinkedIn page
+  # (linkedin.com/company/<id>/admin).
+  # Empty: no button.
   linkedin_org_id: ''
 
   # Language for new courses and for visitors without a language preference.

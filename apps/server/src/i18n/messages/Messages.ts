@@ -33,6 +33,7 @@ export type Messages = {
     download: string;
     copyLink: string;
     linkCopied: string;
+    addToLinkedIn: string;
     /** Shown with the link when the browser won't let the page copy it. */
     copyLinkManually: string;
     /** Shown in place of the preview without JavaScript or when drawing fails. */

@@ -12,6 +12,8 @@ type CertificatePageProps = {
   orgName: string;
   /** Absolute public URL of this page, for the copy-link button. */
   pageUrl: string;
+  /** LinkedIn "Add to Profile" link; null hides the button. */
+  linkedInUrl: string | null;
   /** Path of the PDF, shown inline. */
   pdfPath: string;
   /** Null while the certificate is active. */
@@ -96,6 +98,17 @@ export function CertificatePage(props: CertificatePageProps) {
               <span class="button-label">{texts.copyLink}</span>
             </button>
             <span id="copy-link-status" class="visually-hidden" role="status" />
+            {props.linkedInUrl && (
+              <a
+                class="button button-linkedin"
+                href={props.linkedInUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <LinkedInIcon />
+                {texts.addToLinkedIn}
+              </a>
+            )}
           </div>
         </>
       )}
@@ -199,6 +212,14 @@ function LinkIcon() {
     >
       <path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1" />
       <path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1" />
+    </svg>
+  );
+}
+
+function LinkedInIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z" />
     </svg>
   );
 }
