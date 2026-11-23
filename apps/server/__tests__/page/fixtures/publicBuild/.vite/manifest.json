@@ -5,5 +5,12 @@
     "src": "src/certificate/certificatePage.ts",
     "isEntry": true,
     "css": ["assets/certificate-def456.css"]
+  },
+  "src/lookup/lookupPage.ts": {
+    "file": "assets/lookup-ghi789.js",
+    "name": "lookup",
+    "src": "src/lookup/lookupPage.ts",
+    "isEntry": true,
+    "css": ["assets/certificate-def456.css"]
   }
 }

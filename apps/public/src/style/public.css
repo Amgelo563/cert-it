@@ -439,3 +439,203 @@ a {
   margin: 0;
   color: var(--muted);
 }
+
+/* lookup page */
+
+/* a light brand tint behind the top of the page, fading into the background */
+.lookup {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--brand) 9%, var(--bg)),
+    var(--bg) 70%
+  );
+}
+
+.lookup-layout {
+  display: grid;
+  gap: 3rem;
+  max-width: 68rem;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+@media (min-width: 56rem) {
+  .lookup-layout {
+    grid-template-columns: minmax(0, 28rem) minmax(0, 1fr);
+    align-items: center;
+    column-gap: 4rem;
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+  }
+}
+
+.lookup h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+.lookup-intro {
+  margin: 0 0 1.5rem;
+  color: var(--muted);
+  font-size: 1.0625rem;
+}
+
+.lookup-message {
+  margin-bottom: 1.25rem;
+}
+
+.lookup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.lookup-next {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* illustration: wide screens only, phones get straight to the form */
+.lookup-art {
+  display: none;
+  position: relative;
+}
+
+@media (min-width: 56rem) {
+  .lookup-art {
+    display: block;
+  }
+}
+
+.lookup-art-drawing {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform: rotate(2deg);
+  filter: drop-shadow(0 18px 28px rgb(0 0 0 / 0.12));
+}
+
+.lookup-art-badge {
+  position: absolute;
+  left: 4%;
+  bottom: 10%;
+  margin: 0;
+  box-shadow: var(--shadow-md);
+}
+
+.art-sheet {
+  fill: var(--surface);
+  stroke: var(--border);
+}
+
+.art-sheet-back {
+  fill: color-mix(in srgb, var(--brand) 16%, var(--surface));
+}
+
+.art-frame {
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 40%, transparent);
+  stroke-width: 1.5;
+}
+
+.art-accent {
+  fill: var(--accent);
+}
+
+.art-line-strong {
+  fill: var(--text);
+  opacity: 0.75;
+}
+
+.art-line {
+  fill: var(--border);
+}
+
+.art-ink {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.art-seal {
+  fill: var(--brand);
+}
+
+.art-ribbon {
+  fill: color-mix(in srgb, var(--brand) 70%, #000);
+}
+
+.art-seal-ring {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.55);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 3;
+}
+
+.art-seal-mark {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (prefers-color-scheme: dark) {
+  .lookup-art-drawing {
+    filter: drop-shadow(0 18px 28px rgb(0 0 0 / 0.45));
+  }
+
+  .art-line {
+    fill: var(--dark-3);
+  }
+}
+
+/* lines up with the form above */
+.lookup-footer {
+  max-width: 68rem;
+}
+
+.lookup-form .button {
+  justify-content: center;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.field label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 0.75);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.input:hover {
+  border-color: var(--muted);
+}
+
+.input:focus-visible {
+  outline-offset: 0;
+  border-color: var(--accent);
+}

@@ -96,6 +96,6 @@ describe('PublicAssetsService (start)', () => {
     });
     assets.start();
 
-    expect(() => assets.getPage('lookup')).toThrow('no "lookup" entry');
+    expect(() => assets.getPage('missing')).toThrow('no "missing" entry');
   });
 });

@@ -24,7 +24,7 @@ export class CsrfGuard {
     this.onReject = options.onReject ?? CsrfGuard.DefaultOnReject;
   }
 
-  /** Returns the middleware that answers unsafe methods whose Origin isn't the app's, or that send neither Origin nor Sec-Fetch-Site, with onReject. */
+  /** Returns the middleware that answers unsafe methods whose Origin isn't the app's, or that send no Origin (or `null`) and no same-origin Sec-Fetch-Site, with onReject. */
   public middleware(): MiddlewareHandler {
     return async (c, next) => {
       if (
@@ -40,9 +40,10 @@ export class CsrfGuard {
 
   protected isSameOrigin(headers: Headers): boolean {
     const origin = headers.get('origin');
-    if (origin) return origin === this.origin;
+    // form posts send "null" under Referrer-Policy: no-referrer, even to the same origin
+    if (origin && origin !== 'null') return origin === this.origin;
 
-    // browsers that omit Origin still send this on fetches
+    // browsers that omit Origin still send this on fetches and form posts
     return headers.get('sec-fetch-site') === 'same-origin';
   }
 }

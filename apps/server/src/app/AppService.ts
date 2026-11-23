@@ -6,6 +6,7 @@ import { AuthService } from '../auth/AuthService';
 import { PasswordHasher } from '../auth/password/PasswordHasher';
 import { SessionService } from '../auth/session/SessionService';
 import { CertificateFileService } from '../certificate/file/CertificateFileService';
+import { LookupPageService } from '../certificate/lookup/LookupPageService';
 import { CertificatePageService } from '../certificate/page/CertificatePageService';
 import type { Config } from '../config/schema/ConfigSchema';
 import { DatabaseService } from '../database/DatabaseService';
@@ -210,6 +211,11 @@ export class AppService {
       adminPanel,
       certificateFiles,
       certificatePages: CertificatePageService.create({
+        config,
+        database,
+        assets: publicAssets,
+      }),
+      lookupPages: LookupPageService.create({
         config,
         database,
         assets: publicAssets,

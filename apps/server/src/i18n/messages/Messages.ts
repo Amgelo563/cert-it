@@ -45,6 +45,28 @@ export type Messages = {
     /** Placeholders: {org}. */
     revokedHelp: string;
   };
+  /** The public "Find my certificate" page. */
+  lookupPage: {
+    title: string;
+    /** Placeholders: {org}. */
+    description: string;
+    intro: string;
+    email: string;
+    course: string;
+    /** Empty first option of the course select. */
+    chooseCourse: string;
+    submit: string;
+    /** Under the form: where a match leads. */
+    nextStep: string;
+    /** Footer line. Placeholders: {org}. */
+    help: string;
+    /** Same text whatever didn't match, so it never tells whether the email is known. Placeholders: {org}. */
+    notFound: string;
+    /** Placeholders: {minutes}. */
+    tooManyRequests: string;
+    /** Shown in place of the form when no course is listed. Placeholders: {org}. */
+    noCourses: string;
+  };
   error: {
     notFound: string;
     certificateNotFound: string;

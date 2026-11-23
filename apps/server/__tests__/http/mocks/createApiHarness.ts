@@ -116,6 +116,29 @@ export function createApiHarness(
         ),
     );
 
+  /** Posts a form to a public path under /certs, as a browser would from the app's own page. */
+  const postForm = (
+    path: string,
+    fields: Record<string, string>,
+    headers: Record<string, string> = {},
+  ): Promise<Response> =>
+    Promise.resolve(
+      http.getApp().request(
+        `/certs${path}`,
+        {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+            origin: ApiHarnessOrigin,
+            'x-real-ip': '198.51.100.1',
+            ...headers,
+          },
+          body: new URLSearchParams(fields).toString(),
+        },
+        { incoming: { socket: { remoteAddress: '127.0.0.1' } } },
+      ),
+    );
+
   const createUser = async (
     data: { email?: string; role?: Role; mustChangePassword?: boolean } = {},
   ): Promise<User> =>
@@ -151,5 +174,5 @@ export function createApiHarness(
     ),
   ];
 
-  return { createUser, listRoutes, loginAs, request, requestPublic };
+  return { createUser, listRoutes, loginAs, postForm, request, requestPublic };
 }

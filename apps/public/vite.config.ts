@@ -139,6 +139,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         certificate: 'src/certificate/certificatePage.ts',
+        lookup: 'src/lookup/lookupPage.ts',
       },
     },
   },

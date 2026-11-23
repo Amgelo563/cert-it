@@ -56,6 +56,24 @@ describe('CsrfGuard (middleware)', () => {
     expect(response.status).toBe(204);
   });
 
+  test('GIVEN a null Origin and a same-origin Sec-Fetch-Site WHEN posting a form THEN lets it through', async () => {
+    const response = await request('POST', {
+      origin: 'null',
+      'sec-fetch-site': 'same-origin',
+    });
+
+    expect(response.status).toBe(204);
+  });
+
+  test.each<Record<string, string>>([{}, { 'sec-fetch-site': 'cross-site' }])(
+    'GIVEN a null Origin and Sec-Fetch-Site %o WHEN posting THEN answers 403',
+    async (headers) => {
+      const response = await request('POST', { origin: 'null', ...headers });
+
+      expect(response.status).toBe(403);
+    },
+  );
+
   test('GIVEN another Origin and the app origin in Sec-Fetch-Site WHEN posting THEN trusts the Origin', async () => {
     const response = await request('POST', {
       origin: 'https://evil.example',

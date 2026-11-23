@@ -17,6 +17,7 @@ import { AuditLogService } from '../audit/AuditLogService';
 import { AuthService } from '../auth/AuthService';
 import { createCsrfGuard } from '../auth/csrf/createCsrfGuard';
 import type { CertificateFileService } from '../certificate/file/CertificateFileService';
+import type { LookupPageService } from '../certificate/lookup/LookupPageService';
 import type { CertificatePageService } from '../certificate/page/CertificatePageService';
 import type { Config } from '../config/schema/ConfigSchema';
 import { CourseService } from '../course/CourseService';
@@ -45,6 +46,7 @@ type HttpServiceOptions = {
   adminPanel: AdminPanelService;
   certificateFiles: CertificateFileService;
   certificatePages: CertificatePageService;
+  lookupPages: LookupPageService;
   publicAssets: PublicAssetsService;
   auth: AuthService;
   users: UserService;
@@ -103,6 +105,8 @@ export class HttpService {
 
   protected readonly certificatePages: CertificatePageService;
 
+  protected readonly lookupPages: LookupPageService;
+
   protected readonly publicAssets: PublicAssetsService;
 
   protected readonly auth: AuthService;
@@ -151,6 +155,7 @@ export class HttpService {
     this.adminPanel = options.adminPanel;
     this.certificateFiles = options.certificateFiles;
     this.certificatePages = options.certificatePages;
+    this.lookupPages = options.lookupPages;
     this.publicAssets = options.publicAssets;
     this.auth = options.auth;
     this.users = options.users;
@@ -177,6 +182,7 @@ export class HttpService {
     adminPanel: AdminPanelService;
     certificateFiles: CertificateFileService;
     certificatePages: CertificatePageService;
+    lookupPages: LookupPageService;
     publicAssets: PublicAssetsService;
     auth: AuthService;
     users: UserService;
@@ -196,6 +202,7 @@ export class HttpService {
       adminPanel,
       certificateFiles,
       certificatePages,
+      lookupPages,
       publicAssets,
       auth,
       users,
@@ -224,6 +231,7 @@ export class HttpService {
       adminPanel,
       certificateFiles,
       certificatePages,
+      lookupPages,
       publicAssets,
       auth,
       users,
@@ -321,11 +329,11 @@ export class HttpService {
     app.use(`${HttpService.ApiPath}/*`, this.csrf.middleware(), this.noStore());
     app.route('/', this.api);
 
-    app.get('/', (c) => c.text('Hello Hono!'));
     app.route(AdminPanelService.Path, this.adminPanel.getApp());
     app.route(PublicAssetsService.Path, this.publicAssets.getApp());
     app.route('/', this.certificateFiles.getApp());
     app.route('/', this.certificatePages.getApp());
+    app.route('/', this.lookupPages.getApp());
 
     return root;
   }
