@@ -1,16 +1,16 @@
-import { SiteUrl } from "@cert-it/hono";
-import { AdminPanelService } from "../admin/AdminPanelService";
-import { PasswordHasher } from "../auth/password/PasswordHasher";
-import { SessionService } from "../auth/session/SessionService";
-import type { Config } from "../config/schema/ConfigSchema";
-import { DatabaseService } from "../database/DatabaseService";
-import { ApiService } from "../http/api/ApiService";
-import { HttpService } from "../http/HttpService";
-import { BackgroundJobService } from "../job/BackgroundJobService";
-import { PublicAssetsService } from "../page/PublicAssetsService";
-import { LinkPreviewService } from "../page/preview/LinkPreviewService";
-import { DataDirectoryService } from "../storage/DataDirectoryService";
-import { StorageCleanupService } from "../storage/StorageCleanupService";
+import { SiteUrl } from '@cert-it/hono';
+import { AdminPanelService } from '../admin/AdminPanelService';
+import { PasswordHasher } from '../auth/password/PasswordHasher';
+import { SessionService } from '../auth/session/SessionService';
+import type { Config } from '../config/schema/ConfigSchema';
+import { DatabaseService } from '../database/DatabaseService';
+import { ApiService } from '../http/api/ApiService';
+import { HttpService } from '../http/HttpService';
+import { BackgroundJobService } from '../job/BackgroundJobService';
+import { PublicAssetsService } from '../page/PublicAssetsService';
+import { LinkPreviewService } from '../page/preview/LinkPreviewService';
+import { DataDirectoryService } from '../storage/DataDirectoryService';
+import { StorageCleanupService } from '../storage/StorageCleanupService';
 
 type AppServiceOptions = {
   dataDirectory: DataDirectoryService;
@@ -30,7 +30,7 @@ type AppServiceOptions = {
 export type AppServiceInjections = Partial<
   Pick<
     AppServiceOptions,
-    "dataDirectory" | "database" | "passwords" | "publicAssets"
+    'dataDirectory' | 'database' | 'passwords' | 'publicAssets'
   >
 >;
 
@@ -86,11 +86,11 @@ export class AppService {
   }): AppServiceOptions {
     const { config, injections } = options;
     const dataDirectory =
-      injections?.dataDirectory ??
-      new DataDirectoryService({ root: config.server.dataDir });
+      injections?.dataDirectory
+      ?? new DataDirectoryService({ root: config.server.dataDir });
     const database =
-      injections?.database ??
-      new DatabaseService({ path: dataDirectory.getDatabasePath() });
+      injections?.database
+      ?? new DatabaseService({ path: dataDirectory.getDatabasePath() });
     const passwords = injections?.passwords ?? new PasswordHasher();
     const sessions = new SessionService({
       database,
@@ -147,7 +147,7 @@ export class AppService {
       process.exit(1);
     }
 
-    for (const signal of ["SIGTERM", "SIGINT"] as const) {
+    for (const signal of ['SIGTERM', 'SIGINT'] as const) {
       process.once(signal, () => {
         this.stop().then(
           () => process.exit(0),

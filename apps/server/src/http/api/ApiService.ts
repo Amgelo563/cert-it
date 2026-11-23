@@ -1,25 +1,25 @@
-import { type CsrfGuard, SiteUrl } from "@cert-it/hono";
-import { Hono, type MiddlewareHandler } from "hono";
-import { AuditLogService } from "../../audit/AuditLogService";
-import { AuthGuard } from "../../auth/AuthGuard";
-import { AuthService } from "../../auth/AuthService";
-import { createCsrfGuard } from "../../auth/csrf/createCsrfGuard";
-import { PasswordHasher } from "../../auth/password/PasswordHasher";
-import type { SessionService } from "../../auth/session/SessionService";
-import { CertificateService } from "../../certificate/CertificateService";
-import { CertificateExportService } from "../../certificate/export/CertificateExportService";
-import type { Config } from "../../config/schema/ConfigSchema";
-import { CourseService } from "../../course/CourseService";
-import type { DatabaseService } from "../../database/DatabaseService";
-import { FontCatalogService } from "../../font/catalog/FontCatalogService";
-import { FontService } from "../../font/FontService";
-import type { BackgroundJobService } from "../../job/BackgroundJobService";
-import { JobService } from "../../job/JobService";
-import { ParticipantService } from "../../participant/ParticipantService";
-import type { DataDirectoryService } from "../../storage/DataDirectoryService";
-import { TemplateService } from "../../template/TemplateService";
-import { UserService } from "../../user/UserService";
-import type { HttpEnv } from "../HttpEnv";
+import { type CsrfGuard, SiteUrl } from '@cert-it/hono';
+import { Hono, type MiddlewareHandler } from 'hono';
+import { AuditLogService } from '../../audit/AuditLogService';
+import { AuthGuard } from '../../auth/AuthGuard';
+import { AuthService } from '../../auth/AuthService';
+import { createCsrfGuard } from '../../auth/csrf/createCsrfGuard';
+import { PasswordHasher } from '../../auth/password/PasswordHasher';
+import type { SessionService } from '../../auth/session/SessionService';
+import { CertificateService } from '../../certificate/CertificateService';
+import { CertificateExportService } from '../../certificate/export/CertificateExportService';
+import type { Config } from '../../config/schema/ConfigSchema';
+import { CourseService } from '../../course/CourseService';
+import type { DatabaseService } from '../../database/DatabaseService';
+import { FontCatalogService } from '../../font/catalog/FontCatalogService';
+import { FontService } from '../../font/FontService';
+import type { BackgroundJobService } from '../../job/BackgroundJobService';
+import { JobService } from '../../job/JobService';
+import { ParticipantService } from '../../participant/ParticipantService';
+import type { DataDirectoryService } from '../../storage/DataDirectoryService';
+import { TemplateService } from '../../template/TemplateService';
+import { UserService } from '../../user/UserService';
+import type { HttpEnv } from '../HttpEnv';
 
 type ApiServiceOptions = {
   auth: AuthService;
@@ -38,7 +38,7 @@ type ApiServiceOptions = {
 
 /** The admin panel's API: its routes, behind the CSRF guard and uncached by default. */
 export class ApiService {
-  public static readonly Path = "/api";
+  public static readonly Path = '/api';
 
   protected readonly auth: AuthService;
 
@@ -64,7 +64,7 @@ export class ApiService {
 
   protected readonly csrf: CsrfGuard;
 
-  protected readonly app: ReturnType<ApiService["createApp"]>;
+  protected readonly app: ReturnType<ApiService['createApp']>;
 
   constructor(options: ApiServiceOptions) {
     this.auth = options.auth;
@@ -114,39 +114,39 @@ export class ApiService {
       auth: injections?.auth ?? AuthService.create(services),
       users: injections?.users ?? UserService.create(services),
       courses:
-        injections?.courses ??
-        CourseService.create({ ...services, dataDirectory }),
+        injections?.courses
+        ?? CourseService.create({ ...services, dataDirectory }),
       participants:
-        injections?.participants ??
-        ParticipantService.create({
+        injections?.participants
+        ?? ParticipantService.create({
           ...services,
           dataDirectory,
           jobs: backgroundJobs,
         }),
       certificates:
-        injections?.certificates ??
-        CertificateService.create({
+        injections?.certificates
+        ?? CertificateService.create({
           ...services,
           dataDirectory,
           jobs: backgroundJobs,
         }),
       certificateExports:
-        injections?.certificateExports ??
-        CertificateExportService.create({ ...services, dataDirectory }),
+        injections?.certificateExports
+        ?? CertificateExportService.create({ ...services, dataDirectory }),
       jobs:
-        injections?.jobs ??
-        JobService.create({ ...services, jobs: backgroundJobs }),
+        injections?.jobs
+        ?? JobService.create({ ...services, jobs: backgroundJobs }),
       fonts,
       fontCatalog:
-        injections?.fontCatalog ??
-        FontCatalogService.create({ ...services, fonts }),
+        injections?.fontCatalog
+        ?? FontCatalogService.create({ ...services, fonts }),
       templates:
-        injections?.templates ??
-        TemplateService.create({ ...services, dataDirectory }),
+        injections?.templates
+        ?? TemplateService.create({ ...services, dataDirectory }),
       auditLog,
       csrf:
-        injections?.csrf ??
-        createCsrfGuard(new SiteUrl({ baseUrl: config.site.baseUrl })),
+        injections?.csrf
+        ?? createCsrfGuard(new SiteUrl({ baseUrl: config.site.baseUrl })),
     });
   }
 
@@ -156,7 +156,7 @@ export class ApiService {
   }
 
   /** Returns the API routes, relative to the base path, typed for the admin panel as CertItApi. */
-  public getApp(): ApiService["app"] {
+  public getApp(): ApiService['app'] {
     return this.app;
   }
 
@@ -183,8 +183,8 @@ export class ApiService {
   protected noStore(): MiddlewareHandler<HttpEnv> {
     return async (c, next) => {
       await next();
-      if (!c.res.headers.has("Cache-Control")) {
-        c.header("Cache-Control", "no-store");
+      if (!c.res.headers.has('Cache-Control')) {
+        c.header('Cache-Control', 'no-store');
       }
     };
   }

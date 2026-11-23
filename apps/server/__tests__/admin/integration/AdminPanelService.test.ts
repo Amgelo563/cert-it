@@ -3,24 +3,24 @@ import {
   ResponseCompressor,
   ResponseRevalidator,
   SiteUrl,
-} from "@cert-it/hono";
-import { getConnInfo } from "@hono/node-server/conninfo";
-import { brotliDecompressSync } from "node:zlib";
-import { LocaleEnum } from "@cert-it/shared";
-import { afterAll, afterEach, describe, expect, test } from "vite-plus/test";
-import { AdminPanelService } from "../../../src/admin/AdminPanelService";
-import { AccelFileServer } from "../../../src/certificate/file/AccelFileServer";
-import { CertificateFileService } from "../../../src/certificate/file/CertificateFileService";
-import type { DatabaseService } from "../../../src/database/DatabaseService";
-import { StartupError } from "../../../src/error/StartupError";
-import { ApiService } from "../../../src/http/api/ApiService";
-import { HttpService } from "../../../src/http/HttpService";
-import { LocaleResolver } from "../../../src/i18n/LocaleResolver";
-import { MessagesService } from "../../../src/i18n/MessagesService";
-import { createAuthOptions } from "../../auth/mocks/createAuthOptions";
-import { createPublicPageOptions } from "../../page/mocks/createPublicPageOptions";
-import { createTestDatabase } from "../../database/mocks/createTestDatabase";
-import { AdminBuildScript, createAdminBuild } from "../mocks/createAdminBuild";
+} from '@cert-it/hono';
+import { getConnInfo } from '@hono/node-server/conninfo';
+import { brotliDecompressSync } from 'node:zlib';
+import { LocaleEnum } from '@cert-it/shared';
+import { afterAll, afterEach, describe, expect, test } from 'vite-plus/test';
+import { AdminPanelService } from '../../../src/admin/AdminPanelService';
+import { AccelFileServer } from '../../../src/certificate/file/AccelFileServer';
+import { CertificateFileService } from '../../../src/certificate/file/CertificateFileService';
+import type { DatabaseService } from '../../../src/database/DatabaseService';
+import { StartupError } from '../../../src/error/StartupError';
+import { ApiService } from '../../../src/http/api/ApiService';
+import { HttpService } from '../../../src/http/HttpService';
+import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
+import { MessagesService } from '../../../src/i18n/MessagesService';
+import { createAuthOptions } from '../../auth/mocks/createAuthOptions';
+import { createPublicPageOptions } from '../../page/mocks/createPublicPageOptions';
+import { createTestDatabase } from '../../database/mocks/createTestDatabase';
+import { AdminBuildScript, createAdminBuild } from '../mocks/createAdminBuild';
 
 const build = createAdminBuild();
 const databases: DatabaseService[] = [];
@@ -74,7 +74,7 @@ function createHttp(adminPanel: AdminPanelService, baseUrl: string) {
         .request(
           path,
           { headers },
-          { incoming: { socket: { remoteAddress: "127.0.0.1" } } },
+          { incoming: { socket: { remoteAddress: '127.0.0.1' } } },
         ),
     );
 }
@@ -86,23 +86,23 @@ async function startedHttp(baseUrl: string) {
 }
 
 describe.each([
-  { baseUrl: "https://certs.example.org", base: "" },
-  { baseUrl: "https://example.org/certs", base: "/certs" },
-])("AdminPanelService ($baseUrl)", ({ baseUrl, base }) => {
-  test.each(["/admin", "/admin/", "/admin/template-designer", "/admin/a/b"])(
-    "GIVEN the page %s WHEN requesting it THEN serves the page with the base path injected",
+  { baseUrl: 'https://certs.example.org', base: '' },
+  { baseUrl: 'https://example.org/certs', base: '/certs' },
+])('AdminPanelService ($baseUrl)', ({ baseUrl, base }) => {
+  test.each(['/admin', '/admin/', '/admin/template-designer', '/admin/a/b'])(
+    'GIVEN the page %s WHEN requesting it THEN serves the page with the base path injected',
     async (path) => {
       const request = await startedHttp(baseUrl);
 
       const response = await request(`${base}${path}`, {
-        "accept-language": "es",
+        'accept-language': 'es',
       });
       const html = await response.text();
 
       expect(response.status).toBe(200);
-      expect(response.headers.get("content-type")).toMatch(/^text\/html/);
-      expect(response.headers.get("cache-control")).toBe("no-cache");
-      expect(response.headers.get("content-security-policy")).toBe(
+      expect(response.headers.get('content-type')).toMatch(/^text\/html/);
+      expect(response.headers.get('cache-control')).toBe('no-cache');
+      expect(response.headers.get('content-security-policy')).toBe(
         HttpService.AdminCsp,
       );
       expect(html).toContain(
@@ -113,82 +113,82 @@ describe.each([
     },
   );
 
-  test("GIVEN a hashed asset WHEN requesting it THEN serves it with immutable caching and the admin CSP", async () => {
+  test('GIVEN a hashed asset WHEN requesting it THEN serves it with immutable caching and the admin CSP', async () => {
     const request = await startedHttp(baseUrl);
 
     const response = await request(`${base}/admin/assets/index-abc123.js`);
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("content-type")).toMatch(/javascript/);
-    expect(response.headers.get("cache-control")).toBe(
-      "public, max-age=31536000, immutable",
+    expect(response.headers.get('content-type')).toMatch(/javascript/);
+    expect(response.headers.get('cache-control')).toBe(
+      'public, max-age=31536000, immutable',
     );
-    expect(response.headers.get("content-security-policy")).toBe(
+    expect(response.headers.get('content-security-policy')).toBe(
       HttpService.AdminCsp,
     );
     expect(await response.text()).toBe(AdminBuildScript);
   });
 
-  test("GIVEN a browser that accepts brotli WHEN requesting an asset THEN serves the precompressed file", async () => {
+  test('GIVEN a browser that accepts brotli WHEN requesting an asset THEN serves the precompressed file', async () => {
     const request = await startedHttp(baseUrl);
 
     const response = await request(`${base}/admin/assets/index-abc123.js`, {
-      "accept-encoding": "gzip, br",
+      'accept-encoding': 'gzip, br',
     });
     const body = Buffer.from(await response.arrayBuffer());
 
-    expect(response.headers.get("content-encoding")).toBe("br");
-    expect(response.headers.get("content-type")).toMatch(/javascript/);
+    expect(response.headers.get('content-encoding')).toBe('br');
+    expect(response.headers.get('content-type')).toMatch(/javascript/);
     expect(brotliDecompressSync(body).toString()).toBe(AdminBuildScript);
   });
 
-  test("GIVEN an unhashed file WHEN requesting it THEN asks the browser to revalidate", async () => {
+  test('GIVEN an unhashed file WHEN requesting it THEN asks the browser to revalidate', async () => {
     const request = await startedHttp(baseUrl);
 
     const response = await request(`${base}/admin/favicon.svg`);
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("cache-control")).toBe("no-cache");
+    expect(response.headers.get('cache-control')).toBe('no-cache');
   });
 
-  test.each(["/admin/favicon.svg", "/admin/"])(
-    "GIVEN the current ETag of %s WHEN revalidating it THEN answers 304",
+  test.each(['/admin/favicon.svg', '/admin/'])(
+    'GIVEN the current ETag of %s WHEN revalidating it THEN answers 304',
     async (path) => {
       const request = await startedHttp(baseUrl);
       const first = await request(`${base}${path}`);
-      const tag = first.headers.get("etag") ?? "";
+      const tag = first.headers.get('etag') ?? '';
 
       const response = await request(`${base}${path}`, {
-        "if-none-match": tag,
+        'if-none-match': tag,
       });
 
-      expect(tag).not.toBe("");
+      expect(tag).not.toBe('');
       expect(response.status).toBe(304);
-      expect(response.headers.get("cache-control")).toBe("no-cache");
+      expect(response.headers.get('cache-control')).toBe('no-cache');
     },
   );
 
-  test("GIVEN a hashed asset WHEN requesting it THEN sends no ETag", async () => {
+  test('GIVEN a hashed asset WHEN requesting it THEN sends no ETag', async () => {
     const request = await startedHttp(baseUrl);
 
     const response = await request(`${base}/admin/assets/index-abc123.js`);
 
-    expect(response.headers.get("etag")).toBeNull();
+    expect(response.headers.get('etag')).toBeNull();
   });
 
-  test.each(["/admin/assets/missing-123.js", "/admin/courses/missing.css"])(
-    "GIVEN a missing file %s WHEN requesting it THEN answers 404 instead of the page",
+  test.each(['/admin/assets/missing-123.js', '/admin/courses/missing.css'])(
+    'GIVEN a missing file %s WHEN requesting it THEN answers 404 instead of the page',
     async (path) => {
       const request = await startedHttp(baseUrl);
 
       const response = await request(`${base}${path}`);
 
       expect(response.status).toBe(404);
-      expect(await response.text()).not.toContain("<base");
+      expect(await response.text()).not.toContain('<base');
     },
   );
 
-  test("GIVEN a path that leaves the build WHEN requesting it THEN answers 404", async () => {
+  test('GIVEN a path that leaves the build WHEN requesting it THEN answers 404', async () => {
     const request = await startedHttp(baseUrl);
 
     const response = await request(
@@ -198,7 +198,7 @@ describe.each([
     expect(response.status).toBe(404);
   });
 
-  test("GIVEN index.html by name WHEN requesting it THEN serves the injected page", async () => {
+  test('GIVEN index.html by name WHEN requesting it THEN serves the injected page', async () => {
     const request = await startedHttp(baseUrl);
 
     const html = await (await request(`${base}/admin/index.html`)).text();
@@ -207,24 +207,24 @@ describe.each([
   });
 });
 
-describe("AdminPanelService (start)", () => {
-  test("GIVEN a missing build WHEN starting THEN throws a StartupError naming the path", async () => {
+describe('AdminPanelService (start)', () => {
+  test('GIVEN a missing build WHEN starting THEN throws a StartupError naming the path', async () => {
     const panel = createPanel(
-      "https://certs.example.org",
+      'https://certs.example.org',
       `${build.directory}-missing`,
     );
 
     await expect(panel.start()).rejects.toThrow(StartupError);
-    await expect(panel.start()).rejects.toThrow("build apps/admin first");
+    await expect(panel.start()).rejects.toThrow('build apps/admin first');
   });
 
-  test("GIVEN a panel not started WHEN requesting a page THEN answers 503", async () => {
+  test('GIVEN a panel not started WHEN requesting a page THEN answers 503', async () => {
     const request = createHttp(
-      createPanel("https://certs.example.org"),
-      "https://certs.example.org",
+      createPanel('https://certs.example.org'),
+      'https://certs.example.org',
     );
 
-    const response = await request("/admin/");
+    const response = await request('/admin/');
 
     expect(response.status).toBe(503);
   });

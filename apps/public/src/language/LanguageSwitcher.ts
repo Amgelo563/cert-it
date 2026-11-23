@@ -22,7 +22,7 @@ export class LanguageSwitcher {
       this.close();
       this.details.querySelector('summary')?.focus();
     });
-    
+
     this.details.addEventListener('focusout', (event) => {
       const next = event.relatedTarget as Node | null;
       if (next && !this.details.contains(next)) this.close();
