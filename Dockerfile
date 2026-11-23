@@ -32,7 +32,13 @@ RUN deluser --remove-home node \
  && (getent group "${APP_GID}" >/dev/null || addgroup -S -g "${APP_GID}" cert-it) \
  && adduser -S -D -H -u "${APP_UID}" -G "$(getent group "${APP_GID}" | cut -d: -f1)" cert-it
 
-ENV NODE_ENV=production
+# rclone uploads the backups; its config sits next to config.yml, and its
+# cache goes to /tmp since the root filesystem is read-only
+RUN apk add --no-cache rclone
+
+ENV NODE_ENV=production \
+    RCLONE_CONFIG=/app/config/rclone.conf \
+    XDG_CACHE_HOME=/tmp/.cache
 
 WORKDIR /app
 

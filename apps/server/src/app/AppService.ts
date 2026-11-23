@@ -2,6 +2,7 @@ import { SiteUrl } from '@cert-it/hono';
 import { AdminPanelService } from '../admin/AdminPanelService';
 import { AuditLogService } from '../audit/AuditLogService';
 import { AuthGuard } from '../auth/AuthGuard';
+import { BackupService } from '../backup/BackupService';
 import { PasswordHasher } from '../auth/password/PasswordHasher';
 import { CertificateRegenerator } from '../certificate/regenerate/CertificateRegenerator';
 import { SessionService } from '../auth/session/SessionService';
@@ -29,6 +30,8 @@ type AppServiceOptions = {
   passwords: PasswordHasher;
   sessions: SessionService;
   storageCleanup: StorageCleanupService;
+  /** Null when backups are off. */
+  backups: BackupService | null;
   jobs: BackgroundJobService;
   api: ApiService;
   adminPanel: AdminPanelService;
@@ -61,6 +64,8 @@ export class AppService {
 
   protected readonly storageCleanup: StorageCleanupService;
 
+  protected readonly backups: BackupService | null;
+
   protected readonly jobs: BackgroundJobService;
 
   protected readonly api: ApiService;
@@ -81,6 +86,7 @@ export class AppService {
     this.passwords = options.passwords;
     this.sessions = options.sessions;
     this.storageCleanup = options.storageCleanup;
+    this.backups = options.backups;
     this.jobs = options.jobs;
     this.api = options.api;
     this.adminPanel = options.adminPanel;
@@ -170,6 +176,9 @@ export class AppService {
       passwords,
       sessions,
       storageCleanup: StorageCleanupService.create({ database, dataDirectory }),
+      backups: config.backup.enabled
+        ? BackupService.create({ config, database, dataDirectory })
+        : null,
       jobs,
       api,
       adminPanel,
@@ -217,6 +226,7 @@ export class AppService {
       await this.startUsers();
       this.sessions.start();
       this.storageCleanup.start();
+      await this.backups?.start();
       this.jobs.start();
       await this.baseUrls.completeMove();
       await this.startAdminPanel();
@@ -224,6 +234,7 @@ export class AppService {
       this.linkPreviews.start();
       await this.http.start();
     } catch (error) {
+      await this.backups?.stop();
       await this.jobs.stop({ graceMs: 0 });
       this.database.close();
       throw error;
@@ -235,6 +246,7 @@ export class AppService {
     await this.http.stop();
     this.sessions.stop();
     this.storageCleanup.stop();
+    await this.backups?.stop();
     await this.jobs.stop();
     this.database.close();
   }

@@ -7,6 +7,7 @@ export default defineConfig({
       index: 'src/index.ts',
       basePdfWorker: 'src/template/pdf/basePdfWorker.ts',
       generator: 'src/generator/index.ts',
+      backup: 'src/backup.ts',
     },
     platform: 'node',
     format: ['esm'],

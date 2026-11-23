@@ -173,13 +173,20 @@ backup:
   # Empty: false.
   enabled: false
 
-  # When to run, as a cron expression (server time).
+  # When to run, as a cron expression: minute, hour, day of month, month and
+  # day of week. Uses the container's time zone (TZ in docker-compose.yml, UTC by default).
   # Empty: '0 3 * * *' (every day at 03:00).
   schedule: '0 3 * * *'
 
   # How long to keep backups on each remote, in days.
   # Empty: 30.
   retention_days: 30
+
+  # How many backups to keep on each remote at most, the newest ones.
+  # Both limits apply: a backup goes once it's older than retention_days or
+  # there are this many newer ones.
+  # Empty: no limit, only retention_days applies.
+  retention_copies:
 
   # rclone remotes and paths, defined in rclone.conf next to this file. For example:
   #   - 's3:my-bucket/certs'

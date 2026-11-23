@@ -15,6 +15,7 @@ import {
   url,
   type ZodType,
 } from 'zod';
+import { CronSchedule } from '../../backup/schedule/CronSchedule';
 import { FileServeModeEnum } from './enums/FileServeModeEnum';
 import { FontCatalogEnum } from './enums/FontCatalogEnum';
 
@@ -142,10 +143,14 @@ export const ConfigSchema = strictObject({
     enabled: blank(boolean().default(false)),
     schedule: blank(
       string()
-        .regex(/^\S+(\s+\S+){4}$/, 'Must be a 5-field cron expression')
+        .refine(
+          (schedule) => CronSchedule.parse(schedule) !== null,
+          'Must be a 5-field cron expression',
+        )
         .default('0 3 * * *'),
     ),
     retentionDays: blank(int().positive().default(30)),
+    retentionCopies: blank(int().positive().optional()),
     remotes: blank(
       array(
         string().regex(/^[^:\s]+:/, 'Must be an rclone remote:path'),

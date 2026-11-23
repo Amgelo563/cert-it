@@ -9,6 +9,7 @@
 #   APP_UID, APP_GID  user and group the app runs as, default 1000
 #   APP_PORT          loopback port for nginx, default 3000
 #   APP_MEMORY        memory limit, default 256m
+#   TZ                time zone of the backup schedule, default UTC
 name: cert-it
 
 services:
@@ -23,6 +24,8 @@ services:
     init: true
     ports:
       - 127.0.0.1:${APP_PORT:-3000}:3000
+    environment:
+      TZ: ${TZ:-UTC}
     volumes:
       - ${CERT_IT_DIR:-/srv/cert-it}/data:/app/data
       - ${CERT_IT_DIR:-/srv/cert-it}/config:/app/config:ro
