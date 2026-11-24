@@ -21,18 +21,21 @@ import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import {
   IconAlertCircle,
+  IconArrowRight,
   IconCertificate,
+  IconInfoCircle,
   IconSearch,
 } from '@tabler/icons-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 import type { ApiRoutes } from '../../app/api/ApiClient';
 import { describeApiError } from '../../app/api/describeApiError';
 import { useApiClient } from '../../app/api/useApiClient';
 import { useApiRequest } from '../../app/api/useApiRequest';
 import { Surface } from '../../app/layout/Surface';
-import { StatusLabel } from '../../app/layout/StatusLabel';
 import { usePermissions } from '../../auth/usePermissions';
+import { CourseTabEnum, coursePath } from '../CourseTabEnum';
 import { useCourse } from '../useCourse';
 import { IssueCertificatesModal } from './issue/IssueCertificatesModal';
 import { CertificateJobPanel } from './job/CertificateJobPanel';
@@ -64,6 +67,8 @@ export function CertificatesTab() {
   const api = useApiClient();
   const can = usePermissions();
   const canIssue = can(PermissionEnum.IssueCertificates);
+  // the template tab is only shown to these
+  const canEditTemplate = can(PermissionEnum.EditCourses);
   const { course, reload: reloadCourse } = useCourse();
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<Filter>(AllFilter);
@@ -230,9 +235,19 @@ export function CertificatesTab() {
       {canIssue && outdatedCount > 0 && !running && (
         <Surface p="lg">
           <Group justify="space-between" gap="sm">
-            <StatusLabel color="orange">
-              {t('certificates.outdatedNotice', { count: outdatedCount })}
-            </StatusLabel>
+            {/* a sentence, so it wraps instead of widening the page */}
+            <Group gap="xs" wrap="nowrap" align="flex-start" flex="1 1 260px">
+              <IconAlertCircle
+                size={18}
+                stroke={1.5}
+                color="var(--mantine-color-orange-filled)"
+                style={{ flex: 'none' }}
+                aria-hidden
+              />
+              <Text size="sm">
+                {t('certificates.outdatedNotice', { count: outdatedCount })}
+              </Text>
+            </Group>
             <Button
               size="xs"
               variant="light"
@@ -304,13 +319,28 @@ export function CertificatesTab() {
 
           {canIssue && !hasTemplate && (
             <Alert
-              color="orange"
+              color="blue"
               variant="light"
-              icon={<IconAlertCircle size={18} stroke={1.5} />}
+              icon={<IconInfoCircle size={18} stroke={1.5} />}
             >
-              {course.latestTemplateVersion === null
-                ? t('certificates.noTemplate')
-                : t('certificates.noNameField')}
+              <Stack gap="xs" align="flex-start">
+                <Text size="sm">
+                  {course.latestTemplateVersion === null
+                    ? t('certificates.noTemplate')
+                    : t('certificates.noNameField')}
+                </Text>
+                {canEditTemplate && (
+                  <Button
+                    component={Link}
+                    to={coursePath(course.id, CourseTabEnum.Template)}
+                    size="xs"
+                    variant="light"
+                    rightSection={<IconArrowRight size={14} stroke={1.5} />}
+                  >
+                    {t('certificates.openTemplate')}
+                  </Button>
+                )}
+              </Stack>
             </Alert>
           )}
 
@@ -381,7 +411,7 @@ export function CertificatesTab() {
 
       <IssueCertificatesModal
         opened={issuing !== undefined}
-        courseId={course.id}
+        course={course}
         participantIds={issuing ?? null}
         count={issuing ? issuing.length : withoutCertificate}
         onClose={() => setIssuing(undefined)}

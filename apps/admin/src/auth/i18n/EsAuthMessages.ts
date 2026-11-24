@@ -6,6 +6,7 @@ export const EsAuthMessages = {
     loginDescription: 'Usa la cuenta que te creó un administrador',
     email: 'Correo',
     password: 'Contraseña',
+    showPassword: 'Mostrar contraseña',
     login: 'Iniciar sesión',
     logout: 'Cerrar sesión',
     accountMenu: 'Cuenta',

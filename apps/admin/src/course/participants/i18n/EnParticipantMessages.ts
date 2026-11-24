@@ -15,7 +15,7 @@ export const EnParticipantMessages = {
     addedAt: 'Added',
     certificate: 'Certificate',
     notIssued: 'Not issued',
-    certificateActive: 'Valid',
+    certificateActive: 'Active',
     certificateRevoked: 'Revoked',
     templateVersion: 'Template v{version}',
     olderTemplate: 'Template v{version} (latest is v{latest})',
@@ -105,6 +105,6 @@ export const EnParticipantMessages = {
     line: 'Line',
     result: 'Result',
     noRows: 'No rows here.',
-    done: 'Import done: {created} added, {updated} updated, {skipped} skipped.',
+    done: 'Import done: {created} added, {updated} updated, {skipped} skipped, {invalid} with errors.',
   },
 } satisfies ParticipantMessages;

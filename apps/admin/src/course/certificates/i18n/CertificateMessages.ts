@@ -44,6 +44,8 @@ export type CertificateMessages = {
     noTemplate: string;
     /** Shown instead of the issue buttons while the latest template doesn't print the participant's name. */
     noNameField: string;
+    /** Link from those notices to the template tab. */
+    openTemplate: string;
     issueTitle: string;
     /** What will be issued to everyone without one, in `{count}`. */
     issueAllText: string;
@@ -51,6 +53,8 @@ export type CertificateMessages = {
     issueSelectedText: string;
     issueDateLabel: string;
     issueDateDescription: string;
+    /** Placeholder of the empty issue date, with today's `{date}` as printed. */
+    issueDateToday: string;
     issueSubmit: string;
     /** Notice after the job is added, with its `{count}`. */
     issueStarted: string;

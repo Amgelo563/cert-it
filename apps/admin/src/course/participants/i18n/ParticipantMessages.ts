@@ -102,7 +102,7 @@ export type ParticipantMessages = {
     line: string;
     result: string;
     noRows: string;
-    /** With the `{created}`, `{updated}` and `{skipped}` counts. */
+    /** With the `{created}`, `{updated}`, `{skipped}` and `{invalid}` counts, grouped like the preview. */
     done: string;
   };
 };

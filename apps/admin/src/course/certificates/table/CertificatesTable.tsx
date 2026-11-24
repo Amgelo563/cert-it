@@ -15,6 +15,7 @@ import {
 import { DataTable } from 'mantine-datatable';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useTableScroll } from '../../../app/layout/useTableScroll';
 import { MonoFigure } from '../../../app/layout/MonoFigure';
 import { StatusLabel } from '../../../app/layout/StatusLabel';
 import { usePermissions } from '../../../auth/usePermissions';
@@ -61,6 +62,10 @@ export function CertificatesTable({
   onDelete,
 }: CertificatesTableProps) {
   const { t, i18n } = useTranslation();
+  const tableScroll = useTableScroll(
+    t('courses.tabs.certificates'),
+    participants,
+  );
   const can = usePermissions();
   const canEdit = can(PermissionEnum.IssueCertificates);
   const canRevoke = can(PermissionEnum.RevokeCertificates);
@@ -84,6 +89,10 @@ export function CertificatesTable({
       minHeight={participants.length === 0 ? 200 : undefined}
       highlightOnHover
       verticalSpacing="sm"
+      // a visible scrollbar, and keyboard scrolling while it overflows
+      {...tableScroll}
+      // keeps the actions in view while the rest scrolls
+      pinLastColumn
       noRecordsText={emptyText}
       loadingText={t('app.loading')}
       totalRecords={total}
@@ -238,7 +247,7 @@ export function CertificatesTable({
                       {canRevoke
                         && (active ? (
                           <Menu.Item
-                            color="red"
+                            color="orange"
                             leftSection={<IconBan size={16} stroke={1.5} />}
                             onClick={() => onRevoke(participant)}
                           >
@@ -254,6 +263,7 @@ export function CertificatesTable({
                             {t('certificates.reinstate')}
                           </Menu.Item>
                         ))}
+                      {canDelete && (canEdit || canRevoke) && <Menu.Divider />}
                       {canDelete && (
                         <Menu.Item
                           color="red"

@@ -45,10 +45,10 @@ export function AddUserModal({
     validate: { email: isEmail(t('users.invalidEmail')) },
   });
 
-  const close = () => {
+  // cleared once the modal is gone, so nothing changes while it fades out
+  const reset = () => {
     form.reset();
     setError(null);
-    onClose();
   };
 
   const submit = form.onSubmit(async (json) => {
@@ -58,7 +58,6 @@ export function AddUserModal({
       const created = await api.request((routes) =>
         routes.users.$post({ json }),
       );
-      form.reset();
       onCreated(created);
     } catch (caught) {
       if (ApiRequestError.matches(caught, ApiErrorCodeEnum.EmailTaken)) {
@@ -72,7 +71,12 @@ export function AddUserModal({
   });
 
   return (
-    <Modal opened={opened} onClose={close} title={t('users.addTitle')}>
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      onExitTransitionEnd={reset}
+      title={t('users.addTitle')}
+    >
       <form onSubmit={submit} noValidate>
         <Stack gap="md">
           {error !== null && (
@@ -104,7 +108,7 @@ export function AddUserModal({
             {...form.getInputProps('role')}
           />
           <Group justify="flex-end" mt="xs">
-            <Button variant="subtle" color="gray" onClick={close}>
+            <Button variant="subtle" color="gray" onClick={onClose}>
               {t('auth.cancel')}
             </Button>
             <Button type="submit" loading={submitting}>

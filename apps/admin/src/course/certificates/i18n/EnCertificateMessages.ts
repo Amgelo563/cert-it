@@ -32,6 +32,7 @@ export const EnCertificateMessages = {
     noTemplate: 'Save a template before issuing certificates.',
     noNameField:
       "The latest template doesn't print the participant's name. Add a name field and save a new version before issuing certificates.",
+    openTemplate: 'Go to the template',
     issueTitle: 'Issue certificates',
     issueAllText:
       'Participants without a certificate: {count}. Each gets one with a new code, rendered with the latest template.',
@@ -39,7 +40,8 @@ export const EnCertificateMessages = {
       'Selected participants: {count}. Each gets a certificate with a new code, rendered with the latest template.',
     issueDateLabel: 'Issue date',
     issueDateDescription:
-      'Printed on the certificates. Leave it empty to use today.',
+      'Printed on the certificates as shown here. Leave it empty to use today.',
+    issueDateToday: 'Today: {date}',
     issueSubmit: 'Issue',
     issueStarted: 'Issuing in the background: {count}.',
     revoke: 'Revoke',

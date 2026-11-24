@@ -15,6 +15,7 @@ import { type MantineColor, Stack, Text } from '@mantine/core';
 import { DataTable } from 'mantine-datatable';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useTableScroll } from '../../app/layout/useTableScroll';
 import { enumMessageKeys } from '../../app/i18n/enumMessageKeys';
 import { useLocaleNames } from '../../app/i18n/useLocaleNames';
 import { MonoFigure } from '../../app/layout/MonoFigure';
@@ -210,6 +211,7 @@ export function AuditLogTable({
   onPageChange,
 }: AuditLogTableProps) {
   const { t, i18n } = useTranslation();
+  const tableScroll = useTableScroll(t('auditLog.title'), entries);
   const dates = useMemo(
     () =>
       new Intl.DateTimeFormat(i18n.language, {
@@ -228,6 +230,8 @@ export function AuditLogTable({
       minHeight={entries.length === 0 ? 200 : undefined}
       highlightOnHover
       verticalSpacing="sm"
+      // a visible scrollbar, and keyboard scrolling while it overflows
+      {...tableScroll}
       noRecordsText={t('auditLog.empty')}
       loadingText={t('app.loading')}
       totalRecords={total}
@@ -275,7 +279,6 @@ export function AuditLogTable({
         {
           accessor: 'entityName',
           title: t('auditLog.target'),
-          noWrap: true,
           render: (entry) => (
             <Stack gap={0}>
               <Text size="xs" c="dimmed">

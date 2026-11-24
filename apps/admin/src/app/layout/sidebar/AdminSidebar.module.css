@@ -27,7 +27,8 @@
   padding-inline: rem(12px);
   font-size: var(--mantine-font-size-xs);
   font-weight: 500;
-  color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-dark-3));
+  /* dark-3 is under 4.5:1 on the black page */
+  color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-dark-2));
 }
 
 .link {

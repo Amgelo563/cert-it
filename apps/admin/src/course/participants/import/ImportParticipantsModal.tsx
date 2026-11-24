@@ -26,6 +26,7 @@ import { guessColumnRoles } from './guessColumnRoles';
 import { columnsProblem } from './columnsProblem';
 import { ColumnsStep } from './steps/ColumnsStep';
 import { FileStep } from './steps/FileStep';
+import classes from './ImportParticipantsModal.module.css';
 import { PreviewStep } from './steps/PreviewStep';
 
 const StepEnum = { File: 0, Columns: 1, Preview: 2 } as const;
@@ -68,12 +69,12 @@ export function ImportParticipantsModal({
       + preview.totals[ImportRowStatusEnum.Update]
     : 0;
 
-  const close = () => {
+  // cleared once the modal is gone, so nothing changes while it fades out
+  const reset = () => {
     setStep(StepEnum.File);
     setFile(null);
     setPreview(null);
     setError(null);
-    onClose();
   };
 
   // the same request both times; only dryRun changes
@@ -108,11 +109,12 @@ export function ImportParticipantsModal({
         message: t('participantImport.done', {
           created: totals.create,
           updated: totals.update,
-          skipped: totals.skip + totals.invalid,
+          skipped: totals.skip,
+          invalid: totals.invalid,
         }),
       });
       onImported();
-      close();
+      onClose();
     } catch (caught) {
       setError(caught);
     } finally {
@@ -123,12 +125,18 @@ export function ImportParticipantsModal({
   return (
     <Modal
       opened={opened}
-      onClose={close}
+      onClose={onClose}
+      onExitTransitionEnd={reset}
       title={t('participantImport.title')}
       size="xl"
     >
       <Stack gap="lg">
-        <Stepper active={step} size="sm" allowNextStepsSelect={false}>
+        <Stepper
+          active={step}
+          size="sm"
+          allowNextStepsSelect={false}
+          classNames={{ stepIcon: classes.stepIcon }}
+        >
           <Stepper.Step label={t('participantImport.stepFile')} />
           <Stepper.Step label={t('participantImport.stepColumns')} />
           <Stepper.Step label={t('participantImport.stepPreview')} />
@@ -190,7 +198,7 @@ export function ImportParticipantsModal({
             </Button>
           )}
           <Group gap="sm">
-            <Button variant="subtle" color="gray" onClick={close}>
+            <Button variant="subtle" color="gray" onClick={onClose}>
               {t('auth.cancel')}
             </Button>
             {step === StepEnum.Columns && (

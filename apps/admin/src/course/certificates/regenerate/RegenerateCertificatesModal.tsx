@@ -41,11 +41,10 @@ export function RegenerateCertificatesModal({
   const { items } = outdated;
   const checked = items.filter(({ id }) => !unchecked.has(id));
 
-  // the next opening starts with everything checked
-  const close = () => {
+  // the next opening starts with everything checked, once the modal is gone
+  const reset = () => {
     setUnchecked(new Set());
     setError(null);
-    onClose();
   };
 
   const toggle = (id: number) =>
@@ -69,7 +68,6 @@ export function RegenerateCertificatesModal({
               : { certificateIds: checked.map(({ id }) => id) },
         }),
       );
-      setUnchecked(new Set());
       onRegenerated(job);
     } catch (caught) {
       setError(caught);
@@ -81,7 +79,8 @@ export function RegenerateCertificatesModal({
   return (
     <Modal
       opened={opened}
-      onClose={close}
+      onClose={onClose}
+      onExitTransitionEnd={reset}
       title={t('regenerate.title')}
       size="lg"
     >
@@ -138,7 +137,7 @@ export function RegenerateCertificatesModal({
           </Stack>
         </ScrollArea.Autosize>
         <Group justify="flex-end" mt="xs">
-          <Button variant="subtle" color="gray" onClick={close}>
+          <Button variant="subtle" color="gray" onClick={onClose}>
             {t('regenerate.notNow')}
           </Button>
           <Button

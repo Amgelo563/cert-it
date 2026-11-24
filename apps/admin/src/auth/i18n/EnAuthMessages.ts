@@ -6,6 +6,7 @@ export const EnAuthMessages = {
     loginDescription: 'Use the account an administrator created for you',
     email: 'Email',
     password: 'Password',
+    showPassword: 'Show password',
     login: 'Log in',
     logout: 'Log out',
     accountMenu: 'Account',

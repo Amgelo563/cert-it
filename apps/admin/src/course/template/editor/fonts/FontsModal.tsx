@@ -1,5 +1,5 @@
 import type { FontSummary } from '@cert-it/shared';
-import { Modal, Tabs } from '@mantine/core';
+import { Center, Loader, Modal, Tabs } from '@mantine/core';
 import { IconDatabase, IconUpload, IconWorldSearch } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,9 +16,15 @@ const FontsTabEnum = {
   Upload: 'upload',
 } as const;
 
-// stable, so the request is sent once per opening
+// stable, so each request is sent once per opening
 const fetchCatalog = (routes: ApiRoutes) =>
   routes['font-catalog'].$get({ query: {} });
+
+// fetched on every opening, as other editors may add fonts
+const fetchFonts = (routes: ApiRoutes) => routes.fonts.$get();
+
+// about the tallest tab, so switching tabs doesn't resize the modal much
+const PanelMinHeight = 400;
 
 type FontsTab = (typeof FontsTabEnum)[keyof typeof FontsTabEnum];
 
@@ -41,13 +47,16 @@ type FontsModalProps = {
 export function FontsModal({ opened, onClose, ...props }: FontsModalProps) {
   const { t } = useTranslation();
 
-  // the contents live only while open, so each opening starts on the stored fonts, up to date
+  // the contents live only while open, so each opening starts fresh
   return (
     <Modal
       opened={opened}
       onClose={onClose}
       title={t('template.fontsModal.title')}
       size="lg"
+      // a fixed top, so a taller tab grows down instead of moving the modal
+      centered={false}
+      yOffset="8vh"
     >
       <FontsTabs {...props} />
     </Modal>
@@ -63,9 +72,29 @@ function FontsTabs({
   onImported,
 }: Omit<FontsModalProps, 'opened' | 'onClose'>) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<FontsTab>(FontsTabEnum.Stored);
+  const stored = useApiRequest(fetchFonts);
+  const catalogRequest = useApiRequest(fetchCatalog);
   // which catalog the site uses, if any; a catalog that's down hides its tab
-  const catalog = useApiRequest(fetchCatalog).data?.catalog;
+  const catalog = catalogRequest.data?.catalog;
+  const [picked, setTab] = useState<FontsTab | null>(null);
+  const settled = !stored.loading && !catalogRequest.loading;
+
+  if (!picked && !settled) {
+    return (
+      <Center mih={PanelMinHeight}>
+        <Loader size="sm" aria-label={t('app.loading')} />
+      </Center>
+    );
+  }
+  // with no fonts to pick yet, starts where new ones come from
+  const hasFonts = loaded.length > 0 || (stored.data?.length ?? 0) > 0;
+  const tab =
+    picked
+    ?? (hasFonts
+      ? FontsTabEnum.Stored
+      : catalog
+        ? FontsTabEnum.Catalog
+        : FontsTabEnum.Upload);
 
   // a new font shows among the stored ones, already ticked
   const showStored = () => setTab(FontsTabEnum.Stored);
@@ -99,8 +128,9 @@ function FontsTabs({
         </Tabs.Tab>
       </Tabs.List>
 
-      <Tabs.Panel value={FontsTabEnum.Stored}>
+      <Tabs.Panel value={FontsTabEnum.Stored} mih={PanelMinHeight}>
         <StoredFontsPanel
+          stored={stored}
           loaded={loaded}
           busy={busy}
           onAdd={(font) => void onAdd(font)}
@@ -108,7 +138,7 @@ function FontsTabs({
         />
       </Tabs.Panel>
       {catalog && (
-        <Tabs.Panel value={FontsTabEnum.Catalog}>
+        <Tabs.Panel value={FontsTabEnum.Catalog} mih={PanelMinHeight}>
           <CatalogPanel
             onImported={(font, bytes) => {
               onImported(font, bytes);
@@ -117,7 +147,7 @@ function FontsTabs({
           />
         </Tabs.Panel>
       )}
-      <Tabs.Panel value={FontsTabEnum.Upload}>
+      <Tabs.Panel value={FontsTabEnum.Upload} mih={PanelMinHeight}>
         <UploadFontPanel
           busy={busy}
           onUpload={(file) => void onUpload(file).then(showStored)}

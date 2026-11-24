@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   createTheme,
+  type CSSVariablesResolver,
   Input,
   type MantineColorsTuple,
   Menu,
@@ -84,5 +85,20 @@ export const AdminTheme = createTheme({
     Paper: Paper.extend({ defaultProps: { radius: 'lg' } }),
     Popover: Popover.extend({ defaultProps: { radius: 'lg', shadow: 'lg' } }),
     Tooltip: Tooltip.extend({ defaultProps: { radius: 'sm', openDelay: 300 } }),
+  },
+});
+
+// shade 4 keeps brand text readable on dark, but white on it is only 4.1:1, so fills go one darker
+const DarkFillShade = ThemeValues.brandShadeIndexDark + 1;
+
+/** Dark mode colors that need more contrast than Mantine's defaults. */
+export const AdminCssVariables: CSSVariablesResolver = () => ({
+  variables: {},
+  light: {},
+  dark: {
+    '--mantine-color-brand-filled': `var(--mantine-color-brand-${DarkFillShade})`,
+    '--mantine-color-brand-filled-hover': `var(--mantine-color-brand-${DarkFillShade + 1})`,
+    // red-8 is under 4:1 on the dark surfaces
+    '--mantine-color-error': 'var(--mantine-color-red-6)',
   },
 });

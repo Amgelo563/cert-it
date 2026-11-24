@@ -59,6 +59,8 @@ export const EnCourseMessages = {
     deleteTitle: 'Delete this course?',
     deleteText:
       "{name}, its {participants} participants and its {certificates} certificates will be deleted for good, and certificate links will stop working. This can't be undone.",
+    deleteTextWithRevoked:
+      "{name}, its {participants} participants, its {certificates} active certificates and the revoked ones ({revoked}) will be deleted for good, and certificate links will stop working. This can't be undone.",
     deleted: '{name} was deleted.',
     addTitle: 'New course',
     addSubmit: 'Create course',
@@ -74,6 +76,9 @@ export const EnCourseMessages = {
     unsaved: 'Not saved yet',
     versionHelp: 'Each certificate records the version it was made with',
     unsavedChanges: 'Unsaved changes',
+    toggleFieldList: 'Show or hide the field list',
+    addFieldType: 'Add field: {name}',
+    canvasLabel: 'Template canvas',
     replacePdf: 'Replace base PDF',
     pdfUploaded: 'Base PDF uploaded. Save to keep it in the template.',
     largePdf:

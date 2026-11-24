@@ -32,6 +32,7 @@ export const EsCertificateMessages = {
     noTemplate: 'Guarda una plantilla antes de emitir certificados.',
     noNameField:
       'La última plantilla no imprime el nombre del participante. Agrega un campo de nombre y guarda una nueva versión antes de emitir certificados.',
+    openTemplate: 'Ir a la plantilla',
     issueTitle: 'Emitir certificados',
     issueAllText:
       'Participantes sin certificado: {count}. Cada uno recibe uno con un código nuevo, generado con la última plantilla.',
@@ -39,7 +40,8 @@ export const EsCertificateMessages = {
       'Participantes seleccionados: {count}. Cada uno recibe un certificado con un código nuevo, generado con la última plantilla.',
     issueDateLabel: 'Fecha de emisión',
     issueDateDescription:
-      'Se imprime en los certificados. Déjala vacía para usar la de hoy.',
+      'Se imprime en los certificados tal como se ve aquí. Déjala vacía para usar la de hoy.',
+    issueDateToday: 'Hoy: {date}',
     issueSubmit: 'Emitir',
     issueStarted: 'Emitiendo en segundo plano: {count}.',
     revoke: 'Revocar',

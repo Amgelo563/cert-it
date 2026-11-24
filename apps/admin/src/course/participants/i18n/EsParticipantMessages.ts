@@ -15,7 +15,7 @@ export const EsParticipantMessages = {
     addedAt: 'Agregado',
     certificate: 'Certificado',
     notIssued: 'Sin emitir',
-    certificateActive: 'Válido',
+    certificateActive: 'Vigente',
     certificateRevoked: 'Revocado',
     templateVersion: 'Plantilla v{version}',
     olderTemplate: 'Plantilla v{version} (la última es v{latest})',
@@ -105,6 +105,6 @@ export const EsParticipantMessages = {
     line: 'Línea',
     result: 'Resultado',
     noRows: 'No hay filas aquí.',
-    done: 'Importación lista: {created} agregados, {updated} actualizados, {skipped} omitidos.',
+    done: 'Importación lista: {created} agregados, {updated} actualizados, {skipped} omitidos, {invalid} con errores.',
   },
 } satisfies ParticipantMessages;

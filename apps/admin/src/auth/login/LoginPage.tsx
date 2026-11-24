@@ -80,6 +80,9 @@ export function LoginPage() {
             {...form.getInputProps('email')}
           />
           <PasswordInput
+            visibilityToggleButtonProps={{
+              'aria-label': t('auth.showPassword'),
+            }}
             label={t('auth.password')}
             autoComplete="current-password"
             maxLength={PasswordLength.max}

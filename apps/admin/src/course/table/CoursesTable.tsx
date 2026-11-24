@@ -3,6 +3,7 @@ import { Anchor, Stack, Text } from '@mantine/core';
 import { DataTable } from 'mantine-datatable';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useTableScroll } from '../../app/layout/useTableScroll';
 import { Link, useNavigate } from 'react-router';
 import { useLocaleNames } from '../../app/i18n/useLocaleNames';
 import { MonoFigure } from '../../app/layout/MonoFigure';
@@ -28,6 +29,7 @@ export function CoursesTable({
   onPageChange,
 }: CoursesTableProps) {
   const { t, i18n } = useTranslation();
+  const tableScroll = useTableScroll(t('courses.title'), courses);
   const navigate = useNavigate();
   const localeNames = useLocaleNames();
 
@@ -48,6 +50,8 @@ export function CoursesTable({
       minHeight={courses.length === 0 ? 200 : undefined}
       highlightOnHover
       verticalSpacing="sm"
+      // a visible scrollbar, and keyboard scrolling while it overflows
+      {...tableScroll}
       noRecordsText={t('courses.empty')}
       loadingText={t('app.loading')}
       totalRecords={total}

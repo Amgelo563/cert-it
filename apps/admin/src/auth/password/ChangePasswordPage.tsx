@@ -98,6 +98,9 @@ export function ChangePasswordPage() {
             hidden
           />
           <PasswordInput
+            visibilityToggleButtonProps={{
+              'aria-label': t('auth.showPassword'),
+            }}
             label={t('auth.currentPassword')}
             autoComplete="current-password"
             maxLength={PasswordLength.max}
@@ -106,6 +109,9 @@ export function ChangePasswordPage() {
             {...form.getInputProps('currentPassword')}
           />
           <PasswordInput
+            visibilityToggleButtonProps={{
+              'aria-label': t('auth.showPassword'),
+            }}
             label={t('auth.newPassword')}
             description={t('auth.passwordTooShort', {
               min: PasswordLength.min,
@@ -117,6 +123,9 @@ export function ChangePasswordPage() {
             {...form.getInputProps('newPassword')}
           />
           <PasswordInput
+            visibilityToggleButtonProps={{
+              'aria-label': t('auth.showPassword'),
+            }}
             label={t('auth.confirmPassword')}
             autoComplete="new-password"
             maxLength={PasswordLength.max}

@@ -29,10 +29,10 @@ export function AddCourseModal({
   const [submitting, setSubmitting] = useState(false);
   const form = useCourseForm(courseFormValues(null, defaultLocale));
 
-  const close = () => {
+  // cleared once the modal is gone, so nothing changes while it fades out
+  const reset = () => {
     form.reset();
     setError(null);
-    onClose();
   };
 
   const submit = form.onSubmit(async (json) => {
@@ -42,7 +42,6 @@ export function AddCourseModal({
       const course = await api.request((routes) =>
         routes.courses.$post({ json }),
       );
-      form.reset();
       onCreated(course);
     } catch (caught) {
       setError(caught);
@@ -52,7 +51,12 @@ export function AddCourseModal({
   });
 
   return (
-    <Modal opened={opened} onClose={close} title={t('courses.addTitle')}>
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      onExitTransitionEnd={reset}
+      title={t('courses.addTitle')}
+    >
       <form onSubmit={submit} noValidate>
         <Stack gap="md">
           {error !== null && (
@@ -66,7 +70,7 @@ export function AddCourseModal({
           )}
           <CourseFormFields form={form} focusName />
           <Group justify="flex-end" mt="xs">
-            <Button variant="subtle" color="gray" onClick={close}>
+            <Button variant="subtle" color="gray" onClick={onClose}>
               {t('auth.cancel')}
             </Button>
             <Button type="submit" loading={submitting}>

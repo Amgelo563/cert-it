@@ -1,0 +1,6 @@
+/* the current step is filled, so it stands out from the done ones */
+.stepIcon[data-progress] {
+  border-color: var(--mantine-primary-color-filled);
+  background-color: var(--mantine-primary-color-filled);
+  color: var(--mantine-color-white);
+}

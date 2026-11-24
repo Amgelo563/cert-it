@@ -13,6 +13,7 @@ import {
 import { DataTable } from 'mantine-datatable';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useTableScroll } from '../../../app/layout/useTableScroll';
 import { MonoFigure } from '../../../app/layout/MonoFigure';
 import { StatusLabel } from '../../../app/layout/StatusLabel';
 import { usePermissions } from '../../../auth/usePermissions';
@@ -50,6 +51,10 @@ export function ParticipantsTable({
   onDelete,
 }: ParticipantsTableProps) {
   const { t, i18n } = useTranslation();
+  const tableScroll = useTableScroll(
+    t('courses.tabs.participants'),
+    participants,
+  );
   const can = usePermissions();
   const canEdit = can(PermissionEnum.EditParticipants);
   const canDelete = can(PermissionEnum.DeleteRecords);
@@ -67,6 +72,9 @@ export function ParticipantsTable({
       minHeight={participants.length === 0 ? 200 : undefined}
       highlightOnHover
       verticalSpacing="sm"
+      // a visible scrollbar, and keyboard scrolling while it overflows
+      {...tableScroll}
+      pinLastColumn
       noRecordsText={emptyText}
       loadingText={t('app.loading')}
       totalRecords={total}

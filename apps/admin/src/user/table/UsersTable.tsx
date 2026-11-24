@@ -9,6 +9,7 @@ import {
 import { DataTable } from 'mantine-datatable';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useTableScroll } from '../../app/layout/useTableScroll';
 import { MonoFigure } from '../../app/layout/MonoFigure';
 import { StatusLabel } from '../../app/layout/StatusLabel';
 import { useAuth } from '../../auth/useAuth';
@@ -41,6 +42,7 @@ export function UsersTable({
   onResetPassword,
 }: UsersTableProps) {
   const { t, i18n } = useTranslation();
+  const tableScroll = useTableScroll(t('users.title'), users);
   const { user: me } = useAuth();
 
   const roles = useMemo(
@@ -64,6 +66,10 @@ export function UsersTable({
       minHeight={users.length === 0 ? 200 : undefined}
       highlightOnHover
       verticalSpacing="sm"
+      // a visible scrollbar, and keyboard scrolling while it overflows
+      {...tableScroll}
+      // keeps the actions in view while the rest scrolls
+      pinLastColumn
       noRecordsText={t('users.empty')}
       loadingText={t('app.loading')}
       totalRecords={total}
@@ -104,6 +110,16 @@ export function UsersTable({
               data={roles}
               value={user.role}
               allowDeselect={false}
+              // wider than the cell, to fit what each role can do
+              comboboxProps={{ width: 300, position: 'bottom-start' }}
+              renderOption={({ option }) => (
+                <div>
+                  <Text size="sm">{option.label}</Text>
+                  <Text size="xs" c="dimmed">
+                    {t(`roleDescriptions.${option.value as Role}`)}
+                  </Text>
+                </div>
+              )}
               disabled={user.id === me?.id || user.id === busyId}
               aria-label={t('users.changeRole', { email: user.email })}
               onChange={(value) => {

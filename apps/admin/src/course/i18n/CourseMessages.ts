@@ -56,6 +56,8 @@ export type CourseMessages = {
     deleteTitle: string;
     /** With the course's `{name}` and its `{participants}` and `{certificates}` counts. */
     deleteText: string;
+    /** Like deleteText, with the `{revoked}` count apart from the valid `{certificates}`. */
+    deleteTextWithRevoked: string;
     deleted: string;
     addTitle: string;
     addSubmit: string;
@@ -75,6 +77,12 @@ export type CourseMessages = {
     versionHelp: string;
     /** Next to the version while the canvas differs from it. */
     unsavedChanges: string;
+    /** Label of the Designer's button that opens or closes its field list. */
+    toggleFieldList: string;
+    /** Label of a field type's button, with the type's `{name}`. */
+    addFieldType: string;
+    /** Name of the Designer's canvas, a region that scrolls when zoomed in. */
+    canvasLabel: string;
     replacePdf: string;
     /** Shown after uploading, until it's saved with the template. */
     pdfUploaded: string;

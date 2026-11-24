@@ -14,7 +14,9 @@ import {
   Link,
   Outlet,
   useLocation,
+  useHref,
   useNavigate,
+  useNavigation,
   useParams,
 } from 'react-router';
 import type { ApiRoutes } from '../app/api/ApiClient';
@@ -39,7 +41,11 @@ export function CoursePage() {
   const localeNames = useLocaleNames();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const navigation = useNavigation();
   const courseId = useParams()['courseId'] ?? '';
+  const courseHref = useHref(
+    AdminPathEnum.Course.replace(':courseId', courseId),
+  );
 
   const request = useApiRequest(
     useCallback(
@@ -74,9 +80,16 @@ export function CoursePage() {
       show: can(PermissionEnum.EditCourses),
     },
   ].filter((tab) => tab.show);
-  const activeTab = tabs.find(({ value }) =>
-    pathname.endsWith(`/${value}`),
-  )?.value;
+  const tabOf = (path: string) =>
+    tabs.find(({ value }) => path.endsWith(`/${value}`))?.value;
+  const activeTab = tabOf(pathname);
+  // a tab of this course whose code is still loading, such as the designer
+  const target =
+    navigation.state === 'loading' ? navigation.location.pathname : null;
+  // the pending location keeps the router's basename, unlike useLocation
+  const pendingTab = target?.startsWith(`${courseHref}/`)
+    ? tabOf(target)
+    : undefined;
 
   if (ApiRequestError.matches(request.error, ApiErrorCodeEnum.NotFound)) {
     return <NotFoundPage />;
@@ -150,7 +163,8 @@ export function CoursePage() {
       </Stack>
 
       <Tabs
-        value={activeTab ?? null}
+        // the clicked tab shows at once, even while its code loads
+        value={pendingTab ?? activeTab ?? null}
         onChange={(value) => {
           const tab = tabs.find((item) => item.value === value)?.value;
           if (tab) void navigate(coursePath(course.id, tab as CourseTab));
@@ -169,7 +183,11 @@ export function CoursePage() {
         </Tabs.List>
       </Tabs>
 
-      <Outlet context={context} />
+      {pendingTab && pendingTab !== activeTab ? (
+        <PageLoader />
+      ) : (
+        <Outlet context={context} />
+      )}
     </Stack>
   );
 }

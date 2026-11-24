@@ -90,6 +90,11 @@ export function ParticipantFormModal({
     <Modal
       opened={opened}
       onClose={onClose}
+      // cleared once the modal is gone, so the next opening shows no old errors
+      onExitTransitionEnd={() => {
+        form.clearErrors();
+        setError(null);
+      }}
       title={
         participant ? t('participants.editTitle') : t('participants.addTitle')
       }

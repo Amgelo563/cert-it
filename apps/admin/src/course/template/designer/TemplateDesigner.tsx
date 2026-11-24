@@ -5,6 +5,7 @@ import { useComputedColorScheme } from '@mantine/core';
 import { type Ref, useEffect, useImperativeHandle, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Surface } from '../../../app/layout/Surface';
+import { DesignerContainer } from './DesignerContainer';
 import { nameNewField } from './nameNewField';
 import classes from './TemplateDesigner.module.css';
 import { useFillWindowHeight } from './useFillWindowHeight';
@@ -184,7 +185,7 @@ export function TemplateDesigner({
 
   return (
     <Surface className={classes.designer}>
-      <div ref={container} className={classes.container} />
+      <DesignerContainer ref={container} className={classes.container} />
     </Surface>
   );
 }

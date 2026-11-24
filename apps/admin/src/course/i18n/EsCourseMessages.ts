@@ -59,6 +59,8 @@ export const EsCourseMessages = {
     deleteTitle: '¿Eliminar este curso?',
     deleteText:
       'Se eliminarán para siempre {name}, sus {participants} participantes y sus {certificates} certificados, y los enlaces de los certificados dejarán de funcionar. No se puede deshacer.',
+    deleteTextWithRevoked:
+      'Se eliminarán para siempre {name}, sus {participants} participantes, sus {certificates} certificados vigentes y los revocados ({revoked}), y los enlaces de los certificados dejarán de funcionar. No se puede deshacer.',
     deleted: '{name} se eliminó.',
     addTitle: 'Nuevo curso',
     addSubmit: 'Crear curso',
@@ -74,6 +76,9 @@ export const EsCourseMessages = {
     unsaved: 'Sin guardar',
     versionHelp: 'Cada certificado registra la versión con que se generó',
     unsavedChanges: 'Cambios sin guardar',
+    toggleFieldList: 'Mostrar u ocultar la lista de campos',
+    addFieldType: 'Agregar campo: {name}',
+    canvasLabel: 'Lienzo de la plantilla',
     replacePdf: 'Cambiar PDF base',
     pdfUploaded: 'PDF base subido. Guarda para conservarlo en la plantilla.',
     largePdf:

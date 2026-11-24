@@ -134,13 +134,17 @@ export function SettingsTab() {
       title: t('courses.deleteTitle'),
       children: (
         <Text size="sm">
-          {t('courses.deleteText', {
-            name: course.name,
-            participants: course.participantCount,
-            certificates:
-              course.certificateCounts.active
-              + course.certificateCounts.revoked,
-          })}
+          {t(
+            course.certificateCounts.revoked > 0
+              ? 'courses.deleteTextWithRevoked'
+              : 'courses.deleteText',
+            {
+              name: course.name,
+              participants: course.participantCount,
+              certificates: course.certificateCounts.active,
+              revoked: course.certificateCounts.revoked,
+            },
+          )}
         </Text>
       ),
       labels: { confirm: t('courses.delete'), cancel: t('auth.cancel') },

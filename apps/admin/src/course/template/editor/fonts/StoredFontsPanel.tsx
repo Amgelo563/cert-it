@@ -13,9 +13,8 @@ import { useInViewport } from '@mantine/hooks';
 import { IconAlertCircle, IconSearch } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ApiRoutes } from '../../../../app/api/ApiClient';
 import { describeApiError } from '../../../../app/api/describeApiError';
-import { useApiRequest } from '../../../../app/api/useApiRequest';
+import type { ApiRequestState } from '../../../../app/api/useApiRequest';
 import { FontPreviewText } from './FontPreviewText';
 import { StoredFontPreview } from './StoredFontPreview';
 
@@ -26,10 +25,9 @@ type StoredFontsPanelProps = {
   busy: boolean;
   onAdd: (font: FontSummary) => void;
   onRemove: (font: FontSummary) => void;
+  /** Every stored font, fetched by the modal on each opening. */
+  stored: ApiRequestState<readonly FontSummary[]>;
 };
-
-// stable, so the list is fetched once per opening
-const fetchFonts = (routes: ApiRoutes) => routes.fonts.$get();
 
 const fontLabel = (font: FontSummary) => `${font.family} ${font.style}`;
 
@@ -39,11 +37,10 @@ export function StoredFontsPanel({
   busy,
   onAdd,
   onRemove,
+  stored: request,
 }: StoredFontsPanelProps) {
   const { t, i18n } = useTranslation();
   const [query, setQuery] = useState('');
-  // fetched on every opening, as other editors may add fonts
-  const request = useApiRequest(fetchFonts);
 
   const search = query.trim().toLowerCase();
   const matches = (font: FontSummary) =>

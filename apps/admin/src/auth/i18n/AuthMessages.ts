@@ -5,6 +5,8 @@ export type AuthMessages = {
     loginDescription: string;
     email: string;
     password: string;
+    /** Label of the eye button that shows the password as it's typed. */
+    showPassword: string;
     login: string;
     logout: string;
     /** Accessible label of the avatar that opens the account menu. */
