@@ -1,8 +1,8 @@
 import { RateLimiter } from '@cert-it/hono';
 import {
   ApiErrorCodeEnum,
-  AuditActionEnum,
   type AuditAction,
+  AuditActionEnum,
   AuditEntityEnum,
   type ChangePasswordRequest,
   ChangePasswordRequestSchema,
@@ -30,7 +30,7 @@ type AuthRoutesOptions = {
   auditLog: AuditLog;
   /** Limits login attempts per client IP. */
   ipLimiter: RateLimiter;
-  /** Limits password checks per account. */
+  /** Limits failed password checks per account and client IP. */
   accountLimiter: RateLimiter;
 };
 
@@ -96,6 +96,20 @@ export class AuthRoutes extends AbstractApiRoutes {
     });
   }
 
+  protected static tooManyAttempts(c: Context, seconds: number) {
+    c.header('Retry-After', String(seconds));
+    return AuthRoutes.apiError(c, 429, ApiErrorCodeEnum.TooManyAttempts);
+  }
+
+  protected static toCurrentUser(user: User): CurrentUser {
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      mustChangePassword: user.mustChangePassword,
+    };
+  }
+
   /** Returns the routes, to mount at {@link AuthRoutes.Path}. */
   public getApp(): AuthRoutes['app'] {
     return this.app;
@@ -127,9 +141,11 @@ export class AuthRoutes extends AbstractApiRoutes {
   // unknown emails, wrong passwords and deactivated accounts answer alike
   protected async login(c: Context<AuthEnv>, body: LoginRequest) {
     const email = normalizeEmail(body.email);
+    const clientIp = c.get('clientIp');
+    const accountKey = `login:${email}:${clientIp}`;
     const waitSeconds = Math.max(
-      this.ipLimiter.hit(c.get('clientIp')),
-      this.accountLimiter.hit(email),
+      this.ipLimiter.hit(clientIp),
+      this.accountLimiter.check(accountKey),
     );
     if (waitSeconds > 0) return AuthRoutes.tooManyAttempts(c, waitSeconds);
 
@@ -142,10 +158,11 @@ export class AuthRoutes extends AbstractApiRoutes {
     );
 
     if (!user || !passwordHash || !matches || !user.active) {
+      this.accountLimiter.hit(accountKey);
       return AuthRoutes.apiError(c, 401, ApiErrorCodeEnum.InvalidCredentials);
     }
 
-    this.accountLimiter.reset(email);
+    this.accountLimiter.reset(accountKey);
     this.database.atomically(() => {
       this.sessions.open(c, user.id);
       this.audit(user, AuditActionEnum.Login);
@@ -164,12 +181,14 @@ export class AuthRoutes extends AbstractApiRoutes {
     body: ChangePasswordRequest,
   ) {
     const user = c.get('user');
-    const waitSeconds = this.accountLimiter.hit(user.email);
+    const accountKey = `password:${user.id}:${c.get('clientIp')}`;
+    const waitSeconds = this.accountLimiter.check(accountKey);
     if (waitSeconds > 0) return AuthRoutes.tooManyAttempts(c, waitSeconds);
 
     const { users } = this.database.getRepositories();
     const currentHash = users.findPasswordHash(user.id) ?? '';
     if (!(await this.passwords.verify(currentHash, body.currentPassword))) {
+      this.accountLimiter.hit(accountKey);
       return AuthRoutes.apiError(c, 400, ApiErrorCodeEnum.WrongPassword);
     }
     if (body.newPassword === body.currentPassword) {
@@ -187,7 +206,7 @@ export class AuthRoutes extends AbstractApiRoutes {
       this.audit(user, AuditActionEnum.ChangePassword);
       return changed;
     });
-    this.accountLimiter.reset(user.email);
+    this.accountLimiter.reset(accountKey);
     return c.json<CurrentUser, 200>(AuthRoutes.toCurrentUser(updated), 200);
   }
 
@@ -203,19 +222,5 @@ export class AuthRoutes extends AbstractApiRoutes {
   protected getDummyHash(): Promise<string> {
     this.dummyHash ??= this.passwords.hash(this.passwords.generate());
     return this.dummyHash;
-  }
-
-  protected static tooManyAttempts(c: Context, seconds: number) {
-    c.header('Retry-After', String(seconds));
-    return AuthRoutes.apiError(c, 429, ApiErrorCodeEnum.TooManyAttempts);
-  }
-
-  protected static toCurrentUser(user: User): CurrentUser {
-    return {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      mustChangePassword: user.mustChangePassword,
-    };
   }
 }

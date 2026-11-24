@@ -126,19 +126,37 @@ describe('AuthRoutes (login)', () => {
 });
 
 describe('AuthRoutes (rate limit)', () => {
-  test('GIVEN the attempts of an account used up WHEN logging in from another IP with the right password THEN answers 429', async () => {
+  test('GIVEN failed attempts on an account from one IP WHEN logging in from another IP with the right password THEN answers 200', async () => {
     const { createUser, login } = setup({ maxAttempts: 3 });
     await createUser();
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       await login(
         { email: 'ana@example.org', password: 'nope' },
-        `198.51.100.${i}`,
+        '198.51.100.1',
       );
     }
 
     const response = await login(
       { email: 'ana@example.org', password: Password },
       '203.0.113.9',
+    );
+
+    expect(response.status).toBe(200);
+  });
+
+  test('GIVEN the failed attempts of an account used up from an IP WHEN logging in from it with the right password THEN answers 429', async () => {
+    const { createUser, login } = setup({ maxAttempts: 3 });
+    await createUser();
+    for (let i = 0; i < 3; i++) {
+      await login(
+        { email: 'ana@example.org', password: 'nope' },
+        '198.51.100.1',
+      );
+    }
+
+    const response = await login(
+      { email: 'ana@example.org', password: Password },
+      '198.51.100.1',
     );
 
     expect(response.status).toBe(429);
@@ -331,6 +349,23 @@ describe('AuthRoutes (change password)', () => {
       expect((await request('GET', '/me', { cookie })).status).toBe(200);
     },
   );
+
+  test('GIVEN failed logins on the account from other IPs WHEN changing the password THEN answers 200', async () => {
+    const { cookie, login, request } = await loggedIn();
+    for (let i = 0; i < 20; i++) {
+      await login(
+        { email: 'ana@example.org', password: 'nope' },
+        `198.51.100.${i}`,
+      );
+    }
+
+    const response = await request('POST', '/password', {
+      cookie,
+      body: { currentPassword: Password, newPassword: 'a new long password' },
+    });
+
+    expect(response.status).toBe(200);
+  });
 
   test('GIVEN no session WHEN changing the password THEN answers 401', async () => {
     const { request } = setup();

@@ -61,6 +61,24 @@ describe('RateLimiter (hit)', () => {
   });
 });
 
+describe('RateLimiter (check)', () => {
+  test('GIVEN a key under the limit WHEN checking it THEN returns 0 without recording a hit', () => {
+    const { limiter } = createLimiter();
+    for (let i = 0; i < 5; i++) limiter.check('a');
+
+    expect([limiter.hit('a'), limiter.hit('a'), limiter.hit('a')]).toEqual([
+      0, 0, 0,
+    ]);
+  });
+
+  test('GIVEN a key at the limit WHEN checking it THEN returns the seconds to wait', () => {
+    const { limiter } = createLimiter();
+    for (let i = 0; i < 3; i++) limiter.hit('a');
+
+    expect(limiter.check('a')).toBe(60);
+  });
+});
+
 describe('RateLimiter (reset)', () => {
   test('GIVEN a key at the limit WHEN resetting it THEN allows it again', () => {
     const { limiter } = createLimiter();

@@ -31,14 +31,24 @@ export class RateLimiter {
     const now = this.now();
     this.pruneEvery(now);
 
-    const times = this.recentHits(key, now);
-    if (times.length >= this.maxHits) {
-      return Math.ceil((times[0]! + this.windowMs - now) / 1000);
-    }
+    const waitSeconds = this.check(key);
+    if (waitSeconds > 0) return waitSeconds;
 
+    const times = this.recentHits(key, now);
     times.push(now);
     this.hits.set(key, times);
     return 0;
+  }
+
+  /** Returns the seconds the key must wait, or 0 if its next hit would be allowed, without recording a hit. */
+  public check(key: string): number {
+    const now = this.now();
+    this.pruneEvery(now);
+
+    const times = this.recentHits(key, now);
+    if (times.length < this.maxHits) return 0;
+
+    return Math.ceil((times[0]! + this.windowMs - now) / 1000);
   }
 
   /** Forgets the hits of the key, such as after a successful login. */
