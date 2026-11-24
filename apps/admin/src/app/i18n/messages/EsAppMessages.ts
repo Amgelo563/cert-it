@@ -11,7 +11,7 @@ export const EsAppMessages = {
     switcherLabel: 'Idioma',
   },
   layout: {
-    toggleNavigation: 'Mostrar u ocultar la navegación',
+    toggleNavigation: 'Mostrar u ocultar el menú',
     navigationLabel: 'Navegación principal',
     toggleColorScheme: 'Cambiar entre modo claro y oscuro',
   },
@@ -43,24 +43,25 @@ export const EsAppMessages = {
       'Tu rol no incluye esta página. Si la necesitas, pídesela a un administrador.',
     unexpectedTitle: 'Algo salió mal',
     unexpectedDescription:
-      'No se pudo cargar esta página. Intenta recargarla; si sigue pasando, avisa a un administrador.',
+      'No se pudo cargar esta página. Recárgala y, si el problema sigue, avisa a un administrador.',
     backHome: 'Volver al inicio',
     reload: 'Recargar',
   },
   apiErrors: {
     codes: {
-      invalidRequest: 'Revisa el formulario: algunos valores no son válidos.',
+      invalidRequest:
+        'Algunos valores del formulario no son válidos. Revísalos e inténtalo de nuevo.',
       unauthorized: 'Tu sesión terminó. Vuelve a iniciar sesión.',
       forbidden: 'Tu rol no permite hacer esto.',
       crossOrigin:
-        'Se bloqueó la solicitud porque vino de otro sitio. Recarga la página e inténtalo de nuevo.',
+        'Esta acción se bloqueó por seguridad. Recarga la página e inténtalo de nuevo.',
       passwordChangeRequired: 'Cambia tu contraseña para continuar.',
       invalidCredentials:
         'El correo o la contraseña son incorrectos, o la cuenta está desactivada.',
       tooManyAttempts: 'Demasiados intentos. Inténtalo más tarde.',
       wrongPassword: 'La contraseña actual es incorrecta.',
       samePassword: 'La nueva contraseña debe ser distinta de la actual.',
-      notFound: 'Ya no existe. Recarga la página.',
+      notFound: 'Esto se eliminó o ya no existe. Recarga la página.',
       emailTaken: 'Otro usuario ya tiene este correo.',
       participantEmailTaken:
         'Otro participante de este curso ya tiene este correo.',
@@ -68,18 +69,20 @@ export const EsAppMessages = {
       ownAccount:
         'No puedes cambiar tu propio rol, estado o contraseña desde aquí.',
       fileTooLarge: 'El archivo es demasiado grande.',
-      invalidFont: 'El archivo está dañado o no es una fuente.',
+      invalidFont: 'Este archivo no es una fuente o está dañado.',
       fontCollection:
         'El archivo contiene varias fuentes. Sube una sola fuente TTF u OTF.',
       webFont: 'Es una fuente web (WOFF o WOFF2). Sube la versión TTF u OTF.',
-      invalidPdf: 'El archivo está dañado o no es un PDF.',
+      invalidPdf: 'Este archivo no es un PDF o está dañado.',
       encryptedPdf:
         'El PDF está protegido con contraseña. Sube una versión sin protección.',
       pdfNotOnePage: 'El PDF debe tener exactamente una página.',
-      unknownFont: 'Un campo usa una fuente que ya no está disponible.',
-      unknownBasePdf: 'Vuelve a subir el PDF base y guarda de nuevo.',
+      unknownFont:
+        'Un campo usa una fuente que ya no está disponible. Elige otra fuente para él y guarda.',
+      unknownBasePdf:
+        'El PDF base que subiste ya no está en el servidor. Vuelve a subirlo y guarda.',
       catalogUnavailable:
-        'El catálogo de fuentes no respondió. Inténtalo más tarde o sube el archivo de la fuente.',
+        'El catálogo de fuentes no responde. Inténtalo más tarde o sube el archivo de la fuente.',
       noTemplate:
         'Primero guarda una plantilla con el nombre del participante.',
       nothingToIssue:
@@ -89,7 +92,7 @@ export const EsAppMessages = {
       nothingToRegenerate:
         'Todos los certificados ya usan la última plantilla.',
       jobNotFailed:
-        'Solo se puede volver a ejecutar una tarea que falló. Recarga la página.',
+        'Solo se puede reintentar una tarea que falló. Recarga la página.',
     },
     network:
       'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.',

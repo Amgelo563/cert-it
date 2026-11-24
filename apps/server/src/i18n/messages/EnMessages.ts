@@ -14,7 +14,7 @@ export const EnMessages = {
   },
   certificatePage: {
     title: '{name}, {course}',
-    description: 'Certificate of {name} for {course}.',
+    description: 'Certificate issued to {name} for {course}.',
     valid: 'Valid certificate',
     revoked: 'Revoked certificate',
     validStatus: 'Valid',
@@ -28,13 +28,13 @@ export const EnMessages = {
     downloadPdf: 'PDF',
     downloadPdfHint: 'To print or share',
     downloadCredential: 'Verifiable credential',
-    downloadCredentialHint: 'Open Badges 3.0, for digital wallets',
+    downloadCredentialHint: 'For digital wallets (Open Badges 3.0)',
     copyLink: 'Copy link',
     linkCopied: 'Link copied',
     addToLinkedIn: 'Add to LinkedIn',
     opensInNewTab: '(opens in a new tab)',
     copyLinkManually: 'Copy this link:',
-    previewUnavailable: "The preview can't be shown here.",
+    previewUnavailable: "We can't show the certificate preview here.",
     viewPdf: 'Open the PDF',
     loadingPreview: 'Loading preview…',
     previewLabel: 'Certificate for {name}, {course}',
@@ -49,26 +49,25 @@ export const EnMessages = {
   lookupPage: {
     title: 'Find my certificate',
     description: 'Find your certificate from {org} with your email and course.',
-    intro:
-      'Enter the email you registered with and choose your course to open your certificate.',
+    intro: 'Enter the email you used to sign up, then choose your course.',
     email: 'Email',
     course: 'Course',
     chooseCourse: 'Choose a course',
     submit: 'Find certificate',
     nextStep:
-      "You'll go to your certificate's page, where you can download the PDF or share its link.",
+      "If we find it, you'll go to your certificate's page, where you can download the PDF or share the link.",
     help: "Can't find it? Contact {org}.",
     notFound:
-      "We couldn't find a certificate with those details. Check the email you registered with, or contact {org}.",
+      "We couldn't find a certificate for that email and course. Make sure it's the email you signed up with, or contact {org}.",
     tooManyRequests:
-      'Too many searches from your connection. Try again in {minutes} min.',
+      'Too many searches in a short time. Try again in {minutes} min.',
     noCourses:
-      'No courses can be searched right now. If you need your certificate, contact {org}.',
+      "Certificate search isn't available for any course right now. If you need your certificate, contact {org}.",
   },
   error: {
     notFound: 'Page not found',
     certificateNotFound: 'Certificate not found',
     certificateNotFoundHelp:
-      'There is no certificate with this code. Check the link, or contact {org}.',
+      'No certificate matches this link. Make sure you copied the whole link, or contact {org}.',
   },
 } satisfies Messages;

@@ -14,7 +14,7 @@ export const EsMessages = {
   },
   certificatePage: {
     title: '{name}, {course}',
-    description: 'Certificado de {name} por {course}.',
+    description: 'Certificado emitido a {name} en {course}.',
     valid: 'Certificado válido',
     revoked: 'Certificado revocado',
     validStatus: 'Válido',
@@ -28,13 +28,14 @@ export const EsMessages = {
     downloadPdf: 'PDF',
     downloadPdfHint: 'Para imprimir o compartir',
     downloadCredential: 'Credencial verificable',
-    downloadCredentialHint: 'Open Badges 3.0, para billeteras digitales',
+    downloadCredentialHint: 'Para billeteras digitales (Open Badges 3.0)',
     copyLink: 'Copiar enlace',
     linkCopied: 'Enlace copiado',
     addToLinkedIn: 'Añadir a LinkedIn',
     opensInNewTab: '(se abre en una pestaña nueva)',
     copyLinkManually: 'Copia este enlace:',
-    previewUnavailable: 'No se puede mostrar la vista previa aquí.',
+    previewUnavailable:
+      'No podemos mostrar la vista previa del certificado aquí.',
     viewPdf: 'Abrir el PDF',
     loadingPreview: 'Cargando vista previa…',
     previewLabel: 'Certificado de {name}, {course}',
@@ -50,25 +51,25 @@ export const EsMessages = {
     title: 'Buscar mi certificado',
     description: 'Encuentra tu certificado de {org} con tu correo y tu curso.',
     intro:
-      'Ingresa el correo con el que te registraste y elige tu curso para abrir tu certificado.',
+      'Ingresa el correo que usaste al inscribirte y luego elige tu curso.',
     email: 'Correo electrónico',
     course: 'Curso',
     chooseCourse: 'Elige un curso',
     submit: 'Buscar certificado',
     nextStep:
-      'Irás a la página de tu certificado, donde puedes descargar el PDF o compartir su enlace.',
+      'Si lo encontramos, irás a la página de tu certificado, donde puedes descargar el PDF o compartir el enlace.',
     help: '¿No lo encuentras? Contacta a {org}.',
     notFound:
-      'No encontramos un certificado con esos datos. Revisa el correo con el que te registraste o contacta a {org}.',
+      'No encontramos un certificado con ese correo y curso. Verifica que sea el correo con el que te inscribiste o contacta a {org}.',
     tooManyRequests:
-      'Demasiadas búsquedas desde tu conexión. Inténtalo de nuevo en {minutes} min.',
+      'Demasiadas búsquedas en poco tiempo. Inténtalo de nuevo en {minutes} min.',
     noCourses:
-      'Por ahora no se puede buscar en ningún curso. Si necesitas tu certificado, contacta a {org}.',
+      'Por ahora la búsqueda de certificados no está disponible para ningún curso. Si necesitas tu certificado, contacta a {org}.',
   },
   error: {
     notFound: 'Página no encontrada',
     certificateNotFound: 'Certificado no encontrado',
     certificateNotFoundHelp:
-      'No hay ningún certificado con este código. Revisa el enlace o contacta a {org}.',
+      'Ningún certificado coincide con este enlace. Verifica que lo copiaste completo o contacta a {org}.',
   },
 } satisfies Messages;

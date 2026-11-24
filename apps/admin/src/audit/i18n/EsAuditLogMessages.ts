@@ -11,7 +11,7 @@ export const EsAuditLogMessages = {
     when: 'Cuándo',
     who: 'Quién',
     action: 'Acción',
-    target: 'Sobre',
+    target: 'Elemento',
     details: 'Detalles',
     system: 'La aplicación',
     removedUser: 'Usuario #{id}',

@@ -40,14 +40,14 @@ export const EsUserMessages = {
     invalidEmail: 'Escribe un correo válido.',
     passwordTitle: 'Contraseña temporal',
     passwordText:
-      'Entrega esta contraseña a {email} de forma privada. Elegirá una propia la primera vez que inicie sesión.',
+      'Comparte esta contraseña con {email} en privado. Elegirá una propia la primera vez que inicie sesión.',
     passwordLabel: 'Contraseña',
     passwordOnce:
       'Esta contraseña no se volverá a mostrar. Si se pierde, restablécela desde las acciones del usuario.',
     copy: 'Copiar',
     copied: 'Copiada',
     notCopiedText:
-      'Aún no copiaste la contraseña de {email}. Si cierras ahora no podrás volver a verla y tendrás que restablecerla.',
+      'Aún no copiaste la contraseña de {email}. Si cierras ahora, no podrás volver a verla y tendrás que restablecerla.',
     closeWithoutCopying: 'Cerrar sin copiar',
     backToPassword: 'Volver a la contraseña',
     done: 'Listo',

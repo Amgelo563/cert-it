@@ -11,7 +11,7 @@ export const EnParticipantMessages = {
     nameDescription: 'As it should be printed on the certificate',
     email: 'Email',
     emailDescription:
-      'Used to find the certificate in the public lookup. Each participant of a course needs a different one.',
+      'Participants use it to find their certificate in the public search. Each participant in a course needs a different email.',
     addedAt: 'Added',
     certificate: 'Certificate',
     notIssued: 'Not issued',
@@ -33,7 +33,7 @@ export const EnParticipantMessages = {
     delete: 'Delete',
     deleteTitle: 'Delete this participant?',
     deleteText:
-      "{name} ({email}) and their certificate, if they have one, will be deleted for good. This can't be undone.",
+      "This permanently deletes {name} ({email}) and their certificate, if they have one. This can't be undone.",
     deleted: '{name} was deleted.',
     fieldRequired: 'Fill in this field.',
     invalidEmail: 'Enter a valid email address.',
@@ -53,8 +53,8 @@ export const EnParticipantMessages = {
     unreadableFile: "The file couldn't be read as a CSV.",
     rejectedFile: 'Choose one CSV file of up to 5 MB.',
     tooManyRows:
-      'The file has {count} rows; one import takes up to {max}. Split it into smaller files.',
-    fileSummary: '{file}: {count} rows. Check what each column holds.',
+      'The file has {count} rows, but one import can take up to {max}. Split it into smaller files.',
+    fileSummary: '{file} has {count} rows. Choose how to use each column.',
     column: 'Column',
     example: 'First row',
     use: 'Use as',
@@ -74,7 +74,7 @@ export const EnParticipantMessages = {
     modeSkipDescription: 'Their rows are skipped.',
     modeUpdate: 'Update them',
     modeUpdateDescription:
-      'Their name is replaced, and their extra columns are added or replaced.',
+      "Their name is replaced with the one in the file, and the file's extra columns are added or replaced.",
     check: 'Review',
     back: 'Back',
     import: 'Import {count}',

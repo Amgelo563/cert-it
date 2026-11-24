@@ -10,18 +10,18 @@ export const EsCourseMessages = {
     empty: 'Aún no hay cursos.',
     name: 'Nombre',
     locale: 'Idioma',
-    localeDescription: 'Se usa en los certificados y las páginas públicas',
+    localeDescription: 'Idioma de los certificados y de sus páginas públicas',
     dateFormat: 'Formato de fecha',
     dateFormatDescription:
-      'D día, M número de mes, MMMM nombre del mes, YYYY año. El texto entre [corchetes] se mantiene tal cual.',
+      'Usa D para el día, M para el número de mes, MMMM para el nombre del mes y YYYY para el año. El texto entre [corchetes] aparece tal como lo escribas.',
     datePreview: 'Hoy: {date}',
-    lookupEnabled: 'Mostrar en la búsqueda pública',
+    lookupEnabled: 'Mostrar en la búsqueda pública de certificados',
     lookupDescription:
-      'Los participantes pueden encontrar su certificado por correo en la página de búsqueda',
+      'Los participantes pueden encontrar su certificado con su correo en la página "Buscar mi certificado"',
     participants: 'Participantes',
     certificates: 'Certificados',
     revokedCount: '{count} revocados',
-    lookup: 'Búsqueda',
+    lookup: 'Búsqueda pública',
     listed: 'Visible',
     hidden: 'Oculto',
     archived: 'Archivado',
@@ -34,33 +34,33 @@ export const EsCourseMessages = {
       template: 'Plantilla',
       settings: 'Configuración',
     },
-    listedInLookup: 'Visible en la búsqueda',
-    hiddenFromLookup: 'Oculto en la búsqueda',
+    listedInLookup: 'Visible en la búsqueda pública',
+    hiddenFromLookup: 'Oculto en la búsqueda pública',
     revoked: 'Revocados',
     generalTitle: 'General',
     saveSubmit: 'Guardar cambios',
     discard: 'Descartar cambios',
     archiveSection: 'Archivar el curso',
     archiveSectionText:
-      'Los cursos archivados dejan de aparecer en la búsqueda pública. Sus certificados siguen siendo válidos y se pueden abrir desde sus enlaces.',
+      'Los cursos archivados dejan de aparecer en la búsqueda pública de certificados. Sus certificados siguen siendo válidos y sus enlaces siguen funcionando.',
     unarchiveSectionText:
-      'Este curso está archivado, así que no aparece en la búsqueda pública. Desarchívalo para volver a mostrarlo.',
+      'Este curso está archivado, así que no aparece en la búsqueda pública de certificados. Desarchívalo para volver a mostrarlo.',
     deleteSection: 'Eliminar el curso',
     deleteSectionText:
-      'Elimina el curso con sus participantes y certificados. Los enlaces de los certificados dejan de funcionar. No se puede deshacer.',
+      'Elimina el curso junto con sus participantes y certificados. Los enlaces de sus certificados dejarán de funcionar. No se puede deshacer.',
     archive: 'Archivar',
     archiveTitle: '¿Archivar este curso?',
     archiveText:
-      '{name} dejará de aparecer en la búsqueda pública. Sus certificados siguen siendo válidos y se pueden abrir desde sus enlaces.',
+      '{name} dejará de aparecer en la búsqueda pública de certificados. Sus certificados siguen siendo válidos y sus enlaces siguen funcionando.',
     archivedNotice: '{name} se archivó.',
     unarchive: 'Desarchivar',
     unarchivedNotice: '{name} se desarchivó.',
     delete: 'Eliminar',
     deleteTitle: '¿Eliminar este curso?',
     deleteText:
-      'Se eliminarán para siempre {name}, sus {participants} participantes y sus {certificates} certificados, y los enlaces de los certificados dejarán de funcionar. No se puede deshacer.',
+      'Se eliminarán para siempre {name}, sus {participants} participantes y sus {certificates} certificados. Los enlaces de los certificados dejarán de funcionar. No se puede deshacer.',
     deleteTextWithRevoked:
-      'Se eliminarán para siempre {name}, sus {participants} participantes, sus {certificates} certificados vigentes y los revocados ({revoked}), y los enlaces de los certificados dejarán de funcionar. No se puede deshacer.',
+      'Se eliminarán para siempre {name}, sus {participants} participantes, sus {certificates} certificados vigentes y sus {revoked} revocados. Los enlaces de los certificados dejarán de funcionar. No se puede deshacer.',
     deleted: '{name} se eliminó.',
     addTitle: 'Nuevo curso',
     addSubmit: 'Crear curso',
@@ -80,9 +80,9 @@ export const EsCourseMessages = {
     addFieldType: 'Agregar campo: {name}',
     canvasLabel: 'Lienzo de la plantilla',
     replacePdf: 'Cambiar PDF base',
-    pdfUploaded: 'PDF base subido. Guarda para conservarlo en la plantilla.',
+    pdfUploaded: 'PDF base subido. Guarda la plantilla para conservarlo.',
     largePdf:
-      'Este PDF pesa {size}. Cada certificado lleva una copia completa, así que multiplica el uso de disco y el tiempo de generación.',
+      'Este PDF pesa {size}. Cada certificado incluye una copia completa, así que un archivo grande ocupa más espacio en disco y hace más lenta la generación.',
     fonts: 'Fuentes',
     fontsModal: {
       title: 'Fuentes de la plantilla',
@@ -98,7 +98,7 @@ export const EsCourseMessages = {
     noStoredFonts: 'Aún no hay fuentes guardadas',
     fontRemoved: 'Se quitó {font} de esta plantilla',
     fontInUse:
-      'Campos que usan {font}: {fields}. Elige otra fuente para ellos primero.',
+      'Estos campos usan {font}: {fields}. Primero elige otra fuente para ellos.',
     catalog: {
       searchPlaceholder: 'Nombre de la fuente',
       noResults: 'Ninguna fuente coincide.',
@@ -122,13 +122,13 @@ export const EsCourseMessages = {
     sampleName: 'María José Núñez',
     missingGlyphsTitle: 'Algunos caracteres no se pueden imprimir',
     missingGlyphsText:
-      'Saldrían en blanco: elige otra fuente o revisa el texto de ejemplo.',
+      'Saldrían como espacios en blanco. Elige otra fuente o revisa el texto de ejemplo.',
     missingGlyphsItem: '{field}: {characters} (no están en {font})',
     fontAdded: 'Se agregó {family} {style}',
     save: 'Guardar versión',
     noNameTitle: 'Sin nombre del participante',
     noNameText:
-      'Esta plantilla no tiene un campo con el nombre del participante, así que sus certificados no nombrarían a nadie. No se podrán emitir certificados hasta guardar una versión que lo tenga.',
+      'Esta plantilla no tiene un campo con el nombre del participante, así que sus certificados no mostrarán ningún nombre. No podrás emitir certificados hasta que guardes una versión que lo tenga.',
     saveAnyway: 'Guardar de todos modos',
     saved: 'Guardado como versión {version}',
     preview: {
@@ -141,10 +141,10 @@ export const EsCourseMessages = {
       searchFailed: 'No se pudieron cargar los participantes.',
       pickHint: 'Elige un participante para ver su certificado.',
       notIssued:
-        'Aún no tiene certificado, así que la fecha es la de hoy y el código QR es de ejemplo.',
+        'Este participante aún no tiene certificado, así que la vista previa usa la fecha de hoy y un código QR de ejemplo.',
       missingGlyphsTitle: 'El nombre de {name} no se puede imprimir completo',
       missingGlyphsText:
-        'Estos campos usan una fuente a la que le faltan algunos de sus caracteres, así que saldrían en blanco. Elige otra fuente o corrige el nombre.',
+        'Estos campos usan una fuente a la que le faltan algunos caracteres del nombre, así que saldrían como espacios en blanco. Elige otra fuente o corrige el nombre.',
       failed: 'No se pudo generar la vista previa: {reason}',
       imageAlt: 'El certificado tal como se imprimiría',
       download: 'Descargar',

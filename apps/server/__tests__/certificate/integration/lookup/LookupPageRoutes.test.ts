@@ -12,7 +12,8 @@ import {
   PublicPageOrgName,
 } from '../../../page/mocks/createPublicPageOptions';
 
-const NotFoundText = 'We couldn&#39;t find a certificate with those details.';
+const NotFoundText =
+  'We couldn&#39;t find a certificate for that email and course.';
 
 let database: DatabaseService;
 let seeder: MockSeeder;
@@ -101,7 +102,9 @@ describe('LookupPageRoutes (page)', () => {
 
     const page = await (await harness.requestPublic('/')).text();
 
-    expect(page).toContain('No courses can be searched right now.');
+    expect(page).toContain(
+      'Certificate search isn&#39;t available for any course right now.',
+    );
     expect(page).not.toContain('<form');
   });
 

@@ -10,7 +10,7 @@ export const EnAuditLogMessages = {
     when: 'When',
     who: 'Who',
     action: 'Action',
-    target: 'On',
+    target: 'Item',
     details: 'Details',
     system: 'The app',
     removedUser: 'User #{id}',

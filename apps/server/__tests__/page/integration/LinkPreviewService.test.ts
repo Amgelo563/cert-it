@@ -76,7 +76,7 @@ describe('LinkPreviewService (certificate page)', () => {
       meta(
         'property',
         'og:description',
-        'Certificate of Jürgen Müller for Applied Statistics.',
+        'Certificate issued to Jürgen Müller for Applied Statistics.',
       ),
     );
     expect(page).toContain(

@@ -40,14 +40,14 @@ export const EnUserMessages = {
     invalidEmail: 'Enter a valid email address.',
     passwordTitle: 'Temporary password',
     passwordText:
-      'Give this password to {email} in a private way. They will choose their own when they first log in.',
+      "Share this password with {email} privately. They'll choose their own the first time they log in.",
     passwordLabel: 'Password',
     passwordOnce:
       "This password won't be shown again. If it's lost, reset it from the user's actions.",
     copy: 'Copy',
     copied: 'Copied',
     notCopiedText:
-      "You haven't copied the password for {email} yet. If you close now you can't see it again and will have to reset it.",
+      "You haven't copied {email}'s password yet. If you close this now, you won't see it again and will have to reset it.",
     closeWithoutCopying: 'Close without copying',
     backToPassword: 'Back to password',
     done: 'Done',

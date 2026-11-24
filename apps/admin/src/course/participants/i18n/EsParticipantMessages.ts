@@ -11,7 +11,7 @@ export const EsParticipantMessages = {
     nameDescription: 'Tal como debe aparecer en el certificado',
     email: 'Correo',
     emailDescription:
-      'Sirve para encontrar el certificado en la búsqueda pública. Cada participante de un curso necesita uno distinto.',
+      'Los participantes lo usan para encontrar su certificado en la búsqueda pública. Cada participante de un curso necesita un correo distinto.',
     addedAt: 'Agregado',
     certificate: 'Certificado',
     notIssued: 'Sin emitir',
@@ -53,8 +53,8 @@ export const EsParticipantMessages = {
     unreadableFile: 'No se pudo leer el archivo como CSV.',
     rejectedFile: 'Elige un solo archivo CSV de hasta 5 MB.',
     tooManyRows:
-      'El archivo tiene {count} filas; una importación acepta hasta {max}. Divídelo en archivos más pequeños.',
-    fileSummary: '{file}: {count} filas. Revisa qué contiene cada columna.',
+      'El archivo tiene {count} filas, pero una importación acepta hasta {max}. Divídelo en archivos más pequeños.',
+    fileSummary: '{file} tiene {count} filas. Elige cómo usar cada columna.',
     column: 'Columna',
     example: 'Primera fila',
     use: 'Usar como',
@@ -74,7 +74,7 @@ export const EsParticipantMessages = {
     modeSkipDescription: 'Sus filas se omiten.',
     modeUpdate: 'Actualizarlos',
     modeUpdateDescription:
-      'Se reemplaza su nombre, y sus columnas extra se agregan o reemplazan.',
+      'Su nombre se reemplaza por el del archivo, y las columnas extra del archivo se agregan o reemplazan.',
     check: 'Revisar',
     back: 'Atrás',
     import: 'Importar {count}',

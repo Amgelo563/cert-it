@@ -11,9 +11,9 @@ export const EnAppMessages = {
     switcherLabel: 'Language',
   },
   layout: {
-    toggleNavigation: 'Toggle navigation',
+    toggleNavigation: 'Show or hide the menu',
     navigationLabel: 'Main navigation',
-    toggleColorScheme: 'Toggle light and dark mode',
+    toggleColorScheme: 'Switch between light and dark mode',
   },
   navigation: {
     overview: 'Overview',
@@ -43,43 +43,46 @@ export const EnAppMessages = {
       "Your role doesn't include this page. If you need it, ask an administrator.",
     unexpectedTitle: 'Something went wrong',
     unexpectedDescription:
-      "This page couldn't be loaded. Try reloading; if it keeps happening, tell an administrator.",
+      "This page couldn't load. Reload it, and if that doesn't help, tell an administrator.",
     backHome: 'Back to home',
     reload: 'Reload',
   },
   apiErrors: {
     codes: {
-      invalidRequest: "Check the form: some values aren't valid.",
+      invalidRequest:
+        "Some values in the form aren't valid. Check them and try again.",
       unauthorized: 'Your session has ended. Log in again.',
       forbidden: "Your role doesn't allow this.",
       crossOrigin:
-        'The request was blocked because it came from another site. Reload the page and try again.',
+        'This action was blocked for security reasons. Reload the page and try again.',
       passwordChangeRequired: 'Change your password to continue.',
       invalidCredentials:
         'The email or password is wrong, or the account is deactivated.',
       tooManyAttempts: 'Too many attempts. Try again later.',
       wrongPassword: 'The current password is wrong.',
       samePassword: 'The new password must be different from the current one.',
-      notFound: "It doesn't exist anymore. Reload the page.",
+      notFound: 'This was deleted or no longer exists. Reload the page.',
       emailTaken: 'Another user already has this email.',
       participantEmailTaken:
         'Another participant of this course already has this email.',
       lastAdmin: 'There must be at least one active admin.',
       ownAccount: "You can't change your own role, status or password here.",
       fileTooLarge: 'The file is too large.',
-      invalidFont: 'The file is broken or is not a font.',
+      invalidFont: "This file isn't a font, or it's damaged.",
       fontCollection:
         'The file holds several fonts. Upload a single TTF or OTF font.',
       webFont:
         'This is a web font (WOFF or WOFF2). Upload the TTF or OTF version.',
-      invalidPdf: 'The file is broken or is not a PDF.',
+      invalidPdf: "This file isn't a PDF, or it's damaged.",
       encryptedPdf:
         'The PDF is password-protected. Upload a version without protection.',
       pdfNotOnePage: 'The PDF must have exactly one page.',
-      unknownFont: 'A field uses a font that is no longer available.',
-      unknownBasePdf: 'Upload the base PDF again, then save.',
+      unknownFont:
+        "A field uses a font that's no longer available. Pick another font for it, then save.",
+      unknownBasePdf:
+        "The base PDF you uploaded isn't on the server anymore. Upload it again, then save.",
       catalogUnavailable:
-        "The font catalog didn't answer. Try again later, or upload the font file.",
+        "The font catalog isn't responding. Try again later, or upload the font file instead.",
       noTemplate: 'Save a template with a participant name field first.',
       nothingToIssue: 'Every selected participant already has a certificate.',
       certificateRevoked:
@@ -87,7 +90,7 @@ export const EnAppMessages = {
       certificateActive: 'The certificate is already active. Reload the page.',
       nothingToRegenerate:
         'Every certificate already uses the latest template.',
-      jobNotFailed: 'Only a failed job can be run again. Reload the page.',
+      jobNotFailed: 'Only a job that failed can be retried. Reload the page.',
     },
     network: "Couldn't reach the server. Check your connection and try again.",
     unexpected: 'Something went wrong. Try again.',
