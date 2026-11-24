@@ -7,6 +7,7 @@ export const TestJobTypeEnum = {
   Exit: 'exit',
   OutOfMemory: 'out_of_memory',
   Sleep: 'sleep',
+  Tick: 'tick',
   Pid: 'pid',
   Args: 'args',
 } as const;

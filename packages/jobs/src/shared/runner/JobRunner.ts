@@ -18,6 +18,8 @@ export type JobRunnerOptions<J extends Job> = {
   progressIntervalMs?: number;
   /** How long a job may run before the worker is killed and the job failed. @default no limit */
   timeoutMs?: number;
+  /** How long a job may go without reporting progress, counted from when it's claimed, before the worker is killed and the job failed. @default no limit */
+  idleTimeoutMs?: number;
   /** Where panics and crashes are logged. @default console.error */
   logError?: (line: string) => void;
   /** @default () => new Date() */
@@ -31,6 +33,7 @@ type CurrentJob<J extends Job> = {
   lastProgressSavedAt: number;
   progressTimer: NodeJS.Timeout | null;
   timeoutTimer: NodeJS.Timeout | null;
+  idleTimer: NodeJS.Timeout | null;
   /** Why the runner killed the worker, if it did. */
   killReason: string | null;
 };
@@ -68,6 +71,8 @@ export class JobRunner<J extends Job> {
 
   protected readonly timeoutMs: number | null;
 
+  protected readonly idleTimeoutMs: number | null;
+
   protected readonly logError: (line: string) => void;
 
   protected readonly now: () => Date;
@@ -88,6 +93,7 @@ export class JobRunner<J extends Job> {
     this.progressIntervalMs =
       options.progressIntervalMs ?? JobRunner.DefaultProgressIntervalMs;
     this.timeoutMs = options.timeoutMs ?? null;
+    this.idleTimeoutMs = options.idleTimeoutMs ?? null;
     this.logError = options.logError ?? console.error;
     this.now = options.now ?? (() => new Date());
   }
@@ -108,6 +114,8 @@ export class JobRunner<J extends Job> {
 
     this.current = this.createCurrent(job);
     this.startWorker();
+    // also covers a worker that never gets ready
+    this.resetIdleTimer(this.current);
   }
 
   /** Stops the worker, waiting for the current job up to the given time before killing it. A killed job stays running until the next start. */
@@ -164,6 +172,7 @@ export class JobRunner<J extends Job> {
         return;
       case WorkerMessageTypeEnum.Progress:
         if (current?.job.id === message.jobId) {
+          this.resetIdleTimer(current);
           this.queueProgress(current, message.progress, message.total);
         }
         return;
@@ -189,11 +198,16 @@ export class JobRunner<J extends Job> {
 
   protected runCurrent(current: CurrentJob<J>): void {
     if (this.timeoutMs !== null) {
-      current.timeoutTimer = setTimeout(() => {
-        current.killReason = `The job took longer than ${this.timeoutMs} ms.`;
-        this.worker?.kill();
-      }, this.timeoutMs);
+      current.timeoutTimer = setTimeout(
+        () =>
+          this.killFor(
+            current,
+            `The job took longer than ${this.timeoutMs} ms.`,
+          ),
+        this.timeoutMs,
+      );
     }
+    this.resetIdleTimer(current);
 
     this.send({ type: RunnerMessageTypeEnum.Run, job: current.job });
   }
@@ -269,11 +283,35 @@ export class JobRunner<J extends Job> {
     this.queue.setProgress(current.job.id, pending.progress, pending.total);
   }
 
+  protected resetIdleTimer(current: CurrentJob<J>): void {
+    if (this.idleTimeoutMs === null) return;
+    if (current.idleTimer) clearTimeout(current.idleTimer);
+
+    current.idleTimer = setTimeout(
+      () =>
+        this.killFor(
+          current,
+          `The job reported no progress for ${this.idleTimeoutMs} ms.`,
+        ),
+      this.idleTimeoutMs,
+    );
+  }
+
+  // SIGKILL so a handler that traps or blocks SIGTERM still dies
+  protected killFor(current: CurrentJob<J>, reason: string): void {
+    if (this.current !== current) return;
+
+    current.killReason ??= reason;
+    this.worker?.kill('SIGKILL');
+  }
+
   protected clearTimers(current: CurrentJob<J>): void {
     if (current.progressTimer) clearTimeout(current.progressTimer);
     if (current.timeoutTimer) clearTimeout(current.timeoutTimer);
+    if (current.idleTimer) clearTimeout(current.idleTimer);
     current.progressTimer = null;
     current.timeoutTimer = null;
+    current.idleTimer = null;
   }
 
   protected describeExit(
@@ -296,6 +334,7 @@ export class JobRunner<J extends Job> {
       lastProgressSavedAt: 0,
       progressTimer: null,
       timeoutTimer: null,
+      idleTimer: null,
       killReason: null,
     };
   }

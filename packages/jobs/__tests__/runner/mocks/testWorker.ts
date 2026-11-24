@@ -35,6 +35,17 @@ new JobWorker<TestJob>({
         return Result.ok(null);
       },
     },
+    [TestJobTypeEnum.Tick]: {
+      run: async (job, context) => {
+        const n = job.payload.n ?? 0;
+        for (let i = 1; i <= n; i += 1) {
+          await sleep(job.payload.ms ?? 0);
+          context.setProgress(i, n);
+        }
+
+        return Result.ok(null);
+      },
+    },
     [TestJobTypeEnum.Pid]: {
       run: () => Promise.resolve(Result.ok(process.pid)),
     },

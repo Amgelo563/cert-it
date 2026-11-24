@@ -22,10 +22,15 @@ type BackgroundJobServiceOptions = {
   workerPath?: URL;
   /** Node flags for the generator. @default heap limits, plus the TypeScript loader when running from source */
   execArgv?: readonly string[];
+  /** How long a job may go without reporting progress before the generator is killed and the job failed. @default BackgroundJobService.DefaultIdleTimeoutMs */
+  idleTimeoutMs?: number;
 };
 
 /** Runs the jobs that generate certificates in the generator process, which starts when there's work and exits when there's none. */
 export class BackgroundJobService {
+  /** Far longer than one certificate or loading a template takes, so only a stuck job hits it. */
+  public static readonly DefaultIdleTimeoutMs = 2 * 60_000;
+
   protected readonly database: DatabaseService;
 
   protected readonly settings: () => GeneratorSettings;
@@ -33,6 +38,8 @@ export class BackgroundJobService {
   protected readonly workerPath: URL;
 
   protected readonly execArgv: readonly string[];
+
+  protected readonly idleTimeoutMs: number;
 
   protected jobs: SqliteJobDispatcher<Job, typeof jobTable, NewJob> | null =
     null;
@@ -43,6 +50,8 @@ export class BackgroundJobService {
     this.workerPath =
       options.workerPath ?? BackgroundJobService.defaultWorkerPath();
     this.execArgv = options.execArgv ?? BackgroundJobService.defaultExecArgv();
+    this.idleTimeoutMs =
+      options.idleTimeoutMs ?? BackgroundJobService.DefaultIdleTimeoutMs;
   }
 
   public static create(options: {
@@ -74,6 +83,8 @@ export class BackgroundJobService {
       workerPath: this.workerPath,
       args: [JSON.stringify(this.settings())],
       execArgv: this.execArgv,
+      // a stuck job would otherwise block every course until a restart
+      idleTimeoutMs: this.idleTimeoutMs,
     });
     this.jobs.start();
   }

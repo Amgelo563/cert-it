@@ -60,6 +60,7 @@ function createRunner(
   options: {
     progressIntervalMs?: number;
     timeoutMs?: number;
+    idleTimeoutMs?: number;
     args?: string[];
   } = {},
 ): JobRunner<TestJob> {
@@ -246,6 +247,41 @@ describe('JobRunner (failures)', () => {
     expect((await waitForStatus(job.id, JobStatusEnum.Failed)).error).toBe(
       'The job took longer than 200 ms.',
     );
+  });
+
+  test('GIVEN an idle timeout WHEN a job stops reporting progress THEN kills the worker and fails the job', async () => {
+    runner = createRunner({ idleTimeoutMs: 200 });
+    const job = add(TestJobTypeEnum.Sleep, { ms: 60_000 });
+
+    runner.start();
+
+    expect((await waitForStatus(job.id, JobStatusEnum.Failed)).error).toBe(
+      'The job reported no progress for 200 ms.',
+    );
+  });
+
+  test('GIVEN an idle timeout WHEN a job keeps reporting progress past it THEN lets it finish', async () => {
+    runner = createRunner({ idleTimeoutMs: 1000 });
+    const job = add(TestJobTypeEnum.Tick, { n: 8, ms: 200 });
+
+    runner.start();
+
+    expect(
+      (await waitForStatus(job.id, JobStatusEnum.Completed)).progress,
+    ).toBe(8);
+  });
+
+  test('GIVEN an idle timeout WHEN a job times out THEN runs the next job', async () => {
+    runner = createRunner({ idleTimeoutMs: 200 });
+    const stuck = add(TestJobTypeEnum.Sleep, { ms: 60_000 });
+    const next = add(TestJobTypeEnum.Double, { n: 1 });
+
+    runner.start();
+
+    await waitForStatus(stuck.id, JobStatusEnum.Failed);
+    expect(
+      (await waitForStatus(next.id, JobStatusEnum.Completed)).output,
+    ).toEqual({ doubled: 2 });
   });
 });
 
