@@ -8,6 +8,8 @@ Staff upload a base PDF per course, place dynamic fields visually, import partic
 Each certificate gets a short, non-guessable code and a public page reached by its QR code, where anyone can check that
 it's valid, download the PDF or add it to LinkedIn.
 
+https://github.com/user-attachments/assets/4f9d577a-980b-464c-aa07-8c8d9377249b
+
 ## 💫 Features
 
 ### Courses and participants
@@ -296,14 +298,9 @@ pnpm fix          # fix formatting and lint issues
 pnpm test         # run every package's tests
 pnpm build        # build all packages
 ```
-
-`pnpm dev` needs no config file. Open the admin panel at http://localhost:5173/admin/ and log in as
-`admin@cert-it.test`,
-`editor@cert-it.test`, `viewer@cert-it.test` or `new@cert-it.test` (which must change its password first), all with
-the password `cert-it-dev`. Public pages are served by the server itself, such as the seeded certificate at
+ Public pages are served by the server itself, such as the seeded certificate at
 http://localhost:3000/c/DEVA-AAAA-01. To run the server with your own `config/config.yml` instead, use
-`pnpm --filter @cert-it/server dev:config`
-and set `CERT_IT_BASE_URL` to its `base_url` for the admin dev server.
+`pnpm --filter @cert-it/server dev:config` and set `CERT_IT_BASE_URL` to its `base_url` for the admin dev server.
 
 To run the app behind an nginx set up like a real server (under `/certs/` with a strict CSP, and on its own host with
 `X-Accel-Redirect`), see [`deploy/dev/compose.yml`](deploy/dev/compose.yml):
