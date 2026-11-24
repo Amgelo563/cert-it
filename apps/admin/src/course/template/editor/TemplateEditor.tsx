@@ -5,6 +5,7 @@ import {
   type FontSummary,
   type SaveTemplateRequest,
   type TemplateValues,
+  hasParticipantNameField,
 } from '@cert-it/shared';
 import type { Font, Template } from '@pdfme/common';
 import '@mantine/dropzone/styles.css';
@@ -18,6 +19,7 @@ import {
   ThemeIcon,
 } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
+import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import {
   IconAlertTriangle,
@@ -329,6 +331,22 @@ export function TemplateEditor({
     });
   };
 
+  // a version without the name can't issue, so it's saved only once confirmed
+  const confirmSave = () => {
+    if (!designer.current) return;
+    if (hasParticipantNameField(withoutBasePdf(designer.current))) {
+      void save();
+      return;
+    }
+    modals.openConfirmModal({
+      title: t('template.noNameTitle'),
+      children: <Text size="sm">{t('template.noNameText')}</Text>,
+      labels: { confirm: t('template.saveAnyway'), cancel: t('auth.cancel') },
+      confirmProps: { color: 'orange' },
+      onConfirm: () => void save(),
+    });
+  };
+
   const save = () =>
     basePdf
     && run('save', async () => {
@@ -464,7 +482,7 @@ export function TemplateEditor({
             fontLabel={(sha256) => fontLabelOf(fontInfo, sha256)}
           />
           <Button
-            onClick={() => void save()}
+            onClick={confirmSave}
             loading={busy === 'save'}
             disabled={!changed || (busy !== null && busy !== 'save')}
             leftSection={<IconDeviceFloppy size={16} stroke={1.5} />}

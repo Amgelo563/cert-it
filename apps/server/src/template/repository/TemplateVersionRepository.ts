@@ -19,10 +19,10 @@ export interface TemplateVersionRepository {
     ids: readonly TemplateVersionId[],
   ): ReadonlyMap<TemplateVersionId, number>;
 
-  /** Returns the newest version number of each given course, leaving out courses with none. */
-  findLatestVersionNumbers(
+  /** Returns the newest template version of each given course, leaving out courses with none. */
+  findLatestByCourses(
     courseIds: readonly CourseId[],
-  ): ReadonlyMap<CourseId, number>;
+  ): ReadonlyMap<CourseId, TemplateVersion>;
 
   /** Creates a template version, unless the course already has one with that number. */
   create(data: {

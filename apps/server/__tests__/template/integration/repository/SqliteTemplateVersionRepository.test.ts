@@ -30,7 +30,7 @@ describe('SqliteTemplateVersionRepository (create)', () => {
 
     expect(
       repositories.templateVersions.findById(created.id)?.template,
-    ).toEqual({ schemas: [[]] });
+    ).toEqual(MockSeeder.NamedTemplate);
   });
 
   test('GIVEN a version WHEN creating another with the same number in the course THEN returns a DuplicateModelError', () => {
@@ -61,6 +61,29 @@ describe('SqliteTemplateVersionRepository (findLatest)', () => {
 
   test('GIVEN a course without versions WHEN finding the latest THEN returns null', () => {
     expect(repositories.templateVersions.findLatest(course.id)).toBeNull();
+  });
+});
+
+describe('SqliteTemplateVersionRepository (findLatestByCourses)', () => {
+  test('GIVEN courses with and without versions WHEN finding the latest THEN returns the highest version of each course that has one', () => {
+    const other = seeder.course();
+    const empty = seeder.course();
+    seeder.templateVersion(course, user);
+    const latest = seeder.templateVersion(course, user);
+    const otherLatest = seeder.templateVersion(other, user);
+
+    const found = repositories.templateVersions.findLatestByCourses([
+      course.id,
+      other.id,
+      empty.id,
+    ]);
+
+    expect(found).toEqual(
+      new Map([
+        [course.id, latest],
+        [other.id, otherLatest],
+      ]),
+    );
   });
 });
 

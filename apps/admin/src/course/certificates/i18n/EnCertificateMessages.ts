@@ -30,6 +30,8 @@ export const EnCertificateMessages = {
     issueSelected: 'Issue to selected ({count})',
     clearSelection: 'Clear selection',
     noTemplate: 'Save a template before issuing certificates.',
+    noNameField:
+      "The latest template doesn't print the participant's name. Add a name field and save a new version before issuing certificates.",
     issueTitle: 'Issue certificates',
     issueAllText:
       'Participants without a certificate: {count}. Each gets one with a new code, rendered with the latest template.',

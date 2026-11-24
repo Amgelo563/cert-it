@@ -30,6 +30,8 @@ export const EsCertificateMessages = {
     issueSelected: 'Emitir a seleccionados ({count})',
     clearSelection: 'Quitar selección',
     noTemplate: 'Guarda una plantilla antes de emitir certificados.',
+    noNameField:
+      'La última plantilla no imprime el nombre del participante. Agrega un campo de nombre y guarda una nueva versión antes de emitir certificados.',
     issueTitle: 'Emitir certificados',
     issueAllText:
       'Participantes sin certificado: {count}. Cada uno recibe uno con un código nuevo, generado con la última plantilla.',

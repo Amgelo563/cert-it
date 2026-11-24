@@ -121,6 +121,10 @@ export const EsCourseMessages = {
     missingGlyphsItem: '{field}: {characters} (no están en {font})',
     fontAdded: 'Se agregó {family} {style}',
     save: 'Guardar versión',
+    noNameTitle: 'Sin nombre del participante',
+    noNameText:
+      'Esta plantilla no tiene un campo con el nombre del participante, así que sus certificados no nombrarían a nadie. No se podrán emitir certificados hasta guardar una versión que lo tenga.',
+    saveAnyway: 'Guardar de todos modos',
     saved: 'Guardado como versión {version}',
     preview: {
       open: 'Vista previa',

@@ -15,5 +15,7 @@ export type CourseSummary = {
   readonly participantCount: number;
   /** Number of the newest template version, or null if it has no template yet. */
   readonly latestTemplateVersion: number | null;
+  /** Whether the newest template version prints the participant's name; false without a template. */
+  readonly latestTemplateHasName: boolean;
   readonly certificateCounts: Readonly<Record<CertificateStatus, number>>;
 };

@@ -170,6 +170,18 @@ describe('CertificateRoutes (issue)', () => {
     expect(await response.json()).toEqual({ error: 'no_template' });
   });
 
+  test('GIVEN a latest template without a name field WHEN issuing THEN answers 409 no_template', async () => {
+    const { certificates, editor, seeder } = await setup();
+    const course = seeder.course();
+    seeder.participant(course);
+    seeder.templateVersion(course, editor.user, { schemas: [[]] });
+
+    const response = await certificates('/issue', {}, course.id);
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'no_template' });
+  });
+
   test.each([
     { body: { issueDate: '2026-02-30' } },
     { body: { issueDate: '20/11/2026' } },

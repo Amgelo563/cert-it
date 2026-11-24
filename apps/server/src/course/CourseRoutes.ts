@@ -15,8 +15,10 @@ import {
   type PageQuery,
   PageQuerySchema,
   PermissionEnum,
+  type TemplateContent,
   type UpdateCourseRequest,
   UpdateCourseRequestSchema,
+  hasParticipantNameField,
 } from '@cert-it/shared';
 import { type Context, Hono } from 'hono';
 import type { ClientErrorStatusCode } from 'hono/utils/http-status';
@@ -259,21 +261,27 @@ export class CourseRoutes extends AbstractApiRoutes {
     const ids = courses.map((course) => course.id);
     const participantCounts = participants.countByCourses(ids);
     const certificateCounts = certificates.countByCourses(ids);
-    const latestVersions = templateVersions.findLatestVersionNumbers(ids);
+    const latestVersions = templateVersions.findLatestByCourses(ids);
 
-    return courses.map((course) => ({
-      id: course.id,
-      name: course.name,
-      locale: course.locale,
-      dateFormat: course.dateFormat,
-      lookupEnabled: course.lookupEnabled,
-      active: course.active,
-      createdAt: course.createdAt.toISOString(),
-      participantCount: participantCounts.get(course.id) ?? 0,
-      latestTemplateVersion: latestVersions.get(course.id) ?? null,
-      certificateCounts:
-        certificateCounts.get(course.id) ?? CourseRoutes.NoCertificates,
-    }));
+    return courses.map((course) => {
+      const latest = latestVersions.get(course.id);
+      return {
+        id: course.id,
+        name: course.name,
+        locale: course.locale,
+        dateFormat: course.dateFormat,
+        lookupEnabled: course.lookupEnabled,
+        active: course.active,
+        createdAt: course.createdAt.toISOString(),
+        participantCount: participantCounts.get(course.id) ?? 0,
+        latestTemplateVersion: latest?.version ?? null,
+        latestTemplateHasName: latest
+          ? hasParticipantNameField(latest.template as TemplateContent)
+          : false,
+        certificateCounts:
+          certificateCounts.get(course.id) ?? CourseRoutes.NoCertificates,
+      };
+    });
   }
 
   protected audit(

@@ -1,4 +1,10 @@
-import { FontSourceEnum, LocaleEnum, RoleEnum } from '@cert-it/shared';
+import {
+  FontSourceEnum,
+  LocaleEnum,
+  RoleEnum,
+  TemplateFieldTypeEnum,
+} from '@cert-it/shared';
+import type { Template } from '@pdfme/common';
 import type { CertificateCode } from '../../../src/certificate/code/CertificateCode';
 import type { Certificate } from '../../../src/certificate/Certificate';
 import type { Course } from '../../../src/course/Course';
@@ -81,7 +87,26 @@ export class MockSeeder {
       .unwrap();
   }
 
-  public templateVersion(course: Course, createdBy: User): TemplateVersion {
+  /** A template that prints the participant's name, so certificates can be issued from it. */
+  public static readonly NamedTemplate: Omit<Template, 'basePdf'> = {
+    schemas: [
+      [
+        {
+          name: 'Name',
+          type: TemplateFieldTypeEnum.ParticipantName,
+          position: { x: 20, y: 50 },
+          width: 100,
+          height: 10,
+        },
+      ],
+    ],
+  };
+
+  public templateVersion(
+    course: Course,
+    createdBy: User,
+    template: Omit<Template, 'basePdf'> = MockSeeder.NamedTemplate,
+  ): TemplateVersion {
     const version =
       (this.repositories.templateVersions.findLatest(course.id)?.version ?? 0)
       + 1;
@@ -90,7 +115,7 @@ export class MockSeeder {
       .create({
         courseId: course.id,
         version,
-        template: { schemas: [[]] },
+        template,
         basePdfPath: `templates/${course.id}/v${version}.pdf`,
         createdBy: createdBy.id,
       })

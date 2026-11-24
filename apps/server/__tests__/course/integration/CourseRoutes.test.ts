@@ -89,12 +89,29 @@ describe('CourseRoutes (list)', () => {
       createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
       participantCount: 4,
       latestTemplateVersion: 1,
+      latestTemplateHasName: true,
       certificateCounts: { active: 2, revoked: 1 },
     });
     expect(page.items.find((item) => item.name === 'Empty')).toMatchObject({
       participantCount: 0,
       latestTemplateVersion: null,
+      latestTemplateHasName: false,
       certificateCounts: { active: 0, revoked: 0 },
+    });
+  });
+
+  test('GIVEN a course whose latest template has no name field WHEN listing THEN answers it has no name', async () => {
+    const { admin, courses, seeder } = await setup();
+    const course = seeder.course({ name: 'Nameless' });
+    seeder.templateVersion(course, admin.user);
+    seeder.templateVersion(course, admin.user, { schemas: [[]] });
+
+    const response = await courses('GET', '');
+    const page = (await response.json()) as ApiPage<CourseSummary>;
+
+    expect(page.items.find((item) => item.name === 'Nameless')).toMatchObject({
+      latestTemplateVersion: 2,
+      latestTemplateHasName: false,
     });
   });
 

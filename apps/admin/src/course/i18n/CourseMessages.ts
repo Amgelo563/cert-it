@@ -133,6 +133,10 @@ export type CourseMessages = {
     /** With the font's family and style in `{family}` and `{style}`. */
     fontAdded: string;
     save: string;
+    /** Confirmation before saving a version that doesn't print the participant's name. */
+    noNameTitle: string;
+    noNameText: string;
+    saveAnyway: string;
     /** With the new version number in `{version}`. */
     saved: string;
     /** The certificate generated in the browser from the canvas. */

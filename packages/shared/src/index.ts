@@ -59,6 +59,7 @@ export * from './role/PermissionEnum';
 export * from './role/PermissionMatrix';
 export * from './role/RoleEnum';
 export * from './template/buildTemplateInputs';
+export * from './template/hasParticipantNameField';
 export * from './template/TemplateFieldTypeEnum';
 export * from './theme/ThemeValues';
 export * from './types/Brand';

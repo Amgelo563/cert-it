@@ -42,6 +42,8 @@ export type CertificateMessages = {
     clearSelection: string;
     /** Shown instead of the issue buttons while the course has no template. */
     noTemplate: string;
+    /** Shown instead of the issue buttons while the latest template doesn't print the participant's name. */
+    noNameField: string;
     issueTitle: string;
     /** What will be issued to everyone without one, in `{count}`. */
     issueAllText: string;

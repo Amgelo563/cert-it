@@ -115,7 +115,8 @@ export function CertificatesTab() {
     course.participantCount
     - certificateCounts.active
     - certificateCounts.revoked;
-  const hasTemplate = course.latestTemplateVersion !== null;
+  const hasTemplate =
+    course.latestTemplateVersion !== null && course.latestTemplateHasName;
   const issuedCount = certificateCounts.active + certificateCounts.revoked;
 
   const followJob = (added: JobSummary, message: string) => {
@@ -307,7 +308,9 @@ export function CertificatesTab() {
               variant="light"
               icon={<IconAlertCircle size={18} stroke={1.5} />}
             >
-              {t('certificates.noTemplate')}
+              {course.latestTemplateVersion === null
+                ? t('certificates.noTemplate')
+                : t('certificates.noNameField')}
             </Alert>
           )}
 

@@ -7,7 +7,6 @@ import {
   gt,
   inArray,
   lte,
-  max,
   notExists,
 } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
@@ -47,24 +46,28 @@ export class SqliteTemplateVersionRepository
     return new Map(rows.map(({ id, version }) => [id, version]));
   }
 
-  public findLatestVersionNumbers(
+  public findLatestByCourses(
     courseIds: readonly CourseId[],
-  ): ReadonlyMap<CourseId, number> {
-    const rows = this.db
-      .select({
-        courseId: templateVersionTable.courseId,
-        latest: max(templateVersionTable.version),
-      })
-      .from(templateVersionTable)
-      .where(inArray(templateVersionTable.courseId, [...courseIds]))
-      .groupBy(templateVersionTable.courseId)
-      .all();
-
-    return new Map(
-      rows.flatMap(({ courseId, latest }) =>
-        latest === null ? [] : [[courseId, latest] as const],
+  ): ReadonlyMap<CourseId, TemplateVersion> {
+    const newer = alias(templateVersionTable, 'newer');
+    const latest = this.findMany({
+      where: and(
+        inArray(templateVersionTable.courseId, [...courseIds]),
+        notExists(
+          this.db
+            .select({ id: newer.id })
+            .from(newer)
+            .where(
+              and(
+                eq(newer.courseId, templateVersionTable.courseId),
+                gt(newer.version, templateVersionTable.version),
+              ),
+            ),
+        ),
       ),
-    );
+    });
+
+    return new Map(latest.map((version) => [version.courseId, version]));
   }
 
   public listByCourse(courseId: CourseId): TemplateVersion[] {

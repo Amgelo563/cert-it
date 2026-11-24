@@ -6,6 +6,8 @@ import {
   AuditEntityEnum,
   CertificateStatusEnum,
   JobTypeEnum,
+  type TemplateContent,
+  hasParticipantNameField,
 } from '@cert-it/shared';
 import { Result } from 'better-result';
 import type { AuditLog } from '../audit/AuditLog';
@@ -82,7 +84,7 @@ export class CertificateManager {
   }
 
   /**
-   * Adds a job that issues certificates to participants of the course without one. The job uses the latest template when it runs; this only checks there is one.
+   * Adds a job that issues certificates to participants of the course without one. The job uses the latest template when it runs; this only checks there is one that prints the participant's name.
    *
    * @param participantIds The participants to issue to, or every one without a certificate.
    */
@@ -95,7 +97,12 @@ export class CertificateManager {
   }): Result<Job, ApiErrorCode> {
     const { course, userId } = options;
     const { templateVersions } = this.database.getRepositories();
-    if (!templateVersions.findLatest(course.id)) {
+    // a template without the name would issue certificates that name no one
+    const latest = templateVersions.findLatest(course.id);
+    if (
+      !latest
+      || !hasParticipantNameField(latest.template as TemplateContent)
+    ) {
       return Result.err(ApiErrorCodeEnum.NoTemplate);
     }
 

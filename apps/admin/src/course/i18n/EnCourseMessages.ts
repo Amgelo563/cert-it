@@ -121,6 +121,10 @@ export const EnCourseMessages = {
     missingGlyphsItem: '{field}: {characters} (missing in {font})',
     fontAdded: '{family} {style} added',
     save: 'Save version',
+    noNameTitle: 'No participant name',
+    noNameText:
+      "This template has no participant name field, so its certificates wouldn't name anyone. Certificates can't be issued until a version with one is saved.",
+    saveAnyway: 'Save anyway',
     saved: 'Saved as version {version}',
     preview: {
       open: 'Preview',

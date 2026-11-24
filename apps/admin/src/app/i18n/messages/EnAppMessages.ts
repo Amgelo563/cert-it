@@ -80,7 +80,7 @@ export const EnAppMessages = {
       unknownBasePdf: 'Upload the base PDF again, then save.',
       catalogUnavailable:
         "The font catalog didn't answer. Try again later, or upload the font file.",
-      noTemplate: 'Save a template for this course first.',
+      noTemplate: 'Save a template with a participant name field first.',
       nothingToIssue: 'Every selected participant already has a certificate.',
       certificateRevoked:
         'The certificate is already revoked. Reload the page.',

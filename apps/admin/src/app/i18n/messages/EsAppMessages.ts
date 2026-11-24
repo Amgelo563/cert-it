@@ -80,7 +80,8 @@ export const EsAppMessages = {
       unknownBasePdf: 'Vuelve a subir el PDF base y guarda de nuevo.',
       catalogUnavailable:
         'El catálogo de fuentes no respondió. Inténtalo más tarde o sube el archivo de la fuente.',
-      noTemplate: 'Primero guarda una plantilla para este curso.',
+      noTemplate:
+        'Primero guarda una plantilla con el nombre del participante.',
       nothingToIssue:
         'Todos los participantes seleccionados ya tienen certificado.',
       certificateRevoked: 'El certificado ya está revocado. Recarga la página.',
