@@ -42,6 +42,17 @@ const seed = db.transaction(() => {
     )
     .get(courseId, `templates/${courseId}/v1.pdf`, userId, now).id;
 
+  // lowest status index not used or retired
+  const isIndexTaken = db.prepare(
+    `SELECT 1 FROM certificates WHERE status_index = ?
+     UNION ALL SELECT 1 FROM retired_status_indexes WHERE status_index = ?`,
+  );
+  const freeIndex = () => {
+    let index = 0;
+    while (isIndexTaken.get(index, index)) index++;
+    return index;
+  };
+
   for (const [code, status] of [
     [Active, 'active'],
     [Revoked, 'revoked'],
@@ -53,10 +64,11 @@ const seed = db.transaction(() => {
       )
       .get(courseId, `Dev ${status}`, `${status}@example.org`, now).id;
     db.prepare(
-      `INSERT INTO certificates (code, course_id, participant_id, template_version_id, issue_date, status, revoked_at, revoked_reason, created_at, updated_at)
-       VALUES (?, ?, ?, ?, '2026-11-19', ?, ?, ?, ?, ?)`,
+      `INSERT INTO certificates (code, status_index, course_id, participant_id, template_version_id, issue_date, status, revoked_at, revoked_reason, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, '2026-11-19', ?, ?, ?, ?, ?)`,
     ).run(
       code,
+      freeIndex(),
       courseId,
       participantId,
       versionId,
