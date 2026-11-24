@@ -82,6 +82,9 @@ export interface CertificateRepository {
   /** Returns the highest ID ever given to a certificate, deleted ones included, or 0 if there's been none. IDs are never reused. */
   findHighestId(): number;
 
+  /** Returns a number that changes whenever a certificate is created, deleted or changes status, from any process. */
+  findStatusVersion(): number;
+
   /** Returns the number of certificates of each given course in each status, leaving out courses with none. */
   countByCourses(
     courseIds: readonly CourseId[],

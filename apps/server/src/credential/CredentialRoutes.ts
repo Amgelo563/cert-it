@@ -1,5 +1,7 @@
+import { createHash } from 'node:crypto';
 import { CertificateStatusEnum } from '@cert-it/shared';
 import { type Context, Hono, type MiddlewareHandler } from 'hono';
+import { etag } from 'hono/etag';
 import type { CertificateCode } from '../certificate/code/CertificateCode';
 import type { CourseId } from '../course/Course';
 import type { DatabaseService } from '../database/DatabaseService';
@@ -12,6 +14,13 @@ type CredentialRoutesOptions = {
   database: DatabaseService;
   signer: CredentialSigner;
   builder: OpenBadgeBuilder;
+};
+
+type SignedStatusList = {
+  version: number;
+  thumbprint: string;
+  jwt: string;
+  etag: string;
 };
 
 /** Serves what verifiers of the Open Badges credentials fetch: each certificate's signed credential, the issuer's profile and public key, achievements and the revocation list. */
@@ -28,6 +37,9 @@ export class CredentialRoutes {
   protected readonly builder: OpenBadgeBuilder;
 
   protected readonly app: Hono<HttpEnv>;
+
+  // reused until a certificate changes status or the key rotates
+  protected statusList: SignedStatusList | null = null;
 
   constructor(options: CredentialRoutesOptions) {
     this.database = options.database;
@@ -66,7 +78,7 @@ export class CredentialRoutes {
     ] as const satisfies [string, (c: Context<HttpEnv>) => Response][];
 
     for (const [path, handler] of routes) {
-      app.get(path, this.allowAnyOrigin(), handler);
+      app.get(path, this.allowAnyOrigin(), etag(), handler);
     }
     return app;
   }
@@ -135,14 +147,34 @@ export class CredentialRoutes {
   }
 
   protected serveStatusList(c: Context<HttpEnv>): Response {
+    const { jwt, etag } = this.getStatusList();
+
+    c.header('Cache-Control', CredentialRoutes.CacheControl);
+    return c.body(jwt, 200, {
+      'Content-Type': CredentialRoutes.JwtType,
+      ETag: etag,
+    });
+  }
+
+  protected getStatusList(): SignedStatusList {
     const { certificates } = this.database.getRepositories();
+    const version = certificates.findStatusVersion();
+    const thumbprint = this.signer.getKeyThumbprint();
+    if (
+      this.statusList?.version === version
+      && this.statusList.thumbprint === thumbprint
+    ) {
+      return this.statusList;
+    }
+
+    // read after the version, so a change in between only causes one more rebuild
     const jwt = this.signer.signStatusList({
       activeIds: certificates.listActiveIds(),
       highestId: certificates.findHighestId(),
     });
-
-    c.header('Cache-Control', CredentialRoutes.CacheControl);
-    return c.body(jwt, 200, { 'Content-Type': CredentialRoutes.JwtType });
+    const hash = createHash('sha256').update(jwt).digest('base64url');
+    this.statusList = { version, thumbprint, jwt, etag: `"${hash}"` };
+    return this.statusList;
   }
 
   // verifiers often run in a browser on another site

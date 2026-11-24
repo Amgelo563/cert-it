@@ -1,6 +1,7 @@
 import type { JsonWebKey } from 'node:crypto';
 import { gunzipSync } from 'node:zlib';
 import { CertificateStatusEnum, LocaleEnum } from '@cert-it/shared';
+import { sql } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, test } from 'vite-plus/test';
 import type { Certificate } from '../../../src/certificate/Certificate';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
@@ -277,6 +278,49 @@ describe('CredentialRoutes (GET /credentials/status/revocation)', () => {
       .unwrap();
 
     expect((await readStatusList())(certificate.id)).toBe(false);
+  });
+
+  test('GIVEN an unchanged status list WHEN revalidating it with its ETag THEN answers 304', async () => {
+    issue();
+    const path = '/credentials/status/revocation';
+    const first = await harness.requestPublic(path);
+    const etag = first.headers.get('etag');
+
+    const second = await harness.requestPublic(path, {
+      'If-None-Match': etag!,
+    });
+
+    expect(etag).toMatch(/^"[\w-]+"$/);
+    expect(second.status).toBe(304);
+    expect(second.headers.get('etag')).toBe(etag);
+  });
+
+  test('GIVEN a fetched status list WHEN a status changes outside the repositories THEN serves the new list under a new ETag', async () => {
+    const certificate = issue();
+    const path = '/credentials/status/revocation';
+    const before = (await harness.requestPublic(path)).headers.get('etag');
+
+    database
+      .getExecutor()
+      .run(
+        sql`UPDATE certificates SET status = 'revoked' WHERE id = ${certificate.id}`,
+      );
+    const after = await harness.requestPublic(path, {
+      'If-None-Match': before!,
+    });
+
+    expect(after.status).toBe(200);
+    expect(after.headers.get('etag')).not.toBe(before);
+    expect((await readStatusList())(certificate.id)).toBe(true);
+  });
+
+  test('GIVEN a fetched status list WHEN a course is deleted THEN its certificates read as revoked', async () => {
+    const certificate = issue();
+    expect((await readStatusList())(certificate.id)).toBe(false);
+
+    database.getRepositories().courses.delete(certificate.courseId).unwrap();
+
+    expect((await readStatusList())(certificate.id)).toBe(true);
   });
 
   test('GIVEN the status list WHEN fetching it THEN is a signed BitstringStatusListCredential, revalidated on every fetch', async () => {

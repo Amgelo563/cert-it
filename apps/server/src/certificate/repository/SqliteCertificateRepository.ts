@@ -23,6 +23,7 @@ import type { CertificateCode } from '../code/CertificateCode';
 import type { Certificate, CertificateId } from '../Certificate';
 import type { CertificateCounts } from '../CertificateCounts';
 import type { CertificateRepository } from './CertificateRepository';
+import { certificateStatusVersionTable } from './certificateStatusVersionTable';
 import { certificateTable } from './certificateTable';
 
 export class SqliteCertificateRepository
@@ -122,6 +123,14 @@ export class SqliteCertificateRepository
       sql`SELECT seq FROM sqlite_sequence WHERE name = 'certificates'`,
     );
     return row?.seq ?? 0;
+  }
+
+  public findStatusVersion(): number {
+    const row = this.db
+      .select({ version: certificateStatusVersionTable.version })
+      .from(certificateStatusVersionTable)
+      .get();
+    return row?.version ?? 0;
   }
 
   public countByCourses(
