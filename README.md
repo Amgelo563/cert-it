@@ -298,7 +298,8 @@ pnpm fix          # fix formatting and lint issues
 pnpm test         # run every package's tests
 pnpm build        # build all packages
 ```
- Public pages are served by the server itself, such as the seeded certificate at
+
+Public pages are served by the server itself, such as the seeded certificate at
 http://localhost:3000/c/DEVA-AAAA-01. To run the server with your own `config/config.yml` instead, use
 `pnpm --filter @cert-it/server dev:config` and set `CERT_IT_BASE_URL` to its `base_url` for the admin dev server.
 
