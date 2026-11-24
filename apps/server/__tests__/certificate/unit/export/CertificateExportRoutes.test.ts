@@ -10,7 +10,21 @@ class ExposedExportRoutes extends CertificateExportRoutes {
   ): string {
     return super.formatCsv(rows);
   }
+
+  public static stripUnsafe(name: string): string {
+    return name.replace(CertificateExportRoutes.UnsafeNameCharacters, '');
+  }
 }
+
+describe('CertificateExportRoutes (UnsafeNameCharacters)', () => {
+  test('GIVEN a name with a right-to-left override WHEN stripping THEN removes it, so it cannot disguise the extension', () => {
+    expect(ExposedExportRoutes.stripUnsafe('Ada‮fdp.exe')).toBe('Adafdp.exe');
+  });
+
+  test('GIVEN a name with separators and zero-width characters WHEN stripping THEN removes them', () => {
+    expect(ExposedExportRoutes.stripUnsafe('A/d​a:⁦')).toBe('Ada');
+  });
+});
 
 describe('CertificateExportRoutes (formatCsv)', () => {
   test('GIVEN plain cells WHEN formatting THEN joins them with commas and CRLF after a byte order mark', () => {

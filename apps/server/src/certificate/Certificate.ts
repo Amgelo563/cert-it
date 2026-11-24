@@ -10,6 +10,8 @@ export type CertificateId = Brand<number, 'CertificateId'>;
 export type Certificate = {
   readonly id: CertificateId;
   readonly code: CertificateCode;
+  /** Its bit in the revocation status list, picked at random and never reused. */
+  readonly statusIndex: number;
   readonly courseId: CourseId;
   /** Unique: a participant has at most one certificate. */
   readonly participantId: ParticipantId;

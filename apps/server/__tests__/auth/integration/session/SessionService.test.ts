@@ -41,7 +41,7 @@ function setup(baseUrl?: string) {
 }
 
 describe('SessionService (cookie)', () => {
-  test('GIVEN a login WHEN reading the cookie THEN it is httpOnly, Secure, Lax and lasts 8 hours', async () => {
+  test('GIVEN HTTPS at the root WHEN reading the cookie THEN it is __Host- prefixed, httpOnly, Secure, Lax and lasts 8 hours', async () => {
     const { app, user } = setup();
 
     const response = await app.request(`/login/${user.id}`, {
@@ -50,7 +50,7 @@ describe('SessionService (cookie)', () => {
     });
     const cookie = response.headers.get('set-cookie');
 
-    expect(cookie).toMatch(/^cert-it-session=[\w-]{43};/);
+    expect(cookie).toMatch(/^__Host-cert-it-session=[\w-]{43};/);
     expect(cookie).toContain('Max-Age=28800');
     expect(cookie).toContain('Path=/');
     expect(cookie).toContain('HttpOnly');
@@ -67,8 +67,23 @@ describe('SessionService (cookie)', () => {
     });
     const cookie = response.headers.get('set-cookie');
 
+    expect(cookie).toMatch(/^cert-it-session=/);
     expect(cookie).toContain('Path=/certs');
     expect(cookie).not.toContain('Secure');
+  });
+
+  test('GIVEN a session WHEN logging in again from the same browser THEN the old session ends', async () => {
+    const { app, login, me, user } = setup();
+    const old = await login();
+
+    const response = await app.request(`/login/${user.id}`, {
+      method: 'POST',
+      headers: { ...Origin, cookie: old },
+    });
+
+    expect(response.status).toBe(204);
+    expect((await me(old)).status).toBe(401);
+    expect((await me(sessionCookie(response))).status).toBe(200);
   });
 
   test('GIVEN a login WHEN reading the database THEN stores a hash of the token, not the token', async () => {
@@ -96,7 +111,7 @@ describe('SessionService (resolve)', () => {
     const { me } = setup();
 
     expect((await me('')).status).toBe(401);
-    expect((await me('cert-it-session=unknown')).status).toBe(401);
+    expect((await me('__Host-cert-it-session=unknown')).status).toBe(401);
   });
 
   test('GIVEN 30 idle minutes WHEN requesting THEN answers 401', async () => {

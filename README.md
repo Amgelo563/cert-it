@@ -178,6 +178,28 @@ deletes the old ones. Nothing else in the remote's folder is touched.
    sudo chmod 600 /srv/cert-it/config/rclone.conf
    ```
 
+   Backups hold the private key that signs every credential (`keys/issuer.pem`), so anyone who can read them can sign
+   credentials in your name. Unless you fully trust the storage provider, wrap the remote in an
+   [rclone crypt](https://rclone.org/crypt/) remote, which encrypts each file before it leaves the server, and list the
+   crypt remote in the config instead of the plain one. In `rclone config`, pick `crypt` as the type, point `remote` at
+   the plain remote and folder (for example `s3:my-bucket/cert-it`), and let rclone generate the passwords. The result
+   looks like this:
+
+   ```ini
+   [s3]
+   type = s3
+   # ...
+
+   [s3-crypt]
+   type = crypt
+   remote = s3:my-bucket/cert-it
+   password = <obscured by rclone config>
+   password2 = <obscured by rclone config>
+   ```
+
+   Without those passwords the backups can't be decrypted, so keep `rclone.conf` safe and somewhere other than the
+   server (see below).
+
 2. Fill in the `backup` section of `config/config.yml`:
 
    ```yaml
@@ -187,7 +209,7 @@ deletes the old ones. Nothing else in the remote's folder is touched.
      retention_days: 30
      retention_copies: # optional, keeps at most this many
      remotes:
-       - 's3:my-bucket/cert-it'
+       - 's3-crypt:' # or 's3:my-bucket/cert-it' unencrypted
    ```
 
    The schedule uses the container's time zone, UTC by default. To use yours, set `TZ` in `deploy/.env` (for example
@@ -223,7 +245,8 @@ from `/opt/cert-it/deploy` and uses the app's image, which has rclone, so nothin
    sudo chown 1000:1000 /srv/cert-it/data   # APP_UID:APP_GID
    ```
 
-2. List the backups on a remote, and download the one you want into the data directory:
+2. List the backups on a remote, and download the one you want into the data directory. With a crypt remote, use it
+   here too (`s3-crypt:` instead of `s3:my-bucket/cert-it`), so rclone decrypts the file as it downloads:
 
    ```bash
    docker compose run --rm --no-deps app rclone lsf s3:my-bucket/cert-it

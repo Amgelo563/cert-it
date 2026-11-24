@@ -63,6 +63,9 @@ export class HttpService {
 
   protected static readonly HealthPath = '/healthz';
 
+  // a code in a path is enough to open its certificate, so logs leave it out
+  protected static readonly CertificateCodeSegment = /\/c\/[^/]+/;
+
   /** Query parameter the language switcher links set. */
   protected static readonly LocaleParam = 'lang';
 
@@ -275,7 +278,7 @@ export class HttpService {
     return root;
   }
 
-  // logs the path without the query, which may hold emails or tokens
+  // logs the path without the query, which may hold emails or tokens, nor certificate codes
   protected logRequests(): MiddlewareHandler<HttpEnv> {
     const healthPaths = new Set([
       HttpService.HealthPath,
@@ -288,7 +291,10 @@ export class HttpService {
       if (healthPaths.has(c.req.path)) return;
 
       const ms = Math.round(performance.now() - startedAt);
-      const { pathname } = new URL(c.req.url);
+      const pathname = new URL(c.req.url).pathname.replace(
+        HttpService.CertificateCodeSegment,
+        '/c/:code',
+      );
       this.logger.info(
         `${c.req.method} ${pathname} ${c.res.status} ${ms}ms ${c.get('clientIp')}`,
       );

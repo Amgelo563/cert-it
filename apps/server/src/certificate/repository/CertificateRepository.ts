@@ -34,7 +34,7 @@ export interface CertificateRepository {
     email: NormalizedEmail,
   ): Certificate | null;
 
-  /** Creates a certificate, unless its code is taken or the participant already has one. */
+  /** Creates a certificate with a random, unused status index, unless its code is taken or the participant already has one. */
   create(data: {
     code: CertificateCode;
     courseId: CourseId;
@@ -76,8 +76,11 @@ export interface CertificateRepository {
     templateVersionId: TemplateVersionId,
   ): Certificate[];
 
-  /** Returns the IDs of every active certificate, in any course. */
-  listActiveIds(): CertificateId[];
+  /** Returns the status indexes to mark revoked: those of revoked certificates and of deleted ones. */
+  listRevokedStatusIndexes(): number[];
+
+  /** Returns the number of bits of the status list, which covers every status index given out. */
+  findStatusListLength(): number;
 
   /** Returns the highest ID ever given to a certificate, deleted ones included, or 0 if there's been none. IDs are never reused. */
   findHighestId(): number;

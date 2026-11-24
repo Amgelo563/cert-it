@@ -233,13 +233,22 @@ export class CourseRoutes extends AbstractApiRoutes {
     );
     if (deleted.isErr()) return this.error(c, ApiErrorCodeEnum.NotFound);
 
-    await this.dataDirectory
-      .deleteCertificateFolder(course.id)
-      .catch((error: unknown) => {
-        this.logger.error(
-          `Couldn't delete the certificates of course ${course.id}: ${String(error)}`,
-        );
-      });
+    await Promise.all([
+      this.dataDirectory
+        .deleteCertificateFolder(course.id)
+        .catch((error: unknown) => {
+          this.logger.error(
+            `Couldn't delete the certificates of course ${course.id}: ${String(error)}`,
+          );
+        }),
+      this.dataDirectory
+        .deleteTemplateFolder(course.id)
+        .catch((error: unknown) => {
+          this.logger.error(
+            `Couldn't delete the templates of course ${course.id}: ${String(error)}`,
+          );
+        }),
+    ]);
     return c.body(null, 204);
   }
 

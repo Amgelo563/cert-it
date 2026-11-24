@@ -74,8 +74,8 @@ export class CertificateExportRoutes extends AbstractApiRoutes {
 
   protected static readonly CsvNeedsQuotes = /[",\r\n]/;
 
-  // characters a file system may reject in a name
-  protected static readonly UnsafeNameCharacters = /[\\/:*?"<>|\p{Cc}]/gu;
+  // characters a file system may reject, and format controls that can disguise an extension
+  protected static readonly UnsafeNameCharacters = /[\\/:*?"<>|\p{Cc}\p{Cf}]/gu;
 
   protected static readonly MaxNameLength = 100;
 

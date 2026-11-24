@@ -7,6 +7,7 @@ import type { TemplateVersion } from '../../../../src/template/TemplateVersion';
 import { createTestDatabase } from '../../../database/mocks/createTestDatabase';
 import { MockSeeder } from '../../../database/mocks/MockSeeder';
 import { normalizeEmail } from '../../../../src/util/email/NormalizedEmail';
+import { SqliteCertificateRepository } from '../../../../src/certificate/repository/SqliteCertificateRepository';
 
 let database: DatabaseService;
 let repositories: Repositories;
@@ -207,6 +208,49 @@ describe('SqliteCertificateRepository (countByCourses)', () => {
         [course.id, { active: 2, revoked: 1 }],
         [other.id, { active: 1, revoked: 0 }],
       ]),
+    );
+  });
+});
+
+describe('SqliteCertificateRepository (status indexes)', () => {
+  test('GIVEN new certificates WHEN creating THEN each gets a distinct index inside the list', () => {
+    const indexes = Array.from({ length: 20 }, () => issue().statusIndex);
+    const length = repositories.certificates.findStatusListLength();
+
+    expect(new Set(indexes).size).toBe(indexes.length);
+    for (const index of indexes) {
+      expect(index).toBeGreaterThanOrEqual(0);
+      expect(index).toBeLessThan(length);
+    }
+  });
+
+  test('GIVEN revoked and deleted certificates WHEN listing revoked indexes THEN returns both, but not active ones', () => {
+    const active = issue();
+    const revoked = revoke(issue());
+    const deleted = issue();
+    repositories.certificates.delete(deleted.id).unwrap();
+
+    const indexes = repositories.certificates.listRevokedStatusIndexes();
+
+    expect(indexes.toSorted((a, b) => a - b)).toEqual(
+      [revoked.statusIndex, deleted.statusIndex].toSorted((a, b) => a - b),
+    );
+    expect(indexes).not.toContain(active.statusIndex);
+  });
+
+  test('GIVEN a certificate WHEN its course is deleted THEN its index stays retired', () => {
+    const certificate = issue();
+
+    repositories.courses.delete(course.id).unwrap();
+
+    expect(repositories.certificates.listRevokedStatusIndexes()).toEqual([
+      certificate.statusIndex,
+    ]);
+  });
+
+  test('GIVEN no certificates WHEN reading the list length THEN is the minimum', () => {
+    expect(repositories.certificates.findStatusListLength()).toBe(
+      SqliteCertificateRepository.MinStatusListLength,
     );
   });
 });

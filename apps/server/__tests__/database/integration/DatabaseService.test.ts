@@ -19,7 +19,7 @@ afterEach(() => {
 });
 
 describe('DatabaseService (start)', () => {
-  test('GIVEN no migrations folder WHEN starting THEN finds the app migrations and creates every table', () => {
+  test('GIVEN no migrations folder WHEN starting THEN uses the app migrations and creates every table', () => {
     const database = new DatabaseService({ path: join(directory, 'app.db') });
 
     database.start();

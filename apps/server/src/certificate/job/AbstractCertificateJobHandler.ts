@@ -15,7 +15,6 @@ import type { Job } from '../../job/Job';
 import type { Participant } from '../../participant/Participant';
 import type { DataDirectoryService } from '../../storage/DataDirectoryService';
 import type { TemplateVersion } from '../../template/TemplateVersion';
-import type { CertificateId } from '../Certificate';
 import type { CertificateCode } from '../code/CertificateCode';
 import { CertificateRenderer } from '../render/CertificateRenderer';
 import type { CertificateJobOutput } from './CertificateJobOutput';
@@ -32,8 +31,8 @@ export type CertificateJobHandlerOptions = {
 
 /** A certificate to render, once its participant and values are known. */
 export type CertificateToRender = {
-  /** Null before the certificate is stored, which leaves its PDF without a credential. */
-  readonly id: CertificateId | null;
+  /** Its status list index, or null before the certificate is stored, which leaves its PDF without a credential. */
+  readonly statusIndex: number | null;
   readonly participant: Participant;
   readonly code: CertificateCode;
   /** The date to print, as `YYYY-MM-DD`. */
@@ -108,11 +107,11 @@ export abstract class AbstractCertificateJobHandler<
 
     const rendered = await renderer.render(values);
     const pdf =
-      certificate.id === null
+      certificate.statusIndex === null
         ? rendered
         : await this.attachCredential(rendered, course, {
             ...certificate,
-            id: certificate.id,
+            statusIndex: certificate.statusIndex,
           });
     await this.dataDirectory.writeFile(
       this.dataDirectory.getCertificatePath(course.id, certificate.code),
@@ -122,13 +121,13 @@ export abstract class AbstractCertificateJobHandler<
   }
 
   /**
-   * Adds the credential to a stored PDF, once its certificate has an ID.
+   * Adds the credential to a stored PDF, once its certificate has a status index.
    *
    * @throws {Error} If the PDF can't be read, parsed or written.
    */
   protected async storeCredential(
     course: Course,
-    certificate: CertificateToRender & { readonly id: CertificateId },
+    certificate: CertificateToRender & { readonly statusIndex: number },
   ): Promise<void> {
     const path = this.dataDirectory.getCertificatePath(
       course.id,
@@ -146,7 +145,7 @@ export abstract class AbstractCertificateJobHandler<
   protected async attachCredential(
     pdf: Uint8Array,
     course: Course,
-    certificate: CertificateToRender & { readonly id: CertificateId },
+    certificate: CertificateToRender & { readonly statusIndex: number },
   ): Promise<Uint8Array> {
     const jwt = this.credentials.signCertificate({
       certificate,

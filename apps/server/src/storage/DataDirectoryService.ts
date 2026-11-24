@@ -167,6 +167,21 @@ export class DataDirectoryService {
     );
   }
 
+  /**
+   * Deletes a course's folder of base PDFs. A folder that's already gone isn't an error.
+   *
+   * @throws {Error} If the folder can't be deleted.
+   */
+  public async deleteTemplateFolder(courseId: CourseId): Promise<void> {
+    await rm(
+      this.directory.resolve(
+        DataDirectoryService.TemplatesFolder,
+        String(courseId),
+      ),
+      { recursive: true, force: true },
+    );
+  }
+
   /** Returns the path of a certificate's PDF. */
   public getCertificatePath(courseId: CourseId, code: CertificateCode): string {
     return this.directory.resolve(

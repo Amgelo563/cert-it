@@ -8,6 +8,8 @@ type BasePdfCheckerOptions = {
   workerUrl?: URL;
   /** Heap limit of the worker. @default BasePdfChecker.DefaultMaxHeapMb */
   maxHeapMb?: number;
+  /** Young generation limit of the worker, which the heap limit leaves out. @default BasePdfChecker.DefaultMaxYoungMb */
+  maxYoungMb?: number;
   /** @default BasePdfChecker.DefaultTimeoutMs */
   timeoutMs?: number;
   /** Workers allowed at once, later checks wait for a free slot. @default BasePdfChecker.DefaultMaxConcurrent */
@@ -18,6 +20,8 @@ type BasePdfCheckerOptions = {
 export class BasePdfChecker {
   public static readonly DefaultMaxHeapMb = 64;
 
+  public static readonly DefaultMaxYoungMb = 16;
+
   public static readonly DefaultTimeoutMs = 30_000;
 
   public static readonly DefaultMaxConcurrent = 2;
@@ -25,6 +29,8 @@ export class BasePdfChecker {
   protected readonly workerUrl: URL;
 
   protected readonly maxHeapMb: number;
+
+  protected readonly maxYoungMb: number;
 
   protected readonly timeoutMs: number;
 
@@ -37,6 +43,7 @@ export class BasePdfChecker {
   constructor(options: BasePdfCheckerOptions) {
     this.workerUrl = options.workerUrl ?? BasePdfChecker.defaultWorkerUrl();
     this.maxHeapMb = options.maxHeapMb ?? BasePdfChecker.DefaultMaxHeapMb;
+    this.maxYoungMb = options.maxYoungMb ?? BasePdfChecker.DefaultMaxYoungMb;
     this.timeoutMs = options.timeoutMs ?? BasePdfChecker.DefaultTimeoutMs;
     this.maxConcurrent = Math.max(
       1,
@@ -92,7 +99,10 @@ export class BasePdfChecker {
       workerData: { path },
       // not the parent's flags, such as a dev watcher's
       execArgv: [],
-      resourceLimits: { maxOldGenerationSizeMb: this.maxHeapMb },
+      resourceLimits: {
+        maxOldGenerationSizeMb: this.maxHeapMb,
+        maxYoungGenerationSizeMb: this.maxYoungMb,
+      },
     });
 
     return new Promise<BasePdfWorkerResult>((resolve, reject) => {

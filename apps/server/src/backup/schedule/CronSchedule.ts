@@ -140,7 +140,10 @@ export class CronSchedule {
         low = field.min;
         high = field.max;
       } else if (range.includes('-')) {
-        const [from = '', to = ''] = range.split('-', 2);
+        const bounds = range.split('-');
+        if (bounds.length !== 2) return null;
+
+        const [from = '', to = ''] = bounds;
         low = CronSchedule.parseValue(from, field);
         high = CronSchedule.parseValue(to, field);
       } else {

@@ -1,5 +1,4 @@
 import { gzipSync } from 'node:zlib';
-import type { CertificateId } from '../certificate/Certificate';
 import { IssuerKey } from './key/IssuerKey';
 import type { IssuerKeyService } from './key/IssuerKeyService';
 import { type CredentialSource, OpenBadgeBuilder } from './OpenBadgeBuilder';
@@ -12,9 +11,6 @@ type CredentialSignerOptions = {
 
 /** Signs the issuer's credentials as VC-JWTs, the Open Badges 3.0 JWT proof format. */
 export class CredentialSigner {
-  // the spec's minimum, so a list never tells how many certificates there are
-  protected static readonly MinListBits = 131_072;
-
   protected readonly keys: IssuerKeyService;
 
   protected readonly builder: OpenBadgeBuilder;
@@ -57,10 +53,10 @@ export class CredentialSigner {
     });
   }
 
-  /** Returns the signed revocation status list: every index is revoked but those of the given active certificates. */
+  /** Returns the signed revocation status list of the given length, with the given indexes revoked. */
   public signStatusList(options: {
-    activeIds: readonly CertificateId[];
-    highestId: number;
+    revokedIndexes: readonly number[];
+    length: number;
   }): string {
     const list = this.builder.buildStatusList(this.encodeList(options));
     return this.sign({
@@ -91,16 +87,14 @@ export class CredentialSigner {
     return key.signJwt(this.builder.getKeyUrl(key.getThumbprint()), payload);
   }
 
-  // ones by default, so deleted certificates read as revoked; bit 0 is the first byte's highest bit
+  // zeros by default, so free indexes hide the active count; bit 0 is the first byte's highest bit
   protected encodeList(options: {
-    activeIds: readonly CertificateId[];
-    highestId: number;
+    revokedIndexes: readonly number[];
+    length: number;
   }): string {
-    const { MinListBits } = CredentialSigner;
-    const bits = Math.ceil((options.highestId + 1) / MinListBits) * MinListBits;
-    const list = Buffer.alloc(bits / 8, 0xff);
-    for (const id of options.activeIds) {
-      list[id >> 3]! &= ~(0x80 >> (id & 7));
+    const list = Buffer.alloc(Math.ceil(options.length / 8));
+    for (const index of options.revokedIndexes) {
+      list[index >> 3]! |= 0x80 >> (index & 7);
     }
 
     // multibase: the u prefix marks unpadded base64url

@@ -28,6 +28,9 @@ export type ActiveSession = {
 export class SessionService {
   public static readonly CookieName = 'cert-it-session';
 
+  /** The cookie's name over HTTPS at the root, where the browser can bind it to the exact host. */
+  public static readonly HostCookieName = `__Host-${SessionService.CookieName}`;
+
   protected static readonly DefaultLifetimeMs = 8 * 60 * 60 * 1000;
 
   protected static readonly DefaultIdleTimeoutMs = 30 * 60 * 1000;
@@ -49,6 +52,8 @@ export class SessionService {
 
   protected readonly clock: Clock;
 
+  protected readonly cookieName: string;
+
   protected cleanupTimer: NodeJS.Timeout | null = null;
 
   constructor(options: SessionServiceOptions) {
@@ -58,6 +63,10 @@ export class SessionService {
     this.idleTimeoutMs =
       options.idleTimeoutMs ?? SessionService.DefaultIdleTimeoutMs;
     this.clock = options.clock;
+    this.cookieName =
+      this.siteUrl.isSecure() && this.siteUrl.getBasePath() === '/'
+        ? SessionService.HostCookieName
+        : SessionService.CookieName;
   }
 
   public static create(options: {
@@ -90,8 +99,10 @@ export class SessionService {
     this.cleanupTimer = null;
   }
 
-  /** Starts a session for the user and sets its cookie. */
+  /** Starts a session for the user and sets its cookie, ending the session the browser had, if any. */
   public open(c: Context, userId: UserId): Session {
+    this.deletePresented(c);
+
     const token = randomBytes(SessionService.TokenBytes).toString('base64url');
     const now = this.clock.now().getTime();
     const session = this.database
@@ -105,7 +116,7 @@ export class SessionService {
       })
       .unwrap();
 
-    setCookie(c, SessionService.CookieName, token, {
+    setCookie(c, this.cookieName, token, {
       path: this.siteUrl.getBasePath(),
       httpOnly: true,
       secure: this.siteUrl.isSecure(),
@@ -117,7 +128,7 @@ export class SessionService {
 
   /** Returns the request's session and its active user, extending its idle timeout, or null if there's none. */
   public resolve(c: Context): ActiveSession | null {
-    const token = getCookie(c, SessionService.CookieName);
+    const token = getCookie(c, this.cookieName);
     if (!token) return null;
 
     const { sessions, users } = this.database.getRepositories();
@@ -136,16 +147,11 @@ export class SessionService {
 
   /** Ends the request's session, if any, and clears its cookie. */
   public end(c: Context): void {
-    const token = getCookie(c, SessionService.CookieName);
-    deleteCookie(c, SessionService.CookieName, {
+    this.deletePresented(c);
+    deleteCookie(c, this.cookieName, {
       path: this.siteUrl.getBasePath(),
       secure: this.siteUrl.isSecure(),
     });
-    if (!token) return;
-
-    const { sessions } = this.database.getRepositories();
-    const session = sessions.findByTokenHash(SessionService.hashToken(token));
-    if (session) sessions.delete(session.id);
   }
 
   /** Ends every session of the user, returning how many were ended. */
@@ -158,6 +164,15 @@ export class SessionService {
     return this.database
       .getRepositories()
       .sessions.deleteExpired(new Date(this.clock.now().getTime()));
+  }
+
+  protected deletePresented(c: Context): void {
+    const token = getCookie(c, this.cookieName);
+    if (!token) return;
+
+    const { sessions } = this.database.getRepositories();
+    const session = sessions.findByTokenHash(SessionService.hashToken(token));
+    if (session) sessions.delete(session.id);
   }
 
   protected static hashToken(token: string): string {

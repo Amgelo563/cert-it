@@ -104,7 +104,7 @@ describe('IssueJobHandler (run)', () => {
     expect(payload).toMatchObject({
       jti: `${CertificateJobFixture.BaseUrl}/c/${certificate.code}`,
       validFrom: '2026-11-20T00:00:00Z',
-      credentialStatus: { statusListIndex: String(certificate.id) },
+      credentialStatus: { statusListIndex: String(certificate.statusIndex) },
     });
   });
 

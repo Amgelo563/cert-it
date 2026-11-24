@@ -169,8 +169,8 @@ export class CredentialRoutes {
 
     // read after the version, so a change in between only causes one more rebuild
     const jwt = this.signer.signStatusList({
-      activeIds: certificates.listActiveIds(),
-      highestId: certificates.findHighestId(),
+      revokedIndexes: certificates.listRevokedStatusIndexes(),
+      length: certificates.findStatusListLength(),
     });
     const hash = createHash('sha256').update(jwt).digest('base64url');
     this.statusList = { version, thumbprint, jwt, etag: `"${hash}"` };

@@ -29,6 +29,13 @@
       "when": 1795495958919,
       "tag": "0003_certificate_status_version",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1795497960539,
+      "tag": "0004_random_status_index",
+      "breakpoints": true
     }
   ]
 }

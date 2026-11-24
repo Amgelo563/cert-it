@@ -108,7 +108,7 @@ export class IssueJobHandler extends AbstractCertificateJobHandler<
     const skip = await this.renderAndStore(renderer, course, {
       ...data,
       code,
-      id: null,
+      statusIndex: null,
     });
     if (skip) return skip;
 
@@ -126,11 +126,11 @@ export class IssueJobHandler extends AbstractCertificateJobHandler<
       throw created.error;
     }
 
-    // the credential's status entry needs the ID, so it's added once the row exists
+    // the credential's status entry needs the index, so it's added once the row exists
     await this.storeCredential(course, {
       ...data,
       code,
-      id: created.value.id,
+      statusIndex: created.value.statusIndex,
     });
     return null;
   }

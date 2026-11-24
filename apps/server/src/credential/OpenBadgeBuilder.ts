@@ -16,7 +16,7 @@ export type CredentialDocument = Readonly<Record<string, unknown>>;
 
 /** What a certificate's credential is built from. */
 export type CredentialSource = {
-  readonly certificate: Pick<Certificate, 'id' | 'code' | 'issueDate'>;
+  readonly certificate: Pick<Certificate, 'statusIndex' | 'code' | 'issueDate'>;
   readonly course: Course;
   readonly participant: Pick<Participant, 'name'>;
 };
@@ -94,7 +94,7 @@ export class OpenBadgeBuilder {
     };
   }
 
-  /** Returns a certificate's OpenBadgeCredential, without a proof. Its status list index is the certificate's ID, which is never reused. */
+  /** Returns a certificate's OpenBadgeCredential, without a proof. Its status list index is the certificate's own, which is never reused. */
   public buildCredential(source: CredentialSource): CredentialDocument {
     const { certificate, course, participant } = source;
     const statusListUrl = this.getStatusListUrl();
@@ -120,10 +120,10 @@ export class OpenBadgeBuilder {
         achievement: this.achievement(course),
       },
       credentialStatus: {
-        id: `${statusListUrl}#${certificate.id}`,
+        id: `${statusListUrl}#${certificate.statusIndex}`,
         type: 'BitstringStatusListEntry',
         statusPurpose: OpenBadgeBuilder.StatusPurpose,
-        statusListIndex: String(certificate.id),
+        statusListIndex: String(certificate.statusIndex),
         statusListCredential: statusListUrl,
       },
       credentialSchema: [OpenBadgeBuilder.CredentialSchema],

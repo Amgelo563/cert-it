@@ -191,5 +191,7 @@ backup:
   # rclone remotes and paths, defined in rclone.conf next to this file. For example:
   #   - 's3:my-bucket/certs'
   #   - 'gdrive:Backups/certs'
+  # Backups include the credential signing key, so prefer an rclone crypt
+  # remote, which encrypts them before upload, such as 's3-crypt:'.
   # Empty: none (backups have nowhere to go, so enable it only with a remote).
   remotes: []

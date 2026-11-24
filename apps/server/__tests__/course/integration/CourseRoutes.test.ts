@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import {
   type ApiPage,
@@ -282,6 +282,19 @@ describe('CourseRoutes (delete)', () => {
     expect(existsSync(deleted!)).toBe(false);
     expect(existsSync(dirname(deleted!))).toBe(false);
     expect(existsSync(kept!)).toBe(true);
+  });
+
+  test('GIVEN a course with a base PDF WHEN deleting it THEN removes its templates folder', async () => {
+    const { courses, dataDirectory, seeder } = await setup();
+    const course = seeder.course();
+    const template = dataDirectory.getTemplatePath(course.id, 'abc');
+    mkdirSync(dirname(template), { recursive: true });
+    writeFileSync(template, '%PDF-1.7');
+
+    const response = await courses('DELETE', `/${course.id}`);
+
+    expect(response.status).toBe(204);
+    expect(existsSync(dirname(template))).toBe(false);
   });
 
   test('GIVEN an Editor WHEN deleting a course THEN answers 403 and keeps it', async () => {

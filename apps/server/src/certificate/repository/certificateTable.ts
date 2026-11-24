@@ -16,6 +16,7 @@ export const certificateTable = sqliteTable(
       .primaryKey({ autoIncrement: true })
       .$type<CertificateId>(),
     code: text('code').notNull().unique().$type<CertificateCode>(),
+    statusIndex: integer('status_index').notNull().unique(),
     courseId: integer('course_id')
       .notNull()
       .references(() => courseTable.id, { onDelete: 'cascade' })

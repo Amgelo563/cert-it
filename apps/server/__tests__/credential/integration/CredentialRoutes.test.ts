@@ -131,7 +131,7 @@ describe('CredentialRoutes (GET /c/:code/credential)', () => {
       credentialStatus: {
         type: 'BitstringStatusListEntry',
         statusPurpose: 'revocation',
-        statusListIndex: String(certificate.id),
+        statusListIndex: String(certificate.statusIndex),
         statusListCredential: `${Base}/credentials/status/revocation`,
       },
       iss: `${Base}/issuer`,
@@ -260,9 +260,9 @@ describe('CredentialRoutes (GET /credentials/status/revocation)', () => {
 
     const isRevoked = await readStatusList();
 
-    expect(isRevoked(active.id)).toBe(false);
-    expect(isRevoked(revoked.id)).toBe(true);
-    expect(isRevoked(deleted.id)).toBe(true);
+    expect(isRevoked(active.statusIndex)).toBe(false);
+    expect(isRevoked(revoked.statusIndex)).toBe(true);
+    expect(isRevoked(deleted.statusIndex)).toBe(true);
   });
 
   test('GIVEN a revoked certificate WHEN it is reinstated THEN the status list shows it active again', async () => {
@@ -277,7 +277,7 @@ describe('CredentialRoutes (GET /credentials/status/revocation)', () => {
       })
       .unwrap();
 
-    expect((await readStatusList())(certificate.id)).toBe(false);
+    expect((await readStatusList())(certificate.statusIndex)).toBe(false);
   });
 
   test('GIVEN an unchanged status list WHEN revalidating it with its ETag THEN answers 304', async () => {
@@ -311,16 +311,30 @@ describe('CredentialRoutes (GET /credentials/status/revocation)', () => {
 
     expect(after.status).toBe(200);
     expect(after.headers.get('etag')).not.toBe(before);
-    expect((await readStatusList())(certificate.id)).toBe(true);
+    expect((await readStatusList())(certificate.statusIndex)).toBe(true);
   });
 
   test('GIVEN a fetched status list WHEN a course is deleted THEN its certificates read as revoked', async () => {
     const certificate = issue();
-    expect((await readStatusList())(certificate.id)).toBe(false);
+    expect((await readStatusList())(certificate.statusIndex)).toBe(false);
 
     database.getRepositories().courses.delete(certificate.courseId).unwrap();
 
-    expect((await readStatusList())(certificate.id)).toBe(true);
+    expect((await readStatusList())(certificate.statusIndex)).toBe(true);
+  });
+
+  test('GIVEN active certificates WHEN reading the status list THEN no bits are set, so their count does not show', async () => {
+    issue();
+    issue();
+
+    const response = await harness.requestPublic(
+      '/credentials/status/revocation',
+    );
+    const { payload } = await verify(await response.text());
+    const encoded = payload['credentialSubject'].encodedList as string;
+    const bits = gunzipSync(Buffer.from(encoded.slice(1), 'base64url'));
+
+    expect(bits.every((byte) => byte === 0)).toBe(true);
   });
 
   test('GIVEN the status list WHEN fetching it THEN is a signed BitstringStatusListCredential, revalidated on every fetch', async () => {

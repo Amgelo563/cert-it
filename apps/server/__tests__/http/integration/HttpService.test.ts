@@ -196,6 +196,17 @@ describe.each([
     ]);
   });
 
+  test('GIVEN a certificate path WHEN logged THEN leaves the code out', async () => {
+    const lines: string[] = [];
+    const http = createHttp(baseUrl, lines);
+
+    await request(http, `${base}/c/ABCD-EFGH-JK/pdf`);
+
+    expect(lines).toEqual([
+      expect.stringMatching(new RegExp(`^GET ${base}/c/:code/pdf \\d{3} `)),
+    ]);
+  });
+
   test('GIVEN a healthz request WHEN handled THEN is not logged', async () => {
     const lines: string[] = [];
     const http = createHttp(baseUrl, lines);

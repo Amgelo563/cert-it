@@ -1,5 +1,4 @@
-import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   SqliteDatabase,
   type SqliteExecutor,
@@ -26,7 +25,7 @@ type DatabaseServiceOptions = {
   /**
    * Folder with the drizzle-kit migrations.
    *
-   * @default the `drizzle/` folder of the nearest parent directory that has one
+   * @default the package's `drizzle/` folder, next to `src/` or the bundled `dist/`
    */
   migrationsFolder?: string;
   /**
@@ -39,11 +38,9 @@ type DatabaseServiceOptions = {
 
 /** An object that owns the app's SQLite database and gives access to its repositories. */
 export class DatabaseService {
-  protected static readonly MigrationsFolderName = 'drizzle';
-
   protected readonly path: string;
 
-  protected readonly migrationsFolder: string | null;
+  protected readonly migrationsFolder: string;
 
   protected readonly migrate: boolean;
 
@@ -51,7 +48,8 @@ export class DatabaseService {
 
   constructor(options: DatabaseServiceOptions) {
     this.path = options.path;
-    this.migrationsFolder = options.migrationsFolder ?? null;
+    this.migrationsFolder =
+      options.migrationsFolder ?? DatabaseService.defaultMigrationsFolder();
     this.migrate = options.migrate ?? true;
   }
 
@@ -78,9 +76,7 @@ export class DatabaseService {
     try {
       database = SqliteDatabase.create<Repositories>({
         path: this.path,
-        migrationsFolder: this.migrate
-          ? (this.migrationsFolder ?? this.findMigrationsFolder())
-          : undefined,
+        migrationsFolder: this.migrate ? this.migrationsFolder : undefined,
         createRepositories: (db) => this.createRepositories(db),
       });
       database.start();
@@ -92,6 +88,14 @@ export class DatabaseService {
     }
 
     this.database = database;
+  }
+
+  // bundled, every chunk sits flat in dist/
+  protected static defaultMigrationsFolder(): string {
+    const relative = import.meta.url.endsWith('.ts')
+      ? '../../drizzle'
+      : '../drizzle';
+    return fileURLToPath(new URL(relative, import.meta.url));
   }
 
   /** Returns the path of the database file, or `:memory:`. */
@@ -150,23 +154,6 @@ export class DatabaseService {
    */
   public getExecutor(): SqliteExecutor {
     return this.getDatabase().getExecutor();
-  }
-
-  protected findMigrationsFolder(): string {
-    let directory = import.meta.dirname;
-
-    for (;;) {
-      const folder = join(directory, DatabaseService.MigrationsFolderName);
-      if (existsSync(join(folder, 'meta', '_journal.json'))) return folder;
-
-      const parent = dirname(directory);
-      if (parent === directory) {
-        throw new Error(
-          `No ${DatabaseService.MigrationsFolderName}/ folder found above ${import.meta.dirname}.`,
-        );
-      }
-      directory = parent;
-    }
   }
 
   protected getDatabase(): SqliteDatabase<Repositories> {
