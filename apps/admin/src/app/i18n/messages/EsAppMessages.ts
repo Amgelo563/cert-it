@@ -17,7 +17,6 @@ export const EsAppMessages = {
   },
   navigation: {
     overview: 'General',
-    home: 'Inicio',
     courses: 'Cursos',
     administration: 'Administración',
     users: 'Usuarios',

@@ -134,9 +134,7 @@ export const AdminRoutes: RouteObject[] = [
         children: [
           {
             index: true,
-            lazy: async () => ({
-              Component: (await import('../../home/HomePage')).HomePage,
-            }),
+            element: <Navigate to={AdminPathEnum.Courses} replace />,
           },
           page(
             AdminPathEnum.Courses,

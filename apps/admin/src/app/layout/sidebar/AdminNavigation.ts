@@ -2,7 +2,6 @@ import {
   type Icon,
   IconCertificate,
   IconHistory,
-  IconHome,
   IconUsers,
 } from '@tabler/icons-react';
 import type { AdminMessages } from '../../i18n/messages/AdminMessages';
@@ -21,7 +20,6 @@ export const AdminNavigation: AdminNavigationSection[] = [
   {
     title: 'overview',
     links: [
-      { label: 'home', icon: IconHome, to: AdminPathEnum.Home },
       { label: 'courses', icon: IconCertificate, to: AdminPathEnum.Courses },
     ],
   },

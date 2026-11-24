@@ -64,7 +64,7 @@ doesn't ship its own nginx.
 ### What to change for your setup
 
 | Your setup                                                                                                                 | Files to change                                                                                            |
-|----------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | Every setup                                                                                                                | `config/config.yml`: `site.base_url`, `site.org_name` and `admin.email`                                    |
 | Data somewhere other than `/srv/cert-it`, another port than `3000`, another user than `1000:1000`, or another memory limit | `deploy/.env`: `CERT_IT_DIR`, `APP_PORT`, `APP_UID`/`APP_GID`, `APP_MEMORY`                                |
 | App on its own host (`https://certs.example.org`)                                                                          | `deploy/nginx/host.conf`: `server_name`, certificate paths, port and `/srv/cert-it`                        |

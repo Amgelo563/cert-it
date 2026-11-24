@@ -22,7 +22,6 @@ export type AppMessages = {
   };
   navigation: {
     overview: string;
-    home: string;
     courses: string;
     administration: string;
     users: string;

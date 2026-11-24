@@ -17,7 +17,6 @@ export const EnAppMessages = {
   },
   navigation: {
     overview: 'Overview',
-    home: 'Home',
     courses: 'Courses',
     administration: 'Administration',
     users: 'Users',
