@@ -51,6 +51,31 @@ describe('BasePdfChecker', () => {
     );
   });
 
+  test('GIVEN more checks than maxConcurrent WHEN checking THEN runs at most that many workers at once', async () => {
+    let running = 0;
+    let peak = 0;
+    class CountingChecker extends BasePdfChecker {
+      protected override async runWorker(path: string) {
+        running++;
+        peak = Math.max(peak, running);
+        try {
+          return await super.runWorker(path);
+        } finally {
+          running--;
+        }
+      }
+    }
+    const checker = new CountingChecker({ maxConcurrent: 2 });
+    const path = file('one.pdf', await createPdf(1));
+
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () => checker.check(path)),
+    );
+
+    expect(results.every((result) => result.isOk())).toBe(true);
+    expect(peak).toBe(2);
+  });
+
   test('GIVEN a missing file WHEN checking THEN throws', async () => {
     await expect(
       BasePdfChecker.create().check(join(directory, 'missing.pdf')),
