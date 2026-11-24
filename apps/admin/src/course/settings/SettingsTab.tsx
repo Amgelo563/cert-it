@@ -15,6 +15,7 @@ import { describeApiError } from '../../app/api/describeApiError';
 import { useApiClient } from '../../app/api/useApiClient';
 import { Surface } from '../../app/layout/Surface';
 import { AdminPathEnum } from '../../app/router/AdminPathEnum';
+import { LeaveGuard } from '../../app/router/LeaveGuard';
 import { usePermissions } from '../../auth/usePermissions';
 import { CourseFormFields } from '../form/CourseFormFields';
 import { courseFormValues, useCourseForm } from '../form/useCourseForm';
@@ -169,6 +170,8 @@ export function SettingsTab() {
 
   return (
     <Stack gap="lg">
+      {/* a deleted course has nothing left to lose */}
+      <LeaveGuard when={form.isDirty() && busy !== 'delete'} />
       <Surface p="lg">
         <form onSubmit={save} noValidate>
           <Stack gap="md">
