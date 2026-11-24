@@ -46,6 +46,10 @@ export const EsUserMessages = {
       'Esta contraseña no se volverá a mostrar. Si se pierde, restablécela desde las acciones del usuario.',
     copy: 'Copiar',
     copied: 'Copiada',
+    notCopiedText:
+      'Aún no copiaste la contraseña de {email}. Si cierras ahora no podrás volver a verla y tendrás que restablecerla.',
+    closeWithoutCopying: 'Cerrar sin copiar',
+    backToPassword: 'Volver a la contraseña',
     done: 'Listo',
   },
   roles: {

@@ -8,7 +8,13 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
-import { IconCheck, IconCopy, IconInfoCircle } from '@tabler/icons-react';
+import {
+  IconAlertTriangle,
+  IconCheck,
+  IconCopy,
+  IconInfoCircle,
+} from '@tabler/icons-react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /** A random password the server returned once, for a new or reset account. */
@@ -29,16 +35,52 @@ export function OneTimePasswordModal({
   onClose,
 }: OneTimePasswordModalProps) {
   const { t } = useTranslation();
+  // keyed by password so a new one starts uncopied
+  const [copiedFor, setCopiedFor] = useState<string | null>(null);
+  const [confirmingFor, setConfirmingFor] = useState<string | null>(null);
+  const copied = issued !== null && copiedFor === issued.password;
+  const confirming = issued !== null && confirmingFor === issued.password;
+  const copyRef = useRef<HTMLButtonElement>(null);
+  const backRef = useRef<HTMLButtonElement>(null);
+
+  // keep focus on the safe button when the view swaps
+  useEffect(() => {
+    (confirming ? backRef : copyRef).current?.focus();
+  }, [confirming]);
+
+  // closing before copying would lose the password for good
+  const requestClose = () => {
+    if (copied) return onClose();
+    setConfirmingFor(confirming ? null : (issued?.password ?? null));
+  };
 
   return (
     <Modal
       opened={issued !== null}
-      onClose={onClose}
+      onClose={requestClose}
       title={t('users.passwordTitle')}
-      // closing by accident would lose the password for good
       closeOnClickOutside={false}
     >
-      {issued && (
+      {issued && confirming && (
+        <Stack gap="md">
+          <Alert
+            variant="light"
+            color="yellow"
+            icon={<IconAlertTriangle size={18} stroke={1.5} />}
+          >
+            {t('users.notCopiedText', { email: issued.email })}
+          </Alert>
+          <Group justify="flex-end">
+            <Button variant="subtle" color="red" onClick={onClose}>
+              {t('users.closeWithoutCopying')}
+            </Button>
+            <Button ref={backRef} onClick={() => setConfirmingFor(null)}>
+              {t('users.backToPassword')}
+            </Button>
+          </Group>
+        </Stack>
+      )}
+      {issued && !confirming && (
         <Stack gap="md">
           <Text size="sm">
             {t('users.passwordText', { email: issued.email })}
@@ -55,20 +97,25 @@ export function OneTimePasswordModal({
               onFocus={(event) => event.currentTarget.select()}
             />
             <CopyButton value={issued.password}>
-              {({ copied, copy }) => (
+              {({ copied: justCopied, copy }) => (
                 <Button
                   variant="light"
-                  color={copied ? 'teal' : undefined}
+                  color={justCopied ? 'teal' : undefined}
+                  ref={copyRef}
+                  data-autofocus
                   leftSection={
-                    copied ? (
+                    justCopied ? (
                       <IconCheck size={16} stroke={1.5} />
                     ) : (
                       <IconCopy size={16} stroke={1.5} />
                     )
                   }
-                  onClick={copy}
+                  onClick={() => {
+                    copy();
+                    setCopiedFor(issued.password);
+                  }}
                 >
-                  {copied ? t('users.copied') : t('users.copy')}
+                  {justCopied ? t('users.copied') : t('users.copy')}
                 </Button>
               )}
             </CopyButton>
@@ -80,7 +127,7 @@ export function OneTimePasswordModal({
             {t('users.passwordOnce')}
           </Alert>
           <Group justify="flex-end">
-            <Button onClick={onClose}>{t('users.done')}</Button>
+            <Button onClick={requestClose}>{t('users.done')}</Button>
           </Group>
         </Stack>
       )}

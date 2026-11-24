@@ -46,6 +46,10 @@ export type UserMessages = {
     passwordOnce: string;
     copy: string;
     copied: string;
+    /** Shown when closing the password modal before copying it. */
+    notCopiedText: string;
+    closeWithoutCopying: string;
+    backToPassword: string;
     done: string;
   };
   /** Names of the roles, keyed by their value. */

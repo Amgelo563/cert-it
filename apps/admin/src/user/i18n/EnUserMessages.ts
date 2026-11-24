@@ -46,6 +46,10 @@ export const EnUserMessages = {
       "This password won't be shown again. If it's lost, reset it from the user's actions.",
     copy: 'Copy',
     copied: 'Copied',
+    notCopiedText:
+      "You haven't copied the password for {email} yet. If you close now you can't see it again and will have to reset it.",
+    closeWithoutCopying: 'Close without copying',
+    backToPassword: 'Back to password',
     done: 'Done',
   },
   roles: {
