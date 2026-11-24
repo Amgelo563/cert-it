@@ -8,8 +8,8 @@ import { FontReader } from '../../font/FontReader';
 import type { StoredFont } from './StoredFont';
 
 type FontStoreOptions = {
-  /** Folder the files are saved in, absolute or relative to the working directory. */
-  directory: string;
+  /** Folder the files are saved in. */
+  directory: ManagedDirectory;
 };
 
 /** Saves font files by their SHA-256, so each file is kept once. */
@@ -19,7 +19,14 @@ export class FontStore {
   protected readonly directory: ManagedDirectory;
 
   constructor(options: FontStoreOptions) {
-    this.directory = new ManagedDirectory({ root: options.directory });
+    this.directory = options.directory;
+  }
+
+  /** Creates a store in the given folder, absolute or relative to the working directory. */
+  public static create(options: { directory: string }): FontStore {
+    return new FontStore({
+      directory: new ManagedDirectory({ root: options.directory }),
+    });
   }
 
   /**

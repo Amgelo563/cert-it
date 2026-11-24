@@ -24,7 +24,7 @@ let store: FontStore;
 beforeEach(() => {
   parent = mkdtempSync(join(tmpdir(), 'fonts-store-'));
   directory = join(parent, 'fonts');
-  store = new FontStore({ directory });
+  store = FontStore.create({ directory });
   store.start();
 });
 

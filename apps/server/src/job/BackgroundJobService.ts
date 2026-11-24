@@ -3,7 +3,7 @@ import {
   type JobId,
   type JobNotFailedError,
   JobRunner,
-  SqliteJobService,
+  SqliteJobDispatcher,
 } from '@cert-it/jobs';
 import type { Result } from 'better-result';
 import type { Config } from '../config/schema/ConfigSchema';
@@ -34,7 +34,8 @@ export class BackgroundJobService {
 
   protected readonly execArgv: readonly string[];
 
-  protected jobs: SqliteJobService<Job, typeof jobTable, NewJob> | null = null;
+  protected jobs: SqliteJobDispatcher<Job, typeof jobTable, NewJob> | null =
+    null;
 
   constructor(options: BackgroundJobServiceOptions) {
     this.database = options.database;
@@ -45,10 +46,10 @@ export class BackgroundJobService {
   }
 
   public static create(options: {
-    config: Config;
+    config: Pick<Config, 'site'>;
     database: DatabaseService;
     dataDirectory: DataDirectoryService;
-    injections?: Partial<BackgroundJobServiceOptions>;
+    injections?: Partial<Omit<BackgroundJobServiceOptions, 'database'>>;
   }): BackgroundJobService {
     const { config, database, dataDirectory, injections } = options;
 
@@ -66,7 +67,7 @@ export class BackgroundJobService {
 
   /** Marks jobs a restart cut off as failed, then starts any pending ones. Call it once the database is open. */
   public start(): void {
-    this.jobs = new SqliteJobService<Job, typeof jobTable, NewJob>({
+    this.jobs = new SqliteJobDispatcher<Job, typeof jobTable, NewJob>({
       db: this.database.getExecutor(),
       table: jobTable,
       toModel: (row) => row as Job,
@@ -106,7 +107,7 @@ export class BackgroundJobService {
     return this.jobs?.isBusy() ?? false;
   }
 
-  protected getJobs(): SqliteJobService<Job, typeof jobTable, NewJob> {
+  protected getJobs(): SqliteJobDispatcher<Job, typeof jobTable, NewJob> {
     if (!this.jobs) throw new Error('BackgroundJobService is not started.');
     return this.jobs;
   }

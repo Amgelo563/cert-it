@@ -24,10 +24,16 @@ export class BasePdfChecker {
 
   protected readonly timeoutMs: number;
 
-  constructor(options: BasePdfCheckerOptions = {}) {
+  constructor(options: BasePdfCheckerOptions) {
     this.workerUrl = options.workerUrl ?? BasePdfChecker.defaultWorkerUrl();
     this.maxHeapMb = options.maxHeapMb ?? BasePdfChecker.DefaultMaxHeapMb;
     this.timeoutMs = options.timeoutMs ?? BasePdfChecker.DefaultTimeoutMs;
+  }
+
+  public static create(options?: {
+    injections?: Partial<BasePdfCheckerOptions>;
+  }): BasePdfChecker {
+    return new BasePdfChecker({ ...options?.injections });
   }
 
   /**

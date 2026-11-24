@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vite-plus/test';
 import { IssuerKeyService } from '../../../../src/credential/key/IssuerKeyService';
 import { StartupError } from '../../../../src/error/StartupError';
+import { MockLogger } from '../../../log/mocks/MockLogger';
 
 let parent: string;
 let path: string;
@@ -30,7 +31,7 @@ function createService(createMissing: boolean): IssuerKeyService {
   return new IssuerKeyService({
     path,
     createMissing,
-    log: (line) => lines.push(line),
+    logger: new MockLogger({ lines }),
   });
 }
 

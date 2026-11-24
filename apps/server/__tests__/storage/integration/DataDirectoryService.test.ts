@@ -28,7 +28,7 @@ afterEach(() => {
 
 describe('DataDirectoryService (start)', () => {
   test('GIVEN a missing directory WHEN starting THEN creates it with its folders', () => {
-    new DataDirectoryService({ root }).start();
+    DataDirectoryService.create({ root }).start();
 
     for (const folder of ['fonts', 'templates', 'certificates']) {
       expect(existsSync(join(root, folder))).toBe(true);
@@ -36,7 +36,7 @@ describe('DataDirectoryService (start)', () => {
   });
 
   test('GIVEN a directory with files WHEN starting again THEN keeps them', () => {
-    const directory = new DataDirectoryService({ root });
+    const directory = DataDirectoryService.create({ root });
     directory.start();
     const font = directory.getFontPath('abc.ttf');
     writeFileSync(font, 'font');
@@ -51,7 +51,7 @@ describe('DataDirectoryService (start)', () => {
     writeFileSync(file, '');
 
     expect(() =>
-      new DataDirectoryService({ root: join(file, 'data') }).start(),
+      DataDirectoryService.create({ root: join(file, 'data') }).start(),
     ).toThrow(/EEXIST|ENOTDIR/);
   });
 });
@@ -64,13 +64,13 @@ describe('DataDirectoryService (start, temporary files)', () => {
     writeFileSync(pdf, 'pdf');
     writeFileSync(`${pdf}.0b6f1c3e.tmp`, 'partial');
 
-    new DataDirectoryService({ root }).start();
+    DataDirectoryService.create({ root }).start();
 
     expect(readdirSync(certificates)).toEqual(['ABCD-EFGH-JK.pdf']);
   });
 
   test('GIVEN an upload left by a crash WHEN starting THEN removes it', () => {
-    const directory = new DataDirectoryService({ root });
+    const directory = DataDirectoryService.create({ root });
     directory.start();
     writeFileSync(directory.createUploadPath(), 'partial');
 
@@ -82,7 +82,7 @@ describe('DataDirectoryService (start, temporary files)', () => {
 
 describe('DataDirectoryService (moveFile)', () => {
   test('GIVEN an upload WHEN moving it to a missing folder THEN creates the folder and moves the file', async () => {
-    const directory = new DataDirectoryService({ root });
+    const directory = DataDirectoryService.create({ root });
     directory.start();
     const upload = directory.createUploadPath();
     writeFileSync(upload, 'pdf');
@@ -99,7 +99,7 @@ describe('DataDirectoryService (moveFile)', () => {
   });
 
   test('GIVEN a target outside the directory WHEN moving THEN throws', async () => {
-    const directory = new DataDirectoryService({ root });
+    const directory = DataDirectoryService.create({ root });
 
     await expect(directory.moveFile('x', '../outside.pdf')).rejects.toThrow(
       'outside',
@@ -109,7 +109,7 @@ describe('DataDirectoryService (moveFile)', () => {
 
 describe('DataDirectoryService (writeFile)', () => {
   test('GIVEN a file in a missing folder WHEN writing THEN creates the folder and the file', async () => {
-    const directory = new DataDirectoryService({ root });
+    const directory = DataDirectoryService.create({ root });
     const path = directory.getTemplatePath(3 as CourseId, 'abc');
 
     await directory.writeFile(path, 'pdf');
@@ -118,7 +118,7 @@ describe('DataDirectoryService (writeFile)', () => {
   });
 
   test('GIVEN an existing file WHEN writing THEN replaces it and leaves no temporary file', async () => {
-    const directory = new DataDirectoryService({ root });
+    const directory = DataDirectoryService.create({ root });
     directory.start();
     const path = directory.getFontPath('abc.ttf');
     writeFileSync(path, 'old');
@@ -130,7 +130,7 @@ describe('DataDirectoryService (writeFile)', () => {
   });
 
   test('GIVEN content that fails mid-write WHEN writing THEN keeps the old file and leaves no temporary file', async () => {
-    const directory = new DataDirectoryService({ root });
+    const directory = DataDirectoryService.create({ root });
     directory.start();
     const path = directory.getFontPath('abc.ttf');
     writeFileSync(path, 'old');
@@ -151,7 +151,7 @@ describe('DataDirectoryService (writeFile)', () => {
 
 describe('DataDirectoryService (paths)', () => {
   test('GIVEN a relative root WHEN getting paths THEN resolves them from the working directory', () => {
-    const directory = new DataDirectoryService({ root: 'data' });
+    const directory = DataDirectoryService.create({ root: 'data' });
 
     expect(directory.getDatabasePath()).toBe(
       join(process.cwd(), 'data', 'app.db'),
@@ -159,7 +159,7 @@ describe('DataDirectoryService (paths)', () => {
   });
 
   test('GIVEN a course and hash WHEN getting file paths THEN follows the data directory layout', () => {
-    const directory = new DataDirectoryService({ root });
+    const directory = DataDirectoryService.create({ root });
     const courseId = 7 as CourseId;
 
     expect(directory.getFontPath('abc.ttf')).toBe(

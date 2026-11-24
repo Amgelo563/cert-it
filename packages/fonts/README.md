@@ -87,7 +87,7 @@ Vietnamese ones may not, so run the glyph check on the names you'll print.
 ```ts
 import { FontStore } from '@cert-it/fonts/node';
 
-const store = new FontStore({ directory: 'data/fonts' });
+const store = FontStore.create({ directory: 'data/fonts' });
 store.start(); // creates the folder and cleans up after interrupted saves
 
 const result = await store.save(bytes);

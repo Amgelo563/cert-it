@@ -1,6 +1,6 @@
 import { GlyphChecker } from '@cert-it/fonts';
 import type { TemplateContent, TemplateTextFieldType } from '@cert-it/shared';
-import { listTextFields } from '../listTextFields';
+import { listTextFields } from '../TemplateTextField';
 
 /** A text field with characters its font can't draw. */
 export type MissingGlyphs = {
@@ -17,12 +17,16 @@ type CheckedField = {
   checker: GlyphChecker;
 };
 
+type TemplateGlyphCheckerOptions = {
+  fields: readonly CheckedField[];
+};
+
 /** Finds the characters of field values that a template's fonts can't draw, which pdfme would print as blanks. */
 export class TemplateGlyphChecker {
   protected readonly fields: readonly CheckedField[];
 
-  constructor(fields: readonly CheckedField[]) {
-    this.fields = fields;
+  constructor(options: TemplateGlyphCheckerOptions) {
+    this.fields = options.fields;
   }
 
   /**
@@ -48,7 +52,7 @@ export class TemplateGlyphChecker {
       fields.push({ name: field.name, type: field.type, checker });
     }
 
-    return new TemplateGlyphChecker(fields);
+    return new TemplateGlyphChecker({ fields });
   }
 
   /** Returns the fields whose value has characters their font can't draw; empty when every value can be printed. */

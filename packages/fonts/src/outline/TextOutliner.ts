@@ -4,6 +4,10 @@ import type { InvalidFontError } from '../font/errors/InvalidFontError';
 import { FontReader } from '../font/FontReader';
 import type { TextOutline } from './TextOutline';
 
+type TextOutlinerOptions = {
+  font: Font;
+};
+
 /** Draws text in a font as SVG path data, to preview the font without loading it as a web font. Characters the font lacks are drawn as its missing-glyph box. */
 export class TextOutliner {
   /** Longest text it draws, as a preview is one short line. */
@@ -13,8 +17,8 @@ export class TextOutliner {
 
   protected readonly font: Font;
 
-  constructor(font: Font) {
-    this.font = font;
+  constructor(options: TextOutlinerOptions) {
+    this.font = options.font;
   }
 
   /** Returns the outliner for the font in the given bytes. */
@@ -22,7 +26,7 @@ export class TextOutliner {
     bytes: Uint8Array,
   ): Result<TextOutliner, InvalidFontError> {
     return FontReader.Instance.parse(bytes).map(
-      (font) => new TextOutliner(font),
+      (font) => new TextOutliner({ font }),
     );
   }
 

@@ -1,9 +1,9 @@
 import type { SiteUrl } from '@cert-it/hono';
-import { CredentialService } from '../../../src/credential/CredentialService';
+import { CredentialRoutes } from '../../../src/credential/CredentialRoutes';
 import { CredentialSigner } from '../../../src/credential/CredentialSigner';
 import { OpenBadgeBuilder } from '../../../src/credential/OpenBadgeBuilder';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
-import { MessagesService } from '../../../src/i18n/MessagesService';
+import { MessageCatalog } from '../../../src/i18n/MessageCatalog';
 import { StubIssuerKeyService } from './StubIssuerKeyService';
 
 /** The org name the credentials name as issuer. */
@@ -17,13 +17,13 @@ export function createTestCredentials(
   keys: StubIssuerKeyService;
   builder: OpenBadgeBuilder;
   signer: CredentialSigner;
-  service: CredentialService;
+  service: CredentialRoutes;
 } {
   const keys = new StubIssuerKeyService();
   const builder = new OpenBadgeBuilder({
     siteUrl,
     orgName: CredentialOrgName,
-    messages: new MessagesService(),
+    messages: new MessageCatalog(),
   });
   const signer = new CredentialSigner({ keys, builder });
 
@@ -31,6 +31,6 @@ export function createTestCredentials(
     keys,
     builder,
     signer,
-    service: new CredentialService({ database, signer, builder }),
+    service: new CredentialRoutes({ database, signer, builder }),
   };
 }

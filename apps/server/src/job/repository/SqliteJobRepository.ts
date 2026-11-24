@@ -22,7 +22,7 @@ export class SqliteJobRepository
     });
   }
 
-  // the type column decides the payload's shape, which only JobService writes
+  // the type column decides the payload's shape, which only BackgroundJobService writes
   protected toModel(row: typeof jobTable.$inferSelect): Job {
     return row as Job;
   }

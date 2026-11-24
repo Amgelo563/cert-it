@@ -5,6 +5,7 @@ import {
   type SqliteExecutor,
   type UnitOfWork,
 } from '@cert-it/data';
+import { Result } from 'better-result';
 import { SqliteAuditLogRepository } from '../audit/repository/SqliteAuditLogRepository';
 import { SqliteSessionRepository } from '../auth/session/repository/SqliteSessionRepository';
 import { SqliteCertificateRepository } from '../certificate/repository/SqliteCertificateRepository';
@@ -17,6 +18,7 @@ import { SqliteTemplateVersionRepository } from '../template/repository/SqliteTe
 import { SqliteUserRepository } from '../user/repository/SqliteUserRepository';
 import { DatabaseNotStartedError } from './errors/DatabaseNotStartedError';
 import type { Repositories } from './Repositories';
+import type { DataDirectoryService } from '../storage/DataDirectoryService';
 
 type DatabaseServiceOptions = {
   /** Path of the database file, or `:memory:`. */
@@ -51,6 +53,18 @@ export class DatabaseService {
     this.path = options.path;
     this.migrationsFolder = options.migrationsFolder ?? null;
     this.migrate = options.migrate ?? true;
+  }
+
+  public static create(options: {
+    dataDirectory: DataDirectoryService;
+    injections?: Partial<DatabaseServiceOptions>;
+  }): DatabaseService {
+    const { dataDirectory, injections } = options;
+
+    return new DatabaseService({
+      ...injections,
+      path: injections?.path ?? dataDirectory.getDatabasePath(),
+    });
   }
 
   /**
@@ -116,6 +130,17 @@ export class DatabaseService {
    */
   public getUnitOfWork(): UnitOfWork<Repositories> {
     return this.getDatabase().getUnitOfWork();
+  }
+
+  /**
+   * Runs the work in one transaction, rolling it back if it throws. Writes made through {@link DatabaseService.getRepositories} and other objects on this connection join it, and so does a nested call.
+   *
+   * @throws {DatabaseNotStartedError} If the database isn't open.
+   */
+  public atomically<T>(work: () => T): T {
+    return this.getUnitOfWork()
+      .transaction(() => Result.ok(work()))
+      .unwrap();
   }
 
   /**

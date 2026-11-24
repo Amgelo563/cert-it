@@ -18,7 +18,7 @@ let repositories: Repositories;
 let seeder: MockSeeder;
 let course: Course;
 let user: User;
-// jobs are added through JobService in the app; its queue stands in for it here
+// jobs are added through BackgroundJobService in the app; its queue stands in for it here
 let queue: SqliteJobQueue<Job, typeof jobTable, NewJob>;
 
 beforeEach(() => {

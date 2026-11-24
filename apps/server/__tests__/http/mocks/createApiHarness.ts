@@ -9,12 +9,12 @@ import { LocaleEnum, type Role, RoleEnum } from '@cert-it/shared';
 import { AdminPanelService } from '../../../src/admin/AdminPanelService';
 import { PasswordHasher } from '../../../src/auth/password/PasswordHasher';
 import { AccelFileServer } from '../../../src/certificate/file/AccelFileServer';
-import { CertificateFileService } from '../../../src/certificate/file/CertificateFileService';
+import { CertificateFileRoutes } from '../../../src/certificate/file/CertificateFileRoutes';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { ApiService } from '../../../src/http/api/ApiService';
 import { HttpService } from '../../../src/http/HttpService';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
-import { MessagesService } from '../../../src/i18n/MessagesService';
+import { MessageCatalog } from '../../../src/i18n/MessageCatalog';
 import type { User } from '../../../src/user/User';
 import { normalizeEmail } from '../../../src/util/email/NormalizedEmail';
 import { createAuthOptions } from '../../auth/mocks/createAuthOptions';
@@ -23,6 +23,7 @@ import {
   type LinkPreviewSettings,
 } from '../../page/mocks/createPublicPageOptions';
 import { sessionCookie } from '../../auth/mocks/createAuthApp';
+import { MockLogger } from '../../log/mocks/MockLogger';
 
 export type ApiRequestInit = {
   /** Sent as JSON, except text and bytes, which are sent as they are. */
@@ -60,15 +61,16 @@ export function createApiHarness(
     }),
     database,
     locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
-    messages: new MessagesService(),
+    messages: new MessageCatalog(),
     adminPanel: new AdminPanelService({
       directory: '.',
       siteUrl,
       defaultLocale: LocaleEnum.En,
     }),
-    certificateFiles: new CertificateFileService({
+    certificateFiles: new CertificateFileRoutes({
       database,
       fileServer: new AccelFileServer({ siteUrl }),
+      logger: new MockLogger(),
     }),
     ...createPublicPageOptions(
       database,
@@ -77,9 +79,9 @@ export function createApiHarness(
       options.linkedinOrgId,
     ),
     api,
-    compressor: new ResponseCompressor(),
-    revalidator: new ResponseRevalidator(),
-    log: () => {},
+    compressor: ResponseCompressor.create(),
+    revalidator: ResponseRevalidator.create(),
+    logger: new MockLogger(),
   });
 
   /** Sends a request to a path under /certs/api. */

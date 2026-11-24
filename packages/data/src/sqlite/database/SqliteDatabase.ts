@@ -13,7 +13,8 @@ import { SqliteUnitOfWork } from '../transaction/SqliteUnitOfWork';
 type SqliteDatabaseOptions<Repositories> = {
   client: BetterSqlite3.Database;
   db: BetterSQLite3Database;
-  createRepositories: SqliteRepositoriesFactory<Repositories>;
+  repositories: Repositories;
+  unitOfWork: UnitOfWork<Repositories>;
   /** Folder with the drizzle-kit migrations that {@link SqliteDatabase.start} applies. Without it, no migrations are applied. */
   migrationsFolder?: string;
   /** @default SqliteDatabase.DefaultBusyTimeoutMs */
@@ -22,10 +23,11 @@ type SqliteDatabaseOptions<Repositories> = {
 
 type SqliteDatabaseCreateOptions<Repositories> = Omit<
   SqliteDatabaseOptions<Repositories>,
-  'client' | 'db'
+  'client' | 'db' | 'repositories' | 'unitOfWork'
 > & {
   /** Path of the database file, or `:memory:`. */
   path: string;
+  createRepositories: SqliteRepositoriesFactory<Repositories>;
 };
 
 /** An object that owns a SQLite connection and gives access to its repositories. */
@@ -47,11 +49,8 @@ export class SqliteDatabase<Repositories> {
   constructor(options: SqliteDatabaseOptions<Repositories>) {
     this.client = options.client;
     this.db = options.db;
-    this.repositories = options.createRepositories(options.db);
-    this.unitOfWork = new SqliteUnitOfWork({
-      db: options.db,
-      createRepositories: options.createRepositories,
-    });
+    this.repositories = options.repositories;
+    this.unitOfWork = options.unitOfWork;
     this.migrationsFolder = options.migrationsFolder ?? null;
     this.busyTimeoutMs =
       options.busyTimeoutMs ?? SqliteDatabase.DefaultBusyTimeoutMs;
@@ -61,10 +60,17 @@ export class SqliteDatabase<Repositories> {
   public static create<Repositories>(
     options: SqliteDatabaseCreateOptions<Repositories>,
   ): SqliteDatabase<Repositories> {
-    const { path, ...rest } = options;
+    const { path, createRepositories, ...rest } = options;
     const client = new BetterSqlite3(path);
+    const db = drizzle({ client });
 
-    return new SqliteDatabase({ ...rest, client, db: drizzle({ client }) });
+    return new SqliteDatabase({
+      ...rest,
+      client,
+      db,
+      repositories: createRepositories(db),
+      unitOfWork: new SqliteUnitOfWork({ db, createRepositories }),
+    });
   }
 
   /**

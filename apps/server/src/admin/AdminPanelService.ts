@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { SiteUrl } from '@cert-it/hono';
+import type { SiteUrl } from '@cert-it/hono';
 import type { Locale } from '@cert-it/shared';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { type Context, Hono, type MiddlewareHandler } from 'hono';
@@ -54,15 +54,15 @@ export class AdminPanelService {
   }
 
   public static create(options: {
-    config: Config;
+    config: Pick<Config, 'site'>;
+    siteUrl: SiteUrl;
     injections?: Partial<AdminPanelServiceOptions>;
   }): AdminPanelService {
-    const { config, injections } = options;
+    const { config, siteUrl, injections } = options;
 
     return new AdminPanelService({
       directory: injections?.directory ?? AdminPanelService.DefaultDirectory,
-      siteUrl:
-        injections?.siteUrl ?? new SiteUrl({ baseUrl: config.site.baseUrl }),
+      siteUrl,
       defaultLocale: injections?.defaultLocale ?? config.site.defaultLocale,
     });
   }

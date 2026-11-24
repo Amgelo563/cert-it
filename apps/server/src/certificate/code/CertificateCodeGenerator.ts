@@ -16,8 +16,14 @@ export class CertificateCodeGenerator {
 
   protected readonly random: (size: number) => Uint8Array;
 
-  constructor(options: CertificateCodeGeneratorOptions = {}) {
+  constructor(options: CertificateCodeGeneratorOptions) {
     this.random = options.random ?? randomBytes;
+  }
+
+  public static create(options?: {
+    injections?: Partial<CertificateCodeGeneratorOptions>;
+  }): CertificateCodeGenerator {
+    return new CertificateCodeGenerator({ ...options?.injections });
   }
 
   /** Returns a new random code. It isn't checked against stored codes, so callers rely on the unique index. */

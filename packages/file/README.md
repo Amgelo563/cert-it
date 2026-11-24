@@ -28,7 +28,7 @@ const SettingsSchema = strictObject({
 
 const settings = new FileProcessor({
   io: YamlIO.Instance,
-  validator: new ZodValidator(SettingsSchema),
+  validator: new ZodValidator({ schema: SettingsSchema }),
   path: YamlIO.buildName('settings'), // settings.yml
 });
 ```

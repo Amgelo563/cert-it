@@ -16,8 +16,14 @@ export class ResponseRevalidator {
 
   protected readonly skip: (response: Response) => boolean;
 
-  constructor(options: ResponseRevalidatorOptions = {}) {
+  constructor(options: ResponseRevalidatorOptions) {
     this.skip = options.skip ?? (() => false);
+  }
+
+  public static create(options?: {
+    injections?: Partial<ResponseRevalidatorOptions>;
+  }): ResponseRevalidator {
+    return new ResponseRevalidator({ ...options?.injections });
   }
 
   /** Returns the middleware. */

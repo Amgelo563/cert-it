@@ -5,6 +5,8 @@ import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { DatabaseService } from '../../database/DatabaseService';
 import type { User, UserId } from '../../user/User';
 import type { Session } from './Session';
+import type { Clock } from '../../clock/Clock';
+import { SystemClock } from '../../clock/SystemClock';
 
 type SessionServiceOptions = {
   database: DatabaseService;
@@ -13,8 +15,7 @@ type SessionServiceOptions = {
   lifetimeMs?: number;
   /** @default 30 minutes */
   idleTimeoutMs?: number;
-  /** @default Date.now */
-  now?: () => number;
+  clock: Clock;
 };
 
 /** A session together with its user, for a request that's logged in. */
@@ -46,7 +47,7 @@ export class SessionService {
 
   protected readonly idleTimeoutMs: number;
 
-  protected readonly now: () => number;
+  protected readonly clock: Clock;
 
   protected cleanupTimer: NodeJS.Timeout | null = null;
 
@@ -56,7 +57,22 @@ export class SessionService {
     this.lifetimeMs = options.lifetimeMs ?? SessionService.DefaultLifetimeMs;
     this.idleTimeoutMs =
       options.idleTimeoutMs ?? SessionService.DefaultIdleTimeoutMs;
-    this.now = options.now ?? Date.now;
+    this.clock = options.clock;
+  }
+
+  public static create(options: {
+    siteUrl: SiteUrl;
+    database: DatabaseService;
+    injections?: Partial<Omit<SessionServiceOptions, 'database'>>;
+  }): SessionService {
+    const { siteUrl, database, injections } = options;
+
+    return new SessionService({
+      ...injections,
+      database,
+      siteUrl,
+      clock: injections?.clock ?? SystemClock.Instance,
+    });
   }
 
   /** Deletes expired sessions now and periodically after. */
@@ -75,9 +91,9 @@ export class SessionService {
   }
 
   /** Starts a session for the user and sets its cookie. */
-  public create(c: Context, userId: UserId): Session {
+  public open(c: Context, userId: UserId): Session {
     const token = randomBytes(SessionService.TokenBytes).toString('base64url');
-    const now = this.now();
+    const now = this.clock.now().getTime();
     const session = this.database
       .getRepositories()
       .sessions.create({
@@ -108,7 +124,7 @@ export class SessionService {
     const session = sessions.findByTokenHash(SessionService.hashToken(token));
     if (!session) return null;
 
-    const now = this.now();
+    const now = this.clock.now().getTime();
     const user = users.findById(session.userId);
     if (session.expiresAt.getTime() <= now || !user?.active) {
       sessions.delete(session.id);
@@ -141,7 +157,7 @@ export class SessionService {
   public deleteExpired(): number {
     return this.database
       .getRepositories()
-      .sessions.deleteExpired(new Date(this.now()));
+      .sessions.deleteExpired(new Date(this.clock.now().getTime()));
   }
 
   protected static hashToken(token: string): string {

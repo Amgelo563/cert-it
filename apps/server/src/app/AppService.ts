@@ -1,26 +1,26 @@
 import { SiteUrl } from '@cert-it/hono';
 import { AdminPanelService } from '../admin/AdminPanelService';
-import { AuditLogService } from '../audit/AuditLogService';
+import { AuditLog } from '../audit/AuditLog';
 import { AuthGuard } from '../auth/AuthGuard';
 import { BackupService } from '../backup/BackupService';
 import { PasswordHasher } from '../auth/password/PasswordHasher';
-import { CertificateRegenerator } from '../certificate/regenerate/CertificateRegenerator';
+import { CertificateRegenerator } from '../certificate/job/CertificateRegenerator';
 import { SessionService } from '../auth/session/SessionService';
 import type { Config } from '../config/schema/ConfigSchema';
-import { CredentialService } from '../credential/CredentialService';
+import { CredentialRoutes } from '../credential/CredentialRoutes';
 import { CredentialSigner } from '../credential/CredentialSigner';
 import { IssuerKeyService } from '../credential/key/IssuerKeyService';
-import { OpenBadgeBuilder } from '../credential/OpenBadgeBuilder';
 import { DatabaseService } from '../database/DatabaseService';
 import { ApiService } from '../http/api/ApiService';
 import { HttpService } from '../http/HttpService';
-import { MessagesService } from '../i18n/MessagesService';
 import { BackgroundJobService } from '../job/BackgroundJobService';
 import { PublicAssetsService } from '../page/PublicAssetsService';
 import { LinkPreviewService } from '../page/preview/LinkPreviewService';
 import { BaseUrlService } from '../site/BaseUrlService';
 import { DataDirectoryService } from '../storage/DataDirectoryService';
 import { StorageCleanupService } from '../storage/StorageCleanupService';
+import { ConsoleLogger } from '../log/ConsoleLogger';
+import type { Logger } from '../log/Logger';
 
 type AppServiceOptions = {
   dataDirectory: DataDirectoryService;
@@ -38,15 +38,11 @@ type AppServiceOptions = {
   publicAssets: PublicAssetsService;
   linkPreviews: LinkPreviewService;
   http: HttpService;
+  logger: Logger;
 };
 
-/** Services that can replace the defaults, such as an in-memory database. */
-export type AppServiceInjections = Partial<
-  Pick<
-    AppServiceOptions,
-    'dataDirectory' | 'database' | 'passwords' | 'publicAssets'
-  >
->;
+/** Services that replace the defaults, such as an in-memory database. */
+export type AppServiceInjections = Partial<AppServiceOptions>;
 
 /** The whole server: its services, started and stopped in order. */
 export class AppService {
@@ -78,6 +74,8 @@ export class AppService {
 
   protected readonly http: HttpService;
 
+  protected readonly logger: Logger;
+
   constructor(options: AppServiceOptions) {
     this.dataDirectory = options.dataDirectory;
     this.database = options.database;
@@ -93,10 +91,13 @@ export class AppService {
     this.publicAssets = options.publicAssets;
     this.linkPreviews = options.linkPreviews;
     this.http = options.http;
+    this.logger = options.logger;
   }
 
   public static create(options: {
     config: Config;
+    /** @default built from site.base_url */
+    siteUrl?: SiteUrl;
     injections?: AppServiceInjections;
   }): AppService {
     return new AppService(AppService.createServices(options));
@@ -105,86 +106,123 @@ export class AppService {
   // wires the services together, for create and subclasses
   protected static createServices(options: {
     config: Config;
+    /** @default built from site.base_url */
+    siteUrl?: SiteUrl;
     injections?: AppServiceInjections;
   }): AppServiceOptions {
     const { config, injections } = options;
+    const logger = injections?.logger ?? ConsoleLogger.Instance;
+    // one for the whole app
+    const siteUrl =
+      options.siteUrl ?? new SiteUrl({ baseUrl: config.site.baseUrl });
     const dataDirectory =
       injections?.dataDirectory
-      ?? new DataDirectoryService({ root: config.server.dataDir });
+      ?? DataDirectoryService.create({ root: config.server.dataDir });
     const database =
-      injections?.database
-      ?? new DatabaseService({ path: dataDirectory.getDatabasePath() });
+      injections?.database ?? DatabaseService.create({ dataDirectory });
     const passwords = injections?.passwords ?? new PasswordHasher();
-    const siteUrl = new SiteUrl({ baseUrl: config.site.baseUrl });
-    const sessions = new SessionService({ database, siteUrl });
-    const issuerKeys = new IssuerKeyService({
-      path: dataDirectory.getIssuerKeyPath(),
-      createMissing: true,
-    });
-    const badges = new OpenBadgeBuilder({
+    const sessions =
+      injections?.sessions ?? SessionService.create({ siteUrl, database });
+    const issuerKeys =
+      injections?.issuerKeys
+      ?? IssuerKeyService.create({
+        dataDirectory,
+        createMissing: true,
+        injections: { logger },
+      });
+    const signer = CredentialSigner.create({
+      keys: issuerKeys,
       siteUrl,
       orgName: config.site.orgName,
-      messages: new MessagesService(),
     });
-    const signer = new CredentialSigner({ keys: issuerKeys, builder: badges });
-    const jobs = BackgroundJobService.create({
-      config,
+    const jobs =
+      injections?.jobs
+      ?? BackgroundJobService.create({ config, database, dataDirectory });
+    const auditLog = AuditLog.create({ database });
+    const regenerator = CertificateRegenerator.create({
       database,
-      dataDirectory,
+      auditLog,
+      jobs,
     });
-    const guard = new AuthGuard({ sessions });
-    const auditLog = new AuditLogService({ database, guard });
-    const api = ApiService.create({
-      config,
-      database,
-      dataDirectory,
-      sessions,
-      backgroundJobs: jobs,
-      credentials: signer,
-      injections: { passwords, guard, auditLog },
-    });
-    const adminPanel = AdminPanelService.create({ config });
-    const publicAssets =
-      injections?.publicAssets ?? PublicAssetsService.create({ config });
-    const linkPreviews = LinkPreviewService.create({ config, dataDirectory });
-    const http = HttpService.create({
-      config,
-      database,
-      dataDirectory,
-      api,
-      adminPanel,
-      publicAssets,
-      linkPreviews,
-      credentials: new CredentialService({
+    const api =
+      injections?.api
+      ?? ApiService.create({
+        config,
+        siteUrl,
         database,
-        signer,
-        builder: badges,
-      }),
-    });
+        dataDirectory,
+        sessions,
+        backgroundJobs: jobs,
+        credentials: signer,
+        injections: {
+          passwords,
+          guard: AuthGuard.create({ sessions }),
+          auditLog,
+          regenerator,
+          logger,
+        },
+      });
+    const adminPanel =
+      injections?.adminPanel ?? AdminPanelService.create({ config, siteUrl });
+    const publicAssets =
+      injections?.publicAssets ?? PublicAssetsService.create({ siteUrl });
+    const linkPreviews =
+      injections?.linkPreviews
+      ?? LinkPreviewService.create({ config, siteUrl, dataDirectory });
 
     return {
       dataDirectory,
       database,
-      baseUrls: new BaseUrlService({
-        baseUrl: config.site.baseUrl,
-        previousBaseUrl: config.site.previousBaseUrl ?? null,
-        database,
-        dataDirectory,
-        regenerator: CertificateRegenerator.create({ auditLog, jobs }),
-      }),
+      baseUrls:
+        injections?.baseUrls
+        ?? BaseUrlService.create({
+          config,
+          database,
+          dataDirectory,
+          regenerator,
+          injections: { logger },
+        }),
       issuerKeys,
       passwords,
       sessions,
-      storageCleanup: StorageCleanupService.create({ database, dataDirectory }),
-      backups: config.backup.enabled
-        ? BackupService.create({ config, database, dataDirectory })
-        : null,
+      storageCleanup:
+        injections?.storageCleanup
+        ?? StorageCleanupService.create({
+          database,
+          dataDirectory,
+          injections: { logger },
+        }),
+      backups:
+        injections?.backups !== undefined
+          ? injections.backups
+          : config.backup.enabled
+            ? BackupService.create({
+                config,
+                database,
+                dataDirectory,
+                injections: { logger },
+              })
+            : null,
       jobs,
       api,
       adminPanel,
       publicAssets,
       linkPreviews,
-      http,
+      http:
+        injections?.http
+        ?? HttpService.create({
+          config,
+          siteUrl,
+          database,
+          dataDirectory,
+          api,
+          adminPanel,
+          publicAssets,
+          linkPreviews,
+          credentials: CredentialRoutes.create({ database, signer }),
+          injections: { logger },
+        }),
+      logger,
     };
   }
 
@@ -193,7 +231,7 @@ export class AppService {
     try {
       await this.start();
     } catch (error) {
-      console.error(error instanceof Error ? error.message : String(error));
+      this.logger.error(error instanceof Error ? error.message : String(error));
       process.exit(1);
     }
 
@@ -202,7 +240,7 @@ export class AppService {
         this.stop().then(
           () => process.exit(0),
           (error: unknown) => {
-            console.error("Couldn't shut down cleanly:", error);
+            this.logger.error("Couldn't shut down cleanly:", error);
             process.exit(1);
           },
         );

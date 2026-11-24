@@ -10,7 +10,7 @@ import {
   type TemplateContent,
   TemplateFieldTypeEnum,
 } from '@cert-it/shared';
-import type { CertificateJobHandlerOptions } from '../../../src/certificate/issue/AbstractCertificateJobHandler';
+import type { CertificateJobHandlerOptions } from '../../../src/certificate/job/AbstractCertificateJobHandler';
 import type { Course } from '../../../src/course/Course';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import type { Job } from '../../../src/job/Job';
@@ -44,7 +44,7 @@ export class CertificateJobFixture {
 
   constructor() {
     this.database = createTestDatabase();
-    this.dataDirectory = new DataDirectoryService({
+    this.dataDirectory = DataDirectoryService.create({
       root: mkdtempSync(join(tmpdir(), 'cert-it-jobs-')),
     });
     this.dataDirectory.start();

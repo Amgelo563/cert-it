@@ -1,10 +1,10 @@
 import { type Locale, LocaleEnum } from '@cert-it/shared';
-import type { MessagesService } from '../i18n/MessagesService';
+import type { MessageCatalog } from '../i18n/MessageCatalog';
 
 type LanguageSwitcherProps = {
   /** Language the page is shown in. */
   locale: Locale;
-  messages: MessagesService;
+  messages: MessageCatalog;
 };
 
 /** Menu like the admin panel's, linking to the current page in each language. Opens without JavaScript; the lang query saves the choice. */

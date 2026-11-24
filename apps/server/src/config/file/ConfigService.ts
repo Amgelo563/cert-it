@@ -1,13 +1,25 @@
 import { ZodYamlFileProcessor } from '@cert-it/file';
 import { type Config, ConfigSchema } from '../schema/ConfigSchema';
 
+type ConfigServiceOptions = {
+  /** Path of the config file, without its extension. */
+  path: string;
+};
+
+/** Reads config.yml and validates it against the config schema. */
 export class ConfigService extends ZodYamlFileProcessor<typeof ConfigSchema> {
-  protected constructor() {
-    super({ schema: ConfigSchema, path: 'config/config', camelizeKeys: true });
+  protected static readonly DefaultPath = 'config/config';
+
+  constructor(options: ConfigServiceOptions) {
+    super({ schema: ConfigSchema, path: options.path, camelizeKeys: true });
   }
 
-  public static create(): ConfigService {
-    return new ConfigService();
+  public static create(options?: {
+    injections?: Partial<ConfigServiceOptions>;
+  }): ConfigService {
+    return new ConfigService({
+      path: options?.injections?.path ?? ConfigService.DefaultPath,
+    });
   }
 
   /** Reads and validates the config file, or prints what's wrong with it and exits the process. */

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vite-plus/test';
 import type { Certificate } from '../../../src/certificate/Certificate';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { StartupError } from '../../../src/error/StartupError';
-import { MessagesService } from '../../../src/i18n/MessagesService';
+import { MessageCatalog } from '../../../src/i18n/MessageCatalog';
 import { LinkPreviewService } from '../../../src/page/preview/LinkPreviewService';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
 import { MockSeeder } from '../../database/mocks/MockSeeder';
@@ -241,7 +241,7 @@ describe('LinkPreviewService (image)', () => {
     const service = new LinkPreviewService({
       siteUrl: new SiteUrl({ baseUrl: `${ApiHarnessOrigin}/certs` }),
       dataDirectory: directories.create(),
-      messages: new MessagesService(),
+      messages: new MessageCatalog(),
       siteName: PublicPageOrgName,
       image: 'missing.png',
       largeImage: true,
@@ -255,7 +255,7 @@ describe('LinkPreviewService (image)', () => {
     const service = new LinkPreviewService({
       siteUrl: new SiteUrl({ baseUrl: `${ApiHarnessOrigin}/certs` }),
       dataDirectory: directories.create(),
-      messages: new MessagesService(),
+      messages: new MessageCatalog(),
       siteName: PublicPageOrgName,
       image: '../outside.png',
       largeImage: true,

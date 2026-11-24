@@ -23,9 +23,15 @@ export class RcloneBackupStore implements BackupStore {
 
   protected readonly globalArgs: readonly string[];
 
-  constructor(options: RcloneBackupStoreOptions = {}) {
+  constructor(options: RcloneBackupStoreOptions) {
     this.command = options.command ?? 'rclone';
     this.globalArgs = options.globalArgs ?? [];
+  }
+
+  public static create(options?: {
+    injections?: Partial<RcloneBackupStoreOptions>;
+  }): RcloneBackupStore {
+    return new RcloneBackupStore({ ...options?.injections });
   }
 
   public async check(remotes: readonly string[]): Promise<void> {

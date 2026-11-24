@@ -14,6 +14,10 @@ import { BackupRetention } from './retention/BackupRetention';
 import { CronSchedule } from './schedule/CronSchedule';
 import type { BackupStore } from './store/BackupStore';
 import { RcloneBackupStore } from './store/RcloneBackupStore';
+import type { Clock } from '../clock/Clock';
+import type { Logger } from '../log/Logger';
+import { SystemClock } from '../clock/SystemClock';
+import { ConsoleLogger } from '../log/ConsoleLogger';
 
 type BackupServiceOptions = {
   database: DatabaseService;
@@ -23,12 +27,8 @@ type BackupServiceOptions = {
   remotes: readonly string[];
   schedule: CronSchedule;
   retention: BackupRetention;
-  /** @default () => new Date() */
-  now?: () => Date;
-  /** @default console.log */
-  log?: (line: string) => void;
-  /** @default console.error */
-  logError?: (line: string, error: unknown) => void;
+  clock: Clock;
+  logger: Logger;
 };
 
 /** What one backup did. */
@@ -64,11 +64,9 @@ export class BackupService {
 
   protected readonly retention: BackupRetention;
 
-  protected readonly now: () => Date;
+  protected readonly clock: Clock;
 
-  protected readonly log: (line: string) => void;
-
-  protected readonly logError: (line: string, error: unknown) => void;
+  protected readonly logger: Logger;
 
   protected timer: NodeJS.Timeout | null = null;
 
@@ -85,9 +83,8 @@ export class BackupService {
     this.remotes = options.remotes;
     this.schedule = options.schedule;
     this.retention = options.retention;
-    this.now = options.now ?? (() => new Date());
-    this.log = options.log ?? console.log;
-    this.logError = options.logError ?? console.error;
+    this.clock = options.clock;
+    this.logger = options.logger;
   }
 
   /**
@@ -96,27 +93,35 @@ export class BackupService {
    * @throws {Error} If the schedule isn't a valid cron expression.
    */
   public static create(options: {
-    config: Config;
+    config: Pick<Config, 'backup'>;
     database: DatabaseService;
     dataDirectory: DataDirectoryService;
-    injections?: Partial<Pick<BackupServiceOptions, 'store'>>;
+    injections?: Partial<
+      Omit<BackupServiceOptions, 'database' | 'dataDirectory'>
+    >;
   }): BackupService {
     const { config, database, dataDirectory, injections } = options;
     const { backup } = config;
-    const schedule = CronSchedule.parse(backup.schedule);
+    const schedule =
+      injections?.schedule ?? CronSchedule.parse(backup.schedule);
     if (!schedule)
       throw new Error(`Invalid backup schedule: ${backup.schedule}`);
 
     return new BackupService({
+      ...injections,
       database,
       dataDirectory,
-      store: injections?.store ?? new RcloneBackupStore(),
-      remotes: backup.remotes,
+      clock: injections?.clock ?? SystemClock.Instance,
+      logger: injections?.logger ?? ConsoleLogger.Instance,
+      store: injections?.store ?? RcloneBackupStore.create(),
+      remotes: injections?.remotes ?? backup.remotes,
       schedule,
-      retention: new BackupRetention({
-        days: backup.retentionDays,
-        copies: backup.retentionCopies,
-      }),
+      retention:
+        injections?.retention
+        ?? new BackupRetention({
+          days: backup.retentionDays,
+          copies: backup.retentionCopies,
+        }),
     });
   }
 
@@ -171,7 +176,7 @@ export class BackupService {
   }
 
   protected async backUp(signal: AbortSignal): Promise<BackupResult> {
-    const name = BackupFileName.create(this.now());
+    const name = BackupFileName.create(this.clock.now());
     const result: BackupResult = { name, uploaded: [], failed: [], deleted: 0 };
     const snapshotPath = this.dataDirectory.resolve(
       `${basename(this.dataDirectory.getDatabasePath())}.${randomUUID()}${BackupService.SnapshotSuffix}${ManagedDirectory.TempFileSuffix}`,
@@ -187,14 +192,20 @@ export class BackupService {
           result.uploaded.push(remote);
         } catch (error) {
           result.failed.push({ remote, error });
-          this.logError(`Couldn't upload backup ${name} to ${remote}:`, error);
+          this.logger.error(
+            `Couldn't upload backup ${name} to ${remote}:`,
+            error,
+          );
           continue;
         }
 
         try {
           result.deleted += await this.prune(remote, signal);
         } catch (error) {
-          this.logError(`Couldn't delete old backups from ${remote}:`, error);
+          this.logger.error(
+            `Couldn't delete old backups from ${remote}:`,
+            error,
+          );
         }
       }
     } finally {
@@ -246,18 +257,20 @@ export class BackupService {
       kilobytes < 1024
         ? `${Math.ceil(kilobytes)} KB`
         : `${(kilobytes / 1024).toFixed(1)} MB`;
-    this.log(`Uploaded backup ${name} to ${remote} (${shown} in ${seconds} s)`);
+    this.logger.info(
+      `Uploaded backup ${name} to ${remote} (${shown} in ${seconds} s)`,
+    );
   }
 
   protected async prune(remote: string, signal: AbortSignal): Promise<number> {
     const expired = this.retention.selectExpired(
       await this.store.list(remote, signal),
-      this.now(),
+      this.clock.now(),
     );
     for (const file of expired) await this.store.delete(remote, file, signal);
 
     if (expired.length > 0) {
-      this.log(`Deleted ${expired.length} old backups from ${remote}`);
+      this.logger.info(`Deleted ${expired.length} old backups from ${remote}`);
     }
 
     return expired.length;
@@ -266,7 +279,8 @@ export class BackupService {
   // checks the schedule once a minute; a backup still running when the next is due skips it
   protected scheduleTick(): void {
     const { MinuteMs, TickOffsetMs } = BackupService;
-    const delay = MinuteMs - (this.now().getTime() % MinuteMs) + TickOffsetMs;
+    const delay =
+      MinuteMs - (this.clock.now().getTime() % MinuteMs) + TickOffsetMs;
 
     this.timer = setTimeout(() => {
       this.tick();
@@ -276,18 +290,20 @@ export class BackupService {
   }
 
   protected tick(): void {
-    const now = this.now();
+    const now = this.clock.now();
     const minute = Math.floor(now.getTime() / BackupService.MinuteMs);
     if (minute === this.lastMinute || !this.schedule.matches(now)) return;
     this.lastMinute = minute;
 
     if (this.running) {
-      this.log('Skipped a scheduled backup: the previous one is still running');
+      this.logger.info(
+        'Skipped a scheduled backup: the previous one is still running',
+      );
       return;
     }
 
     this.run().catch((error: unknown) =>
-      this.logError("Couldn't take a backup:", error),
+      this.logger.error("Couldn't take a backup:", error),
     );
   }
 }

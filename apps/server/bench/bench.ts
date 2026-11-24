@@ -283,7 +283,7 @@ if (args.seed) {
     root: string;
     basePdfPath: string;
   };
-  const dataDirectory = new DataDirectoryService({ root });
+  const dataDirectory = DataDirectoryService.create({ root });
   dataDirectory.start();
   const database = new DatabaseService({
     path: dataDirectory.getDatabasePath(),
@@ -295,7 +295,7 @@ if (args.seed) {
   await new IssuerKeyService({
     path: dataDirectory.getIssuerKeyPath(),
     createMissing: true,
-    log: () => {},
+    logger: { info: () => {}, error: () => {} },
   }).start();
   process.send!(seeded, () => process.exit(0));
   await new Promise(() => {});
@@ -325,7 +325,9 @@ const basePdfPath = join(workDir, 'base.pdf');
 await createBasePdf(basePdfPath);
 const basePdfBytes = statSync(basePdfPath).size;
 
-const dataDirectory = new DataDirectoryService({ root: join(workDir, 'data') });
+const dataDirectory = DataDirectoryService.create({
+  root: join(workDir, 'data'),
+});
 const seeded = await seedInChild(dataDirectory.getRoot(), basePdfPath);
 // already migrated by the seeding process
 const database = new DatabaseService({ path: dataDirectory.getDatabasePath() });

@@ -3,14 +3,18 @@ import type { Font } from 'fontkit';
 import type { InvalidFontError } from '../font/errors/InvalidFontError';
 import { FontReader } from '../font/FontReader';
 
+type GlyphCheckerOptions = {
+  font: Font;
+};
+
 /** Finds the characters of a text that a font can't draw. */
 export class GlyphChecker {
   protected static readonly Whitespace = /\s/u;
 
   protected readonly font: Font;
 
-  constructor(font: Font) {
-    this.font = font;
+  constructor(options: GlyphCheckerOptions) {
+    this.font = options.font;
   }
 
   /** Returns the checker for the font in the given bytes. */
@@ -18,7 +22,7 @@ export class GlyphChecker {
     bytes: Uint8Array,
   ): Result<GlyphChecker, InvalidFontError> {
     return FontReader.Instance.parse(bytes).map(
-      (font) => new GlyphChecker(font),
+      (font) => new GlyphChecker({ font }),
     );
   }
 

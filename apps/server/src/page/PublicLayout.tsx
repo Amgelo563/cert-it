@@ -1,13 +1,13 @@
 import type { Locale } from '@cert-it/shared';
 import type { Child } from 'hono/jsx';
-import type { MessagesService } from '../i18n/MessagesService';
+import type { MessageCatalog } from '../i18n/MessageCatalog';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import type { LinkPreview } from './preview/LinkPreview';
 import type { PublicPageAssets } from './PublicPageAssets';
 
 type PublicLayoutProps = {
   locale: Locale;
-  messages: MessagesService;
+  messages: MessageCatalog;
   title: string;
   description?: string | undefined;
   /** Name of the issuing organization, shown in the header. */

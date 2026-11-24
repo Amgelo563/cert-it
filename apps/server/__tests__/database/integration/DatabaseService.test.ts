@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, test } from 'vite-plus/test';
 import { DatabaseNotStartedError } from '../../../src/database/errors/DatabaseNotStartedError';
 import { DatabaseService } from '../../../src/database/DatabaseService';
 import { StartupError } from '../../../src/error/StartupError';
+import { createTestDatabase } from '../mocks/createTestDatabase';
+import { MockSeeder } from '../mocks/MockSeeder';
 
 let directory: string;
 
@@ -76,5 +78,33 @@ describe('DatabaseService (ping)', () => {
     const database = new DatabaseService({ path: ':memory:' });
 
     expect(() => database.ping()).toThrow(DatabaseNotStartedError);
+  });
+});
+
+describe('DatabaseService (atomically)', () => {
+  test('GIVEN work that returns WHEN running it THEN keeps its writes and returns the value', () => {
+    const database = createTestDatabase();
+    const seeder = new MockSeeder(database.getRepositories());
+
+    const user = database.atomically(() => seeder.user());
+
+    expect(database.getRepositories().users.findById(user.id)).not.toBeNull();
+    database.close();
+  });
+
+  test('GIVEN work that throws after a write WHEN running it THEN rolls the write back and rethrows', () => {
+    const database = createTestDatabase();
+    const seeder = new MockSeeder(database.getRepositories());
+    const failure = new Error('failure');
+
+    expect(() =>
+      database.atomically(() => {
+        seeder.user();
+        throw failure;
+      }),
+    ).toThrow(failure);
+
+    expect(database.getRepositories().users.count()).toBe(0);
+    database.close();
   });
 });

@@ -9,7 +9,7 @@ const Large = 'x'.repeat(4096);
 function createApp(): Hono {
   const app = new Hono();
   app.use(
-    new ResponseCompressor().middleware(),
+    ResponseCompressor.create().middleware(),
     new ResponseRevalidator({
       skip: (response) =>
         response.headers.get('content-type')?.startsWith('text/plain') ?? false,

@@ -3,30 +3,37 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { RateLimiter, type SiteUrl } from '@cert-it/hono';
 import { LocaleEnum } from '@cert-it/shared';
-import { AuditLogService } from '../../../src/audit/AuditLogService';
+import { AuditLog } from '../../../src/audit/AuditLog';
+import { AuditLogRoutes } from '../../../src/audit/AuditLogRoutes';
 import { AuthGuard } from '../../../src/auth/AuthGuard';
-import { AuthService } from '../../../src/auth/AuthService';
-import { createCsrfGuard } from '../../../src/auth/csrf/createCsrfGuard';
+import { AuthRoutes } from '../../../src/auth/AuthRoutes';
+import { ApiService } from '../../../src/http/api/ApiService';
 import { PasswordHasher } from '../../../src/auth/password/PasswordHasher';
 import { SessionService } from '../../../src/auth/session/SessionService';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
-import { CourseService } from '../../../src/course/CourseService';
+import { CourseRoutes } from '../../../src/course/CourseRoutes';
 import {
   type ActiveCatalog,
-  FontCatalogService,
-} from '../../../src/font/catalog/FontCatalogService';
-import { FontService } from '../../../src/font/FontService';
+  FontCatalogRoutes,
+} from '../../../src/font/catalog/FontCatalogRoutes';
+import { FontLibrary } from '../../../src/font/FontLibrary';
+import { FontRoutes } from '../../../src/font/FontRoutes';
 import { DataDirectoryService } from '../../../src/storage/DataDirectoryService';
-import { TemplateService } from '../../../src/template/TemplateService';
+import { TemplateRoutes } from '../../../src/template/TemplateRoutes';
 import { createTestConfig } from '../../config/mocks/createTestConfig';
-import { ParticipantService } from '../../../src/participant/ParticipantService';
-import { CertificateService } from '../../../src/certificate/CertificateService';
-import { CertificateRegenerator } from '../../../src/certificate/regenerate/CertificateRegenerator';
-import { CertificateExportService } from '../../../src/certificate/export/CertificateExportService';
-import { JobService } from '../../../src/job/JobService';
+import { ParticipantImporter } from '../../../src/participant/import/ParticipantImporter';
+import { ParticipantRoutes } from '../../../src/participant/ParticipantRoutes';
+import { CertificateManager } from '../../../src/certificate/CertificateManager';
+import { CertificateRoutes } from '../../../src/certificate/CertificateRoutes';
+import { CertificateRegenerator } from '../../../src/certificate/job/CertificateRegenerator';
+import { CertificateExportRoutes } from '../../../src/certificate/export/CertificateExportRoutes';
+import { JobRoutes } from '../../../src/job/JobRoutes';
 import { QueueOnlyJobService } from '../../job/mocks/QueueOnlyJobService';
-import { UserService } from '../../../src/user/UserService';
+import { UserRoutes } from '../../../src/user/UserRoutes';
 import { createTestCredentials } from '../../credential/mocks/createTestCredentials';
+import { MockLogger } from '../../log/mocks/MockLogger';
+import { SystemClock } from '../../../src/clock/SystemClock';
+import { CourseLoader } from '../../../src/course/CourseLoader';
 
 /** Returns the options of ApiService, with rate limits that tests can reach. Without a data directory, file routes use one that is never created. */
 export function createAuthOptions(
@@ -40,7 +47,12 @@ export function createAuthOptions(
     catalog?: ActiveCatalog;
   } = {},
 ) {
-  const sessions = new SessionService({ database, siteUrl, now: options.now });
+  const { now } = options;
+  const sessions = new SessionService({
+    database,
+    siteUrl,
+    clock: now ? { now: () => new Date(now()) } : SystemClock.Instance,
+  });
   const limiter = () =>
     new RateLimiter({
       maxHits: options.maxAttempts ?? 15,
@@ -49,8 +61,9 @@ export function createAuthOptions(
     });
   const passwords = new PasswordHasher();
   const guard = new AuthGuard({ sessions });
-  const auditLog = new AuditLogService({ database, guard });
-  const auth = new AuthService({
+  const courseLoader = new CourseLoader({ database });
+  const auditLog = new AuditLog({ database });
+  const auth = new AuthRoutes({
     database,
     sessions,
     passwords,
@@ -60,62 +73,77 @@ export function createAuthOptions(
     accountLimiter: limiter(),
   });
 
-  const users = new UserService({
+  const users = new UserRoutes({
     database,
     passwords,
     sessions,
     guard,
     auditLog,
     firstAdminEmail: 'admin@example.org',
-    log: () => {},
+    logger: new MockLogger(),
   });
 
   const dataDirectory =
     options.dataDirectory
-    ?? new DataDirectoryService({
+    ?? DataDirectoryService.create({
       root: join(tmpdir(), `cert-it-unused-${randomUUID()}`),
     });
   const backgroundJobs = new QueueOnlyJobService(database);
   const regenerator = new CertificateRegenerator({
+    database,
     auditLog,
     jobs: backgroundJobs,
   });
 
-  const courses = new CourseService({
+  const courses = new CourseRoutes({
     database,
     guard,
+    courseLoader,
     auditLog,
     defaultLocale: LocaleEnum.En,
     dataDirectory,
+    logger: new MockLogger(),
   });
 
-  const participants = new ParticipantService({
+  const certificateManager = new CertificateManager({
     database,
-    guard,
-    auditLog,
-    dataDirectory,
-    regenerator,
-  });
-
-  const certificates = new CertificateService({
-    database,
-    guard,
     auditLog,
     jobs: backgroundJobs,
     dataDirectory,
     regenerator,
+    logger: new MockLogger(),
+    clock: SystemClock.Instance,
   });
-  const certificateExports = new CertificateExportService({
+
+  const participants = new ParticipantRoutes({
     database,
     guard,
+    courseLoader,
+    auditLog,
+    certificates: certificateManager,
+    regenerator,
+    importer: new ParticipantImporter({ database }),
+  });
+
+  const certificates = new CertificateRoutes({
+    database,
+    guard,
+    courseLoader,
+    certificates: certificateManager,
+  });
+  const certificateExports = new CertificateExportRoutes({
+    database,
+    guard,
+    courseLoader,
     dataDirectory,
     siteUrl,
     credentials: createTestCredentials(database, siteUrl).signer,
-    log: () => {},
+    logger: new MockLogger(),
   });
-  const jobs = new JobService({
+  const jobs = new JobRoutes({
     database,
     guard,
+    courseLoader,
     auditLog,
     jobs: backgroundJobs,
   });
@@ -127,13 +155,14 @@ export function createAuthOptions(
     guard,
     auditLog,
   };
-  const fonts = FontService.create(services);
-  const fontCatalog = new FontCatalogService({
+  const library = FontLibrary.create(services);
+  const fonts = FontRoutes.create({ ...services, library });
+  const fontCatalog = new FontCatalogRoutes({
     guard,
-    fonts,
+    library,
     active: options.catalog ?? null,
   });
-  const templates = TemplateService.create(services);
+  const templates = TemplateRoutes.create(services);
 
   return {
     auth,
@@ -146,7 +175,7 @@ export function createAuthOptions(
     fonts,
     fontCatalog,
     templates,
-    auditLog,
-    csrf: createCsrfGuard(siteUrl),
+    audit: new AuditLogRoutes({ database, guard }),
+    csrf: ApiService.createCsrfGuard(siteUrl),
   };
 }

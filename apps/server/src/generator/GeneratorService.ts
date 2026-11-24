@@ -1,12 +1,10 @@
 import { SiteUrl } from '@cert-it/hono';
 import { JobWorker } from '@cert-it/jobs';
-import { IssueJobHandler } from '../certificate/issue/IssueJobHandler';
-import { RegenerateJobHandler } from '../certificate/issue/RegenerateJobHandler';
+import { IssueJobHandler } from '../certificate/job/IssueJobHandler';
+import { RegenerateJobHandler } from '../certificate/job/RegenerateJobHandler';
 import { CredentialSigner } from '../credential/CredentialSigner';
 import { IssuerKeyService } from '../credential/key/IssuerKeyService';
-import { OpenBadgeBuilder } from '../credential/OpenBadgeBuilder';
 import { DatabaseService } from '../database/DatabaseService';
-import { MessagesService } from '../i18n/MessagesService';
 import type { Job } from '../job/Job';
 import { JobTypeEnum } from '@cert-it/shared';
 import { DataDirectoryService } from '../storage/DataDirectoryService';
@@ -32,42 +30,49 @@ export class GeneratorService {
     this.worker = options.worker;
   }
 
-  public static create(settings: GeneratorSettings): GeneratorService {
-    // the server migrates, and starts the data directory
-    const database = new DatabaseService({
-      path: settings.databasePath,
-      migrate: false,
+  public static create(options: {
+    settings: GeneratorSettings;
+    injections?: Partial<GeneratorServiceOptions>;
+  }): GeneratorService {
+    const { settings, injections } = options;
+    const dataDirectory = DataDirectoryService.create({
+      root: settings.dataDir,
     });
-    const dataDirectory = new DataDirectoryService({ root: settings.dataDir });
+    // the server migrates, and starts the data directory
+    const database =
+      injections?.database
+      ?? DatabaseService.create({
+        dataDirectory,
+        injections: { path: settings.databasePath, migrate: false },
+      });
     const siteUrl = new SiteUrl({ baseUrl: settings.baseUrl });
     // the server creates the key before it runs any job
-    const keys = new IssuerKeyService({
-      path: dataDirectory.getIssuerKeyPath(),
-      createMissing: false,
-    });
+    const keys =
+      injections?.keys
+      ?? IssuerKeyService.create({ dataDirectory, createMissing: false });
     const handlerOptions = {
       database,
       dataDirectory,
       siteUrl,
-      credentials: new CredentialSigner({
+      credentials: CredentialSigner.create({
         keys,
-        builder: new OpenBadgeBuilder({
-          siteUrl,
-          orgName: settings.orgName,
-          messages: new MessagesService(),
-        }),
+        siteUrl,
+        orgName: settings.orgName,
       }),
     };
 
     return new GeneratorService({
       database,
       keys,
-      worker: new JobWorker<Job>({
-        handlers: {
-          [JobTypeEnum.Issue]: new IssueJobHandler(handlerOptions),
-          [JobTypeEnum.Regenerate]: new RegenerateJobHandler(handlerOptions),
-        },
-      }),
+      worker:
+        injections?.worker
+        ?? new JobWorker<Job>({
+          handlers: {
+            [JobTypeEnum.Issue]: IssueJobHandler.create(handlerOptions),
+            [JobTypeEnum.Regenerate]:
+              RegenerateJobHandler.create(handlerOptions),
+          },
+        }),
     });
   }
 

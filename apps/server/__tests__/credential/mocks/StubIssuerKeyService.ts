@@ -1,12 +1,13 @@
 import { IssuerKey } from '../../../src/credential/key/IssuerKey';
 import { IssuerKeyService } from '../../../src/credential/key/IssuerKeyService';
+import { MockLogger } from '../../log/mocks/MockLogger';
 
 /** An issuer key service that holds a key from the start, without a file. Tests share one key, since RSA keys are slow to generate. */
 export class StubIssuerKeyService extends IssuerKeyService {
   protected static shared: IssuerKey | null = null;
 
   constructor(key = StubIssuerKeyService.sharedKey()) {
-    super({ path: '', createMissing: false });
+    super({ path: '', createMissing: false, logger: new MockLogger() });
     this.key = key;
   }
 

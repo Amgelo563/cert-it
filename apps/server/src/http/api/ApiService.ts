@@ -1,39 +1,46 @@
-import { type CsrfGuard, SiteUrl } from '@cert-it/hono';
+import type { SiteUrl } from '@cert-it/hono';
+import { CsrfGuard } from '@cert-it/hono';
+import { ApiErrorCodeEnum } from '@cert-it/shared';
 import { Hono, type MiddlewareHandler } from 'hono';
-import { AuditLogService } from '../../audit/AuditLogService';
+import { AuditLog } from '../../audit/AuditLog';
+import { AuditLogRoutes } from '../../audit/AuditLogRoutes';
 import { AuthGuard } from '../../auth/AuthGuard';
-import { AuthService } from '../../auth/AuthService';
-import { createCsrfGuard } from '../../auth/csrf/createCsrfGuard';
+import { AuthRoutes } from '../../auth/AuthRoutes';
 import { PasswordHasher } from '../../auth/password/PasswordHasher';
 import type { SessionService } from '../../auth/session/SessionService';
-import { CertificateService } from '../../certificate/CertificateService';
-import { CertificateExportService } from '../../certificate/export/CertificateExportService';
+import { CertificateManager } from '../../certificate/CertificateManager';
+import { CertificateRoutes } from '../../certificate/CertificateRoutes';
+import { CertificateExportRoutes } from '../../certificate/export/CertificateExportRoutes';
+import { CertificateRegenerator } from '../../certificate/job/CertificateRegenerator';
 import type { CredentialSigner } from '../../credential/CredentialSigner';
 import type { Config } from '../../config/schema/ConfigSchema';
-import { CourseService } from '../../course/CourseService';
+import { CourseRoutes } from '../../course/CourseRoutes';
 import type { DatabaseService } from '../../database/DatabaseService';
-import { FontCatalogService } from '../../font/catalog/FontCatalogService';
-import { FontService } from '../../font/FontService';
+import { FontCatalogRoutes } from '../../font/catalog/FontCatalogRoutes';
+import { FontLibrary } from '../../font/FontLibrary';
+import { FontRoutes } from '../../font/FontRoutes';
 import type { BackgroundJobService } from '../../job/BackgroundJobService';
-import { JobService } from '../../job/JobService';
-import { ParticipantService } from '../../participant/ParticipantService';
+import { JobRoutes } from '../../job/JobRoutes';
+import { ParticipantRoutes } from '../../participant/ParticipantRoutes';
 import type { DataDirectoryService } from '../../storage/DataDirectoryService';
-import { TemplateService } from '../../template/TemplateService';
-import { UserService } from '../../user/UserService';
+import { TemplateRoutes } from '../../template/TemplateRoutes';
+import { UserRoutes } from '../../user/UserRoutes';
 import type { HttpEnv } from '../HttpEnv';
+import { AbstractApiRoutes } from './AbstractApiRoutes';
+import type { Logger } from '../../log/Logger';
 
 type ApiServiceOptions = {
-  auth: AuthService;
-  users: UserService;
-  courses: CourseService;
-  participants: ParticipantService;
-  certificates: CertificateService;
-  certificateExports: CertificateExportService;
-  jobs: JobService;
-  fonts: FontService;
-  fontCatalog: FontCatalogService;
-  templates: TemplateService;
-  auditLog: AuditLogService;
+  auth: AuthRoutes;
+  users: UserRoutes;
+  courses: CourseRoutes;
+  participants: ParticipantRoutes;
+  certificates: CertificateRoutes;
+  certificateExports: CertificateExportRoutes;
+  jobs: JobRoutes;
+  fonts: FontRoutes;
+  fontCatalog: FontCatalogRoutes;
+  templates: TemplateRoutes;
+  audit: AuditLogRoutes;
   csrf: CsrfGuard;
 };
 
@@ -41,27 +48,27 @@ type ApiServiceOptions = {
 export class ApiService {
   public static readonly Path = '/api';
 
-  protected readonly auth: AuthService;
+  protected readonly auth: AuthRoutes;
 
-  protected readonly users: UserService;
+  protected readonly users: UserRoutes;
 
-  protected readonly courses: CourseService;
+  protected readonly courses: CourseRoutes;
 
-  protected readonly participants: ParticipantService;
+  protected readonly participants: ParticipantRoutes;
 
-  protected readonly certificates: CertificateService;
+  protected readonly certificates: CertificateRoutes;
 
-  protected readonly certificateExports: CertificateExportService;
+  protected readonly certificateExports: CertificateExportRoutes;
 
-  protected readonly jobs: JobService;
+  protected readonly jobs: JobRoutes;
 
-  protected readonly fonts: FontService;
+  protected readonly fonts: FontRoutes;
 
-  protected readonly fontCatalog: FontCatalogService;
+  protected readonly fontCatalog: FontCatalogRoutes;
 
-  protected readonly templates: TemplateService;
+  protected readonly templates: TemplateRoutes;
 
-  protected readonly auditLog: AuditLogService;
+  protected readonly audit: AuditLogRoutes;
 
   protected readonly csrf: CsrfGuard;
 
@@ -78,83 +85,109 @@ export class ApiService {
     this.fonts = options.fonts;
     this.fontCatalog = options.fontCatalog;
     this.templates = options.templates;
-    this.auditLog = options.auditLog;
+    this.audit = options.audit;
     this.csrf = options.csrf;
     this.app = this.createApp();
   }
 
   public static create(options: {
-    config: Config;
+    config: Pick<Config, 'admin' | 'auth' | 'fonts' | 'site' | 'uploads'>;
+    siteUrl: SiteUrl;
     database: DatabaseService;
     dataDirectory: DataDirectoryService;
     sessions: SessionService;
     backgroundJobs: BackgroundJobService;
     /** Signs the credentials the certificate exports include. */
     credentials: CredentialSigner;
-    /** Also takes the dependencies shared by the default services. */
+    /** Also takes the dependencies shared by the default routes. */
     injections?: Partial<ApiServiceOptions> & {
       passwords?: PasswordHasher;
       guard?: AuthGuard;
+      auditLog?: AuditLog;
+      regenerator?: CertificateRegenerator;
+      certificateManager?: CertificateManager;
+      fontLibrary?: FontLibrary;
+      logger?: Logger;
     };
   }): ApiService {
     const {
       config,
+      siteUrl,
       database,
       dataDirectory,
       sessions,
-      backgroundJobs,
+      backgroundJobs: jobs,
       credentials,
       injections,
     } = options;
     const passwords = injections?.passwords ?? new PasswordHasher();
     const guard = injections?.guard ?? new AuthGuard({ sessions });
-    const auditLog =
-      injections?.auditLog ?? new AuditLogService({ database, guard });
-    const services = { config, database, passwords, sessions, guard, auditLog };
-    const fonts =
-      injections?.fonts ?? FontService.create({ ...services, dataDirectory });
+    const auditLog = injections?.auditLog ?? AuditLog.create({ database });
+    const regenerator =
+      injections?.regenerator
+      ?? CertificateRegenerator.create({ database, auditLog, jobs });
+    const certificates =
+      injections?.certificateManager
+      ?? CertificateManager.create({
+        database,
+        auditLog,
+        jobs,
+        dataDirectory,
+        injections: { regenerator, logger: injections?.logger },
+      });
+    const library =
+      injections?.fontLibrary
+      ?? FontLibrary.create({ database, dataDirectory, auditLog });
+    const shared = { config, database, passwords, sessions, guard, auditLog };
+    const logged = { injections: { logger: injections?.logger } };
 
     return new ApiService({
-      auth: injections?.auth ?? AuthService.create(services),
-      users: injections?.users ?? UserService.create(services),
+      auth: injections?.auth ?? AuthRoutes.create(shared),
+      users: injections?.users ?? UserRoutes.create({ ...shared, ...logged }),
       courses:
         injections?.courses
-        ?? CourseService.create({ ...services, dataDirectory }),
+        ?? CourseRoutes.create({ ...shared, ...logged, dataDirectory }),
       participants:
         injections?.participants
-        ?? ParticipantService.create({
-          ...services,
-          dataDirectory,
-          jobs: backgroundJobs,
+        ?? ParticipantRoutes.create({
+          database,
+          guard,
+          auditLog,
+          certificates,
+          regenerator,
         }),
       certificates:
         injections?.certificates
-        ?? CertificateService.create({
-          ...services,
-          dataDirectory,
-          jobs: backgroundJobs,
-        }),
+        ?? CertificateRoutes.create({ database, guard, certificates }),
       certificateExports:
         injections?.certificateExports
-        ?? CertificateExportService.create({
-          ...services,
+        ?? CertificateExportRoutes.create({
+          ...shared,
+          ...logged,
+          siteUrl,
           dataDirectory,
           credentials,
         }),
-      jobs:
-        injections?.jobs
-        ?? JobService.create({ ...services, jobs: backgroundJobs }),
-      fonts,
+      jobs: injections?.jobs ?? JobRoutes.create({ ...shared, jobs }),
+      fonts: injections?.fonts ?? FontRoutes.create({ config, guard, library }),
       fontCatalog:
         injections?.fontCatalog
-        ?? FontCatalogService.create({ ...services, fonts }),
+        ?? FontCatalogRoutes.create({ config, guard, library }),
       templates:
         injections?.templates
-        ?? TemplateService.create({ ...services, dataDirectory }),
-      auditLog,
-      csrf:
-        injections?.csrf
-        ?? createCsrfGuard(new SiteUrl({ baseUrl: config.site.baseUrl })),
+        ?? TemplateRoutes.create({ ...shared, dataDirectory }),
+      audit: injections?.audit ?? AuditLogRoutes.create({ database, guard }),
+      csrf: injections?.csrf ?? ApiService.createCsrfGuard(siteUrl),
+    });
+  }
+
+  /** Returns the guard that answers cross-origin API writes with the cross_origin error. */
+  public static createCsrfGuard(siteUrl: SiteUrl): CsrfGuard {
+    return new CsrfGuard({
+      // from base_url only, never from Host or X-Forwarded headers
+      origin: siteUrl.getOrigin(),
+      onReject: (c) =>
+        AbstractApiRoutes.apiError(c, 403, ApiErrorCodeEnum.CrossOrigin),
     });
   }
 
@@ -174,17 +207,17 @@ export class ApiService {
     app.use(`${ApiService.Path}/*`, this.csrf.middleware(), this.noStore());
 
     return app
-      .route(AuthService.Path, this.auth.getApp())
-      .route(UserService.Path, this.users.getApp())
-      .route(CourseService.Path, this.courses.getApp())
-      .route(ParticipantService.Path, this.participants.getApp())
-      .route(CertificateExportService.Path, this.certificateExports.getApp())
-      .route(CertificateService.Path, this.certificates.getApp())
-      .route(JobService.Path, this.jobs.getApp())
-      .route(TemplateService.Path, this.templates.getApp())
-      .route(FontService.Path, this.fonts.getApp())
-      .route(FontCatalogService.Path, this.fontCatalog.getApp())
-      .route(AuditLogService.Path, this.auditLog.getApp());
+      .route(AuthRoutes.Path, this.auth.getApp())
+      .route(UserRoutes.Path, this.users.getApp())
+      .route(CourseRoutes.Path, this.courses.getApp())
+      .route(ParticipantRoutes.Path, this.participants.getApp())
+      .route(CertificateExportRoutes.Path, this.certificateExports.getApp())
+      .route(CertificateRoutes.Path, this.certificates.getApp())
+      .route(JobRoutes.Path, this.jobs.getApp())
+      .route(TemplateRoutes.Path, this.templates.getApp())
+      .route(FontRoutes.Path, this.fonts.getApp())
+      .route(FontCatalogRoutes.Path, this.fontCatalog.getApp())
+      .route(AuditLogRoutes.Path, this.audit.getApp());
   }
 
   // answers are per user and change with every write, unless a route says otherwise

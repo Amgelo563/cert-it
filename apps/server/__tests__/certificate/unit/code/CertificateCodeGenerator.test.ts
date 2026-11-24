@@ -5,7 +5,7 @@ const CodePattern = /^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{2}$/;
 
 describe('CertificateCodeGenerator (generate)', () => {
   test('GIVEN the default random source WHEN generating codes THEN each has the XXXX-XXXX-XX format without ambiguous characters', () => {
-    const generator = new CertificateCodeGenerator();
+    const generator = CertificateCodeGenerator.create();
 
     for (let i = 0; i < 1_000; i += 1) {
       expect(generator.generate()).toMatch(CodePattern);
@@ -13,7 +13,7 @@ describe('CertificateCodeGenerator (generate)', () => {
   });
 
   test('GIVEN the default random source WHEN generating many codes THEN they are all different', () => {
-    const generator = new CertificateCodeGenerator();
+    const generator = CertificateCodeGenerator.create();
     const codes = new Set(
       Array.from({ length: 10_000 }, () => generator.generate()),
     );

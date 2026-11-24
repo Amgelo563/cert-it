@@ -6,7 +6,7 @@ import type {
   ServedFile,
 } from '../../../src/certificate/file/FileServer';
 
-/** Returns what the server answers for the file, called from inside a route as CertificateFileService does. */
+/** Returns what the server answers for the file, called from inside a route as CertificateFileRoutes does. */
 export async function serveFile(
   server: FileServer,
   file: ServedFile,

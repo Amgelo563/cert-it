@@ -24,7 +24,7 @@ function file(name: string, content: Uint8Array | string): string {
 
 describe('BasePdfChecker', () => {
   test('GIVEN a one-page PDF WHEN checking THEN accepts it', async () => {
-    const result = await new BasePdfChecker().check(
+    const result = await BasePdfChecker.create().check(
       file('one.pdf', await createPdf(1)),
     );
 
@@ -32,7 +32,7 @@ describe('BasePdfChecker', () => {
   });
 
   test('GIVEN a two-page PDF WHEN checking THEN reports not_one_page', async () => {
-    const result = await new BasePdfChecker().check(
+    const result = await BasePdfChecker.create().check(
       file('two.pdf', await createPdf(2)),
     );
 
@@ -42,7 +42,9 @@ describe('BasePdfChecker', () => {
   });
 
   test('GIVEN a file that is not a PDF WHEN checking THEN reports invalid', async () => {
-    const result = await new BasePdfChecker().check(file('bad.pdf', 'hello'));
+    const result = await BasePdfChecker.create().check(
+      file('bad.pdf', 'hello'),
+    );
 
     expect(result.isErr() && result.error.problem).toBe(
       BasePdfProblemEnum.Invalid,
@@ -51,7 +53,7 @@ describe('BasePdfChecker', () => {
 
   test('GIVEN a missing file WHEN checking THEN throws', async () => {
     await expect(
-      new BasePdfChecker().check(join(directory, 'missing.pdf')),
+      BasePdfChecker.create().check(join(directory, 'missing.pdf')),
     ).rejects.toThrow(/ENOENT/);
   });
 });

@@ -1,10 +1,12 @@
 import { readFile } from 'node:fs/promises';
 import { SiteUrl } from '@cert-it/hono';
-import type { Certificate } from '../certificate/Certificate';
-import type { CertificateRegenerator } from '../certificate/regenerate/CertificateRegenerator';
+import type { CertificateRegenerator } from '../certificate/job/CertificateRegenerator';
 import type { DatabaseService } from '../database/DatabaseService';
 import { StartupError } from '../error/StartupError';
 import type { DataDirectoryService } from '../storage/DataDirectoryService';
+import type { Config } from '../config/schema/ConfigSchema';
+import { ConsoleLogger } from '../log/ConsoleLogger';
+import type { Logger } from '../log/Logger';
 
 type BaseUrlServiceOptions = {
   /** As in site.base_url. */
@@ -14,8 +16,7 @@ type BaseUrlServiceOptions = {
   database: DatabaseService;
   dataDirectory: DataDirectoryService;
   regenerator: CertificateRegenerator;
-  /** @default console.log */
-  log?: (line: string) => void;
+  logger: Logger;
 };
 
 /** What the data directory records about the address. */
@@ -35,7 +36,7 @@ export class BaseUrlService {
 
   protected readonly regenerator: CertificateRegenerator;
 
-  protected readonly log: (line: string) => void;
+  protected readonly logger: Logger;
 
   /** The recorded address of a confirmed move not completed yet. */
   protected movedFrom: string | null = null;
@@ -49,7 +50,29 @@ export class BaseUrlService {
     this.database = options.database;
     this.dataDirectory = options.dataDirectory;
     this.regenerator = options.regenerator;
-    this.log = options.log ?? console.log;
+    this.logger = options.logger;
+  }
+
+  public static create(options: {
+    config: Pick<Config, 'site'>;
+    database: DatabaseService;
+    dataDirectory: DataDirectoryService;
+    regenerator: CertificateRegenerator;
+    injections?: Partial<
+      Pick<BaseUrlServiceOptions, 'baseUrl' | 'previousBaseUrl' | 'logger'>
+    >;
+  }): BaseUrlService {
+    const { config, injections, ...shared } = options;
+
+    return new BaseUrlService({
+      ...shared,
+      baseUrl: injections?.baseUrl ?? config.site.baseUrl,
+      previousBaseUrl:
+        injections?.previousBaseUrl !== undefined
+          ? injections.previousBaseUrl
+          : (config.site.previousBaseUrl ?? null),
+      logger: injections?.logger ?? ConsoleLogger.Instance,
+    });
   }
 
   /**
@@ -100,35 +123,16 @@ export class BaseUrlService {
     const count = this.regenerateAll();
     await this.writeRecord();
     this.movedFrom = null;
-    this.log(
+    this.logger.info(
       `Moved from ${from} to ${this.baseUrl}: rendering every certificate again (${count} in total) so their QR codes and credentials use the new address. `
         + `Keep ${from} redirecting here, since printed QR codes and credentials already handed out still use it.`,
     );
   }
 
-  // one job per course and template version, each keeping its version
+  // every certificate again, each keeping its template version
   protected regenerateAll(): number {
-    const { certificates, templateVersions } = this.database.getRepositories();
-    const groups = new Map<string, Certificate[]>();
-    const all = certificates.listAll();
-    for (const certificate of all) {
-      const key = `${certificate.courseId}:${certificate.templateVersionId}`;
-      groups.set(key, [...(groups.get(key) ?? []), certificate]);
-    }
-
-    for (const group of groups.values()) {
-      const [first] = group;
-      const version =
-        first && templateVersions.findById(first.templateVersionId);
-      if (!first || !version) continue;
-
-      this.regenerator.queue({
-        courseId: first.courseId,
-        certificates: group,
-        version,
-        userId: null,
-      });
-    }
+    const all = this.database.getRepositories().certificates.listAll();
+    this.regenerator.queueAll(all, null);
     return all.length;
   }
 

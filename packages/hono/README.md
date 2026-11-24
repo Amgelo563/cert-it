@@ -61,8 +61,8 @@ const app = new Hono<AppEnv>();
 
 app.use(
   clientIps.middleware(),
-  new ResponseCompressor().middleware(),
-  new ResponseRevalidator().middleware(),
+  ResponseCompressor.create().middleware(),
+  ResponseRevalidator.create().middleware(),
 );
 app.use('/api/*', csrf.middleware());
 

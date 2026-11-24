@@ -7,8 +7,8 @@ import type { CourseId } from '../course/Course';
 import { StartupError } from '../error/StartupError';
 
 type DataDirectoryServiceOptions = {
-  /** Path of the directory, absolute or relative to the working directory. */
-  root: string;
+  /** The directory, with the folders it keeps. */
+  directory: ManagedDirectory;
 };
 
 /** The directory that holds the database and every stored file: `app.db`, `site.json`, `fonts/`, `templates/`, `certificates/` and `keys/`. */
@@ -30,12 +30,19 @@ export class DataDirectoryService {
   protected readonly directory: ManagedDirectory;
 
   constructor(options: DataDirectoryServiceOptions) {
+    this.directory = options.directory;
+  }
+
+  /** Creates the data directory at the given path, absolute or relative to the working directory. */
+  public static create(options: { root: string }): DataDirectoryService {
     const { FontsFolder, TemplatesFolder, CertificatesFolder, KeysFolder } =
       DataDirectoryService;
 
-    this.directory = new ManagedDirectory({
-      root: options.root,
-      folders: [FontsFolder, TemplatesFolder, CertificatesFolder, KeysFolder],
+    return new DataDirectoryService({
+      directory: new ManagedDirectory({
+        root: options.root,
+        folders: [FontsFolder, TemplatesFolder, CertificatesFolder, KeysFolder],
+      }),
     });
   }
 

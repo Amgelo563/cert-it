@@ -4,7 +4,7 @@ import {
   type Permission,
 } from '@cert-it/shared';
 import type { MiddlewareHandler } from 'hono';
-import { apiError } from '../http/api/apiError';
+import { AbstractApiRoutes } from '../http/api/AbstractApiRoutes';
 import type { AuthEnv } from './AuthEnv';
 import type { SessionService } from './session/SessionService';
 
@@ -20,6 +20,10 @@ export class AuthGuard {
     this.sessions = options.sessions;
   }
 
+  public static create(options: AuthGuardOptions): AuthGuard {
+    return new AuthGuard(options);
+  }
+
   /** Answers 401 without a valid session, and 403 while the user must change their password unless allowed. */
   public authenticate(
     options: { allowPendingPasswordChange?: boolean } = {},
@@ -27,13 +31,21 @@ export class AuthGuard {
     return async (c, next) => {
       const active = this.sessions.resolve(c);
       if (!active) {
-        return apiError(c, 401, ApiErrorCodeEnum.Unauthorized);
+        return AbstractApiRoutes.apiError(
+          c,
+          401,
+          ApiErrorCodeEnum.Unauthorized,
+        );
       }
       if (
         active.user.mustChangePassword
         && !options.allowPendingPasswordChange
       ) {
-        return apiError(c, 403, ApiErrorCodeEnum.PasswordChangeRequired);
+        return AbstractApiRoutes.apiError(
+          c,
+          403,
+          ApiErrorCodeEnum.PasswordChangeRequired,
+        );
       }
 
       c.set('user', active.user);
@@ -46,7 +58,7 @@ export class AuthGuard {
   public requirePermission(permission: Permission): MiddlewareHandler<AuthEnv> {
     return async (c, next) => {
       if (!hasPermission(c.get('user').role, permission)) {
-        return apiError(c, 403, ApiErrorCodeEnum.Forbidden);
+        return AbstractApiRoutes.apiError(c, 403, ApiErrorCodeEnum.Forbidden);
       }
       return next();
     };

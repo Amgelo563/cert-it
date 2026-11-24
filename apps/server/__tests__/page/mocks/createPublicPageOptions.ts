@@ -4,13 +4,13 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CsrfGuard, RateLimiter, type SiteUrl } from '@cert-it/hono';
 import { LocaleEnum } from '@cert-it/shared';
-import { LookupPageService } from '../../../src/certificate/lookup/LookupPageService';
-import { CertificatePageService } from '../../../src/certificate/page/CertificatePageService';
+import { LookupPageRoutes } from '../../../src/certificate/lookup/LookupPageRoutes';
+import { CertificatePageRoutes } from '../../../src/certificate/page/CertificatePageRoutes';
 import { LinkedInProfileLink } from '../../../src/certificate/page/LinkedInProfileLink';
-import type { CredentialService } from '../../../src/credential/CredentialService';
+import type { CredentialRoutes } from '../../../src/credential/CredentialRoutes';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
-import { MessagesService } from '../../../src/i18n/MessagesService';
+import { MessageCatalog } from '../../../src/i18n/MessageCatalog';
 import { LinkPreviewService } from '../../../src/page/preview/LinkPreviewService';
 import { PublicAssetsService } from '../../../src/page/PublicAssetsService';
 import { DataDirectoryService } from '../../../src/storage/DataDirectoryService';
@@ -61,9 +61,9 @@ export function createPublicPageOptions(
 ): {
   publicAssets: PublicAssetsService;
   linkPreviews: LinkPreviewService;
-  certificatePages: CertificatePageService;
-  lookupPages: LookupPageService;
-  credentials: CredentialService;
+  certificatePages: CertificatePageRoutes;
+  lookupPages: LookupPageRoutes;
+  credentials: CredentialRoutes;
 } {
   const publicAssets = new PublicAssetsService({
     directory: PublicBuildDirectory,
@@ -76,10 +76,10 @@ export function createPublicPageOptions(
     // only read for a local image, so it's never created by default
     dataDirectory:
       dataDirectory
-      ?? new DataDirectoryService({
+      ?? DataDirectoryService.create({
         root: join(tmpdir(), `cert-it-unused-${randomUUID()}`),
       }),
-    messages: new MessagesService(),
+    messages: new MessageCatalog(),
     siteName: PublicPageOrgName,
     largeImage: true,
     themeColor: LinkPreviewThemeColor,
@@ -90,7 +90,7 @@ export function createPublicPageOptions(
   return {
     publicAssets,
     linkPreviews,
-    certificatePages: new CertificatePageService({
+    certificatePages: new CertificatePageRoutes({
       database,
       assets: publicAssets,
       previews: linkPreviews,
@@ -101,7 +101,7 @@ export function createPublicPageOptions(
         ? new LinkedInProfileLink({ organizationId: linkedinOrgId })
         : null,
     }),
-    lookupPages: new LookupPageService({
+    lookupPages: new LookupPageRoutes({
       database,
       assets: publicAssets,
       previews: linkPreviews,

@@ -3,11 +3,11 @@
 Runs slow work, like generating hundreds of PDFs, in a separate Node process, one job at a time. Each job is a row in a
 SQLite table, so the app can show its progress and what happened to it.
 
-- `shared/service/`: `JobService`, what the app uses to add jobs, retry them, and start or stop the whole thing.
+- `shared/dispatcher/`: `JobDispatcher`, what the app uses to add jobs, retry them, and start or stop the whole thing.
 - `shared/job/`: the `Job` type.
 - `shared/worker/`: `JobWorker` and `JobHandler`, which do the work in the separate process.
-- `shared/runner/`: `JobRunner`, which starts and stops that process. `JobService` uses it for you.
-- `sqlite/`: the columns your jobs table needs, and `SqliteJobService`.
+- `shared/runner/`: `JobRunner`, which starts and stops that process. `JobDispatcher` uses it for you.
+- `sqlite/`: the columns your jobs table needs, and `SqliteJobDispatcher`.
 
 `drizzle-orm` and `better-sqlite3` are peer dependencies, so the app picks their versions.
 
@@ -71,15 +71,15 @@ export const reportJobTable = sqliteTable(
 );
 ```
 
-### 2. Service
+### 2. Dispatcher
 
-Create one `SqliteJobService` when the app starts, and use it for everything. Adding a job saves it and starts it, so
+Create one `SqliteJobDispatcher` when the app starts, and use it for everything. Adding a job saves it and starts it, so
 there's nothing else to call:
 
 ```ts
-import { SqliteJobService } from '@cert-it/jobs';
+import { SqliteJobDispatcher } from '@cert-it/jobs';
 
-const jobs = new SqliteJobService<
+const jobs = new SqliteJobDispatcher<
   ReportJob,
   typeof reportJobTable,
   NewReportJob
@@ -112,7 +112,7 @@ process.on('SIGTERM', async () => {
 });
 ```
 
-You can also add a job inside a transaction, as long as it uses the same database connection you gave the service. The
+You can also add a job inside a transaction, as long as it uses the same database connection you gave the dispatcher. The
 job is then saved only if the rest of the transaction is, and it starts once the transaction is done:
 
 ```ts
@@ -145,7 +145,7 @@ To list jobs or show one, write a repository for the same table, with only readi
 
 ```ts
 // job/repository/ReportJobRepository.ts
-/** An object that queries report jobs. Jobs are added and change state only through the job service. */
+/** An object that queries report jobs. Jobs are added and change state only through the job dispatcher. */
 export interface ReportJobRepository {
   findById(id: JobId): ReportJob | null;
   listByUser(userId: UserId, page: PageRequest): Page<ReportJob>;
@@ -165,14 +165,14 @@ export class SqliteReportJobRepository
     });
   }
 
-  // the type column decides the payload's shape, which only the job service writes
+  // the type column decides the payload's shape, which only the job dispatcher writes
   protected toModel(row: typeof reportJobTable.$inferSelect): ReportJob {
     return row as ReportJob;
   }
 }
 ```
 
-**Don't give it methods that write.** That way a job's status only changes through the service, which follows the job's
+**Don't give it methods that write.** That way a job's status only changes through the dispatcher, which follows the job's
 state machine rules.
 
 ### 4. Handlers

@@ -14,6 +14,7 @@ import { type Config, ConfigSchema } from '../../config/schema/ConfigSchema';
 import { PublicAssetsService } from '../../page/PublicAssetsService';
 import { normalizeEmail } from '../../util/email/NormalizedEmail';
 import { AppService, type AppServiceInjections } from '../AppService';
+import { SiteUrl } from '@cert-it/hono';
 
 type DevUser = {
   email: string;
@@ -69,13 +70,16 @@ export class DevAppService extends AppService {
         },
       });
 
+    const siteUrl = new SiteUrl({ baseUrl: config.site.baseUrl });
+
     return new DevAppService(
       AppService.createServices({
         config,
+        siteUrl,
         injections: {
           // pnpm dev rebuilds the public pages' files in watch mode
           publicAssets: PublicAssetsService.create({
-            config,
+            siteUrl,
             injections: { rereadManifest: true },
           }),
           ...options?.injections,
@@ -107,7 +111,7 @@ export class DevAppService extends AppService {
         .unwrap();
     }
 
-    console.log(
+    this.logger.info(
       [
         `Dev users, all with the password ${DevAppService.Password}:`,
         ...DevAppService.Users.map(

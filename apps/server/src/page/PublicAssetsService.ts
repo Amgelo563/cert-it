@@ -1,9 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { SiteUrl } from '@cert-it/hono';
+import type { SiteUrl } from '@cert-it/hono';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { type Context, Hono, type MiddlewareHandler } from 'hono';
-import type { Config } from '../config/schema/ConfigSchema';
 import { StartupError } from '../error/StartupError';
 import type { HttpEnv } from '../http/HttpEnv';
 import type { PublicPageAssets } from './PublicPageAssets';
@@ -64,15 +63,14 @@ export class PublicAssetsService {
   }
 
   public static create(options: {
-    config: Config;
+    siteUrl: SiteUrl;
     injections?: Partial<PublicAssetsServiceOptions>;
   }): PublicAssetsService {
-    const { config, injections } = options;
+    const { siteUrl, injections } = options;
 
     return new PublicAssetsService({
       directory: injections?.directory ?? PublicAssetsService.DefaultDirectory,
-      siteUrl:
-        injections?.siteUrl ?? new SiteUrl({ baseUrl: config.site.baseUrl }),
+      siteUrl,
       rereadManifest: injections?.rereadManifest,
     });
   }

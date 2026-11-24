@@ -1,19 +1,19 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { extname } from 'node:path';
-import { SiteUrl } from '@cert-it/hono';
+import type { SiteUrl } from '@cert-it/hono';
 import { type Context, Hono } from 'hono';
 import type { Config } from '../../config/schema/ConfigSchema';
 import { StartupError } from '../../error/StartupError';
 import type { HttpEnv } from '../../http/HttpEnv';
-import { MessagesService } from '../../i18n/MessagesService';
+import { MessageCatalog } from '../../i18n/MessageCatalog';
 import type { DataDirectoryService } from '../../storage/DataDirectoryService';
 import type { LinkPreview, LinkPreviewImage } from './LinkPreview';
 
 type LinkPreviewServiceOptions = {
   siteUrl: SiteUrl;
   dataDirectory: DataDirectoryService;
-  messages: MessagesService;
+  messages: MessageCatalog;
   siteName: string;
   /** Replaces the certificate pages' titles, with their placeholders. */
   title?: string | undefined;
@@ -55,7 +55,7 @@ export class LinkPreviewService {
 
   protected readonly dataDirectory: DataDirectoryService;
 
-  protected readonly messages: MessagesService;
+  protected readonly messages: MessageCatalog;
 
   protected readonly siteName: string;
 
@@ -91,18 +91,18 @@ export class LinkPreviewService {
   }
 
   public static create(options: {
-    config: Config;
+    config: Pick<Config, 'linkPreviews' | 'site'>;
+    siteUrl: SiteUrl;
     dataDirectory: DataDirectoryService;
-    injections?: Partial<LinkPreviewServiceOptions>;
+    injections?: Partial<Omit<LinkPreviewServiceOptions, 'dataDirectory'>>;
   }): LinkPreviewService {
-    const { config, dataDirectory, injections } = options;
+    const { config, siteUrl, dataDirectory, injections } = options;
     const previews = config.linkPreviews;
 
     return new LinkPreviewService({
-      siteUrl:
-        injections?.siteUrl ?? new SiteUrl({ baseUrl: config.site.baseUrl }),
-      dataDirectory: injections?.dataDirectory ?? dataDirectory,
-      messages: injections?.messages ?? new MessagesService(),
+      siteUrl,
+      dataDirectory,
+      messages: injections?.messages ?? new MessageCatalog(),
       siteName:
         injections?.siteName ?? previews.siteName ?? config.site.orgName,
       title: injections?.title ?? previews.title,

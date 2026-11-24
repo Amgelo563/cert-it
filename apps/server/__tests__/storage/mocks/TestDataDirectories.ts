@@ -12,7 +12,7 @@ export class TestDataDirectories {
   public create(): DataDirectoryService {
     const root = mkdtempSync(join(tmpdir(), 'cert-it-data-'));
     this.roots.push(root);
-    const dataDirectory = new DataDirectoryService({ root });
+    const dataDirectory = DataDirectoryService.create({ root });
     dataDirectory.start();
     return dataDirectory;
   }

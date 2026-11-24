@@ -3,6 +3,10 @@ import { join, relative, sep } from 'node:path';
 import { FontStore } from '@cert-it/fonts/node';
 import type { DatabaseService } from '../database/DatabaseService';
 import type { DataDirectoryService } from './DataDirectoryService';
+import type { Clock } from '../clock/Clock';
+import type { Logger } from '../log/Logger';
+import { SystemClock } from '../clock/SystemClock';
+import { ConsoleLogger } from '../log/ConsoleLogger';
 
 type StorageCleanupServiceOptions = {
   database: DatabaseService;
@@ -12,10 +16,8 @@ type StorageCleanupServiceOptions = {
   graceMs?: number;
   /** @default StorageCleanupService.DefaultIntervalMs */
   intervalMs?: number;
-  /** @default Date.now */
-  now?: () => number;
-  /** @default console.log */
-  log?: (line: string) => void;
+  clock: Clock;
+  logger: Logger;
 };
 
 /** What one cleanup deleted. */
@@ -47,9 +49,9 @@ export class StorageCleanupService {
 
   protected readonly intervalMs: number;
 
-  protected readonly now: () => number;
+  protected readonly clock: Clock;
 
-  protected readonly log: (line: string) => void;
+  protected readonly logger: Logger;
 
   protected timer: NodeJS.Timeout | null = null;
 
@@ -60,20 +62,28 @@ export class StorageCleanupService {
     this.graceMs = options.graceMs ?? StorageCleanupService.DefaultGraceMs;
     this.intervalMs =
       options.intervalMs ?? StorageCleanupService.DefaultIntervalMs;
-    this.now = options.now ?? Date.now;
-    this.log = options.log ?? console.log;
+    this.clock = options.clock;
+    this.logger = options.logger;
   }
 
   public static create(options: {
     database: DatabaseService;
     dataDirectory: DataDirectoryService;
+    injections?: Partial<
+      Omit<StorageCleanupServiceOptions, 'database' | 'dataDirectory'>
+    >;
   }): StorageCleanupService {
-    const { database, dataDirectory } = options;
+    const { database, dataDirectory, injections } = options;
 
     return new StorageCleanupService({
+      ...injections,
       database,
       dataDirectory,
-      fontStore: new FontStore({ directory: dataDirectory.getFontsFolder() }),
+      clock: injections?.clock ?? SystemClock.Instance,
+      logger: injections?.logger ?? ConsoleLogger.Instance,
+      fontStore:
+        injections?.fontStore
+        ?? FontStore.create({ directory: dataDirectory.getFontsFolder() }),
     });
   }
 
@@ -83,12 +93,13 @@ export class StorageCleanupService {
       this.run().then(
         ({ templateVersions, fonts, basePdfs }) => {
           if (templateVersions + fonts + basePdfs > 0) {
-            this.log(
+            this.logger.info(
               `Deleted ${templateVersions} unused template versions, ${fonts} unused fonts and ${basePdfs} unused base PDFs`,
             );
           }
         },
-        (error: unknown) => console.error("Couldn't clean up storage:", error),
+        (error: unknown) =>
+          this.logger.error("Couldn't clean up storage:", error),
       );
     };
 
@@ -110,7 +121,7 @@ export class StorageCleanupService {
    * @throws {Error} If a file can't be listed or deleted.
    */
   public async run(): Promise<CleanupResult> {
-    const cutoff = this.now() - this.graceMs;
+    const cutoff = this.clock.now().getTime() - this.graceMs;
     return {
       templateVersions: this.deleteTemplateVersions(cutoff),
       fonts: await this.deleteFonts(cutoff),

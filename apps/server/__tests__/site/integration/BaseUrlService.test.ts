@@ -1,19 +1,17 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { JobTypeEnum } from '@cert-it/shared';
 import { afterEach, beforeEach, describe, expect, test } from 'vite-plus/test';
-import { AuditLogService } from '../../../src/audit/AuditLogService';
-import { AuthGuard } from '../../../src/auth/AuthGuard';
-import { SessionService } from '../../../src/auth/session/SessionService';
-import { CertificateRegenerator } from '../../../src/certificate/regenerate/CertificateRegenerator';
+import { AuditLog } from '../../../src/audit/AuditLog';
+import { CertificateRegenerator } from '../../../src/certificate/job/CertificateRegenerator';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { StartupError } from '../../../src/error/StartupError';
 import { BaseUrlService } from '../../../src/site/BaseUrlService';
 import type { DataDirectoryService } from '../../../src/storage/DataDirectoryService';
-import { SiteUrl } from '@cert-it/hono';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
 import { MockSeeder } from '../../database/mocks/MockSeeder';
 import { QueueOnlyJobService } from '../../job/mocks/QueueOnlyJobService';
 import { TestDataDirectories } from '../../storage/mocks/TestDataDirectories';
+import { MockLogger } from '../../log/mocks/MockLogger';
 
 const OldUrl = 'https://old.example.org/certs';
 
@@ -42,25 +40,17 @@ function createService(
   baseUrl: string,
   previousBaseUrl: string | null = null,
 ): BaseUrlService {
-  const sessions = new SessionService({
-    database,
-    siteUrl: new SiteUrl({ baseUrl }),
-  });
-  const auditLog = new AuditLogService({
-    database,
-    guard: new AuthGuard({ sessions }),
-  });
-
   return new BaseUrlService({
     baseUrl,
     previousBaseUrl,
     database,
     dataDirectory,
     regenerator: new CertificateRegenerator({
-      auditLog,
+      database,
+      auditLog: new AuditLog({ database }),
       jobs: new QueueOnlyJobService(database),
     }),
-    log: (line) => lines.push(line),
+    logger: new MockLogger({ lines }),
   });
 }
 

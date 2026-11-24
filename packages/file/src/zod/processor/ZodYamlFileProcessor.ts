@@ -12,7 +12,7 @@ export class ZodYamlFileProcessor<Schema extends ZodType> extends FileProcessor<
     camelizeKeys?: boolean;
   }) {
     super({
-      validator: new ZodValidator(options.schema),
+      validator: new ZodValidator({ schema: options.schema }),
       io: options.camelizeKeys ? YamlIO.CamelizedInstance : YamlIO.Instance,
       path: YamlIO.buildName(options.path),
     });

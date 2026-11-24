@@ -19,9 +19,15 @@ export class ResponseCompressor {
 
   protected readonly skip: (response: Response) => boolean;
 
-  constructor(options: ResponseCompressorOptions = {}) {
+  constructor(options: ResponseCompressorOptions) {
     this.minBytes = options.minBytes ?? ResponseCompressor.DefaultMinBytes;
     this.skip = options.skip ?? (() => false);
+  }
+
+  public static create(options?: {
+    injections?: Partial<ResponseCompressorOptions>;
+  }): ResponseCompressor {
+    return new ResponseCompressor({ ...options?.injections });
   }
 
   /** Returns the middleware. */

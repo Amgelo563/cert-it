@@ -14,6 +14,9 @@ import { MockSeeder } from '../../database/mocks/MockSeeder';
 import { TestDataDirectories } from '../../storage/mocks/TestDataDirectories';
 import { backupStoreContract } from '../contract/backupStoreContract';
 import { MockBackupStore } from '../mocks/MockBackupStore';
+import { MockLogger } from '../../log/mocks/MockLogger';
+import { MockClock } from '../../clock/mocks/MockClock';
+import { SystemClock } from '../../../src/clock/SystemClock';
 
 const Now = new Date('2026-11-23T03:00:00Z');
 const Day = 24 * 60 * 60 * 1000;
@@ -58,9 +61,8 @@ function setup(options: { remotes?: string[]; copies?: number } = {}) {
     remotes: options.remotes ?? Remotes,
     schedule: CronSchedule.parse('0 3 * * *')!,
     retention: new BackupRetention({ days: 30, copies: options.copies }),
-    now: () => Now,
-    log: (line) => logs.push(line),
-    logError: (line) => logs.push(line),
+    clock: new MockClock({ start: Now }),
+    logger: new MockLogger({ lines: logs }),
   });
 
   return { backups, store, root, logs };
@@ -187,7 +189,8 @@ describe('BackupService (start)', () => {
       remotes: ['s3:bucket'],
       schedule: CronSchedule.parse('0 3 * * *')!,
       retention: new BackupRetention({ days: 30 }),
-      log: () => {},
+      clock: SystemClock.Instance,
+      logger: new MockLogger(),
     });
     const run = vi.spyOn(backups, 'run').mockResolvedValue({
       name: 'x',

@@ -1,4 +1,3 @@
-// takes one backup now, next to the running server; exits with 1 if any remote failed
 import { BackupService } from './backup/BackupService';
 import { ConfigService } from './config/file/ConfigService';
 import { DatabaseService } from './database/DatabaseService';
@@ -10,7 +9,9 @@ if (config.backup.remotes.length === 0) {
   process.exit(1);
 }
 
-const dataDirectory = new DataDirectoryService({ root: config.server.dataDir });
+const dataDirectory = DataDirectoryService.create({
+  root: config.server.dataDir,
+});
 // the server applies migrations, not this
 const database = new DatabaseService({
   path: dataDirectory.getDatabasePath(),

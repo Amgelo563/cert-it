@@ -12,7 +12,7 @@ import {
   type MissingGlyphs,
   TemplateGlyphChecker,
 } from '../../template/glyph/TemplateGlyphChecker';
-import { listTextFields } from '../../template/listTextFields';
+import { listTextFields } from '../../template/TemplateTextField';
 
 type CertificateRendererOptions = {
   /** The template with its base PDF bytes. */

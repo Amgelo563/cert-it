@@ -17,6 +17,8 @@ import { DataDirectoryService } from '../../../src/storage/DataDirectoryService'
 import { StorageCleanupService } from '../../../src/storage/StorageCleanupService';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
 import { MockSeeder } from '../../database/mocks/MockSeeder';
+import { MockLogger } from '../../log/mocks/MockLogger';
+import { MockClock } from '../../clock/mocks/MockClock';
 
 const Day = 24 * 60 * 60 * 1000;
 
@@ -35,7 +37,7 @@ function setup() {
   databases.push(database);
   const root = mkdtempSync(join(tmpdir(), 'cert-it-cleanup-'));
   roots.push(root);
-  const dataDirectory = new DataDirectoryService({ root });
+  const dataDirectory = DataDirectoryService.create({ root });
   dataDirectory.start();
   const seeder = new MockSeeder(database.getRepositories());
   const admin = seeder.user();
@@ -44,9 +46,11 @@ function setup() {
     new StorageCleanupService({
       database,
       dataDirectory,
-      fontStore: new FontStore({ directory: dataDirectory.getFontsFolder() }),
-      now: () => now,
-      log: () => {},
+      fontStore: FontStore.create({
+        directory: dataDirectory.getFontsFolder(),
+      }),
+      clock: new MockClock({ start: now }),
+      logger: new MockLogger(),
     }).run();
 
   // a seeded font, with its file on disk

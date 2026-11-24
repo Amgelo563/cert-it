@@ -1,14 +1,14 @@
 import type { SiteUrl } from '@cert-it/hono';
 import type { Certificate } from '../certificate/Certificate';
 import type { Course } from '../course/Course';
-import type { MessagesService } from '../i18n/MessagesService';
+import { MessageCatalog } from '../i18n/MessageCatalog';
 import type { Participant } from '../participant/Participant';
 
 type OpenBadgeBuilderOptions = {
   siteUrl: SiteUrl;
   /** Name of the issuing organization, as in site.org_name. */
   orgName: string;
-  messages: MessagesService;
+  messages: MessageCatalog;
 };
 
 /** A JSON object of a credential document. */
@@ -57,12 +57,25 @@ export class OpenBadgeBuilder {
 
   protected readonly orgName: string;
 
-  protected readonly messages: MessagesService;
+  protected readonly messages: MessageCatalog;
 
   constructor(options: OpenBadgeBuilderOptions) {
     this.siteUrl = options.siteUrl;
     this.orgName = options.orgName;
     this.messages = options.messages;
+  }
+
+  public static create(options: {
+    siteUrl: SiteUrl;
+    orgName: string;
+    injections?: Partial<Pick<OpenBadgeBuilderOptions, 'messages'>>;
+  }): OpenBadgeBuilder {
+    const { injections, ...shared } = options;
+
+    return new OpenBadgeBuilder({
+      ...shared,
+      messages: injections?.messages ?? new MessageCatalog(),
+    });
   }
 
   /** Returns the issuer's profile, as served on its own. */

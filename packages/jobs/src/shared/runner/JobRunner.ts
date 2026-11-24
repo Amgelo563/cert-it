@@ -99,7 +99,7 @@ export class JobRunner<J extends Job> {
     this.wake();
   }
 
-  /** Starts the worker if there are pending jobs and it isn't running. JobService calls it after adding or retrying a job. */
+  /** Starts the worker if there are pending jobs and it isn't running. JobDispatcher calls it after adding or retrying a job. */
   public wake(): void {
     if (this.stopping || this.worker) return;
 

@@ -19,7 +19,7 @@ let dataDirectory: DataDirectoryService;
 
 beforeAll(async () => {
   parent = mkdtempSync(join(tmpdir(), 'cert-it-files-'));
-  dataDirectory = new DataDirectoryService({ root: parent });
+  dataDirectory = DataDirectoryService.create({ root: parent });
   await dataDirectory.writeFile(
     dataDirectory.getCertificatePath(ContractFile.courseId, ContractFile.code),
     Content,

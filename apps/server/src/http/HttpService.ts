@@ -1,9 +1,9 @@
 import { once } from 'node:events';
+import type { SiteUrl } from '@cert-it/hono';
 import {
   ClientIpResolver,
   ResponseCompressor,
   ResponseRevalidator,
-  SiteUrl,
 } from '@cert-it/hono';
 import { LocaleCookieName } from '@cert-it/shared';
 import { serve, type ServerType } from '@hono/node-server';
@@ -12,20 +12,22 @@ import { type Context, Hono, type MiddlewareHandler } from 'hono';
 import { getCookie, setCookie } from 'hono/cookie';
 import { secureHeaders } from 'hono/secure-headers';
 import { AdminPanelService } from '../admin/AdminPanelService';
-import { CertificateFileService } from '../certificate/file/CertificateFileService';
-import { LookupPageService } from '../certificate/lookup/LookupPageService';
-import { CertificatePageService } from '../certificate/page/CertificatePageService';
+import { CertificateFileRoutes } from '../certificate/file/CertificateFileRoutes';
+import { LookupPageRoutes } from '../certificate/lookup/LookupPageRoutes';
+import { CertificatePageRoutes } from '../certificate/page/CertificatePageRoutes';
 import type { Config } from '../config/schema/ConfigSchema';
-import type { CredentialService } from '../credential/CredentialService';
+import type { CredentialRoutes } from '../credential/CredentialRoutes';
 import type { DatabaseService } from '../database/DatabaseService';
 import { StartupError } from '../error/StartupError';
 import { LocaleResolver } from '../i18n/LocaleResolver';
-import { MessagesService } from '../i18n/MessagesService';
+import { MessageCatalog } from '../i18n/MessageCatalog';
 import { PublicAssetsService } from '../page/PublicAssetsService';
 import type { LinkPreviewService } from '../page/preview/LinkPreviewService';
 import type { DataDirectoryService } from '../storage/DataDirectoryService';
 import type { ApiService } from './api/ApiService';
 import type { HttpEnv } from './HttpEnv';
+import { ConsoleLogger } from '../log/ConsoleLogger';
+import type { Logger } from '../log/Logger';
 
 type HttpServiceOptions = {
   port: number;
@@ -33,19 +35,18 @@ type HttpServiceOptions = {
   clientIps: ClientIpResolver;
   database: DatabaseService;
   locales: LocaleResolver;
-  messages: MessagesService;
+  messages: MessageCatalog;
   adminPanel: AdminPanelService;
-  certificateFiles: CertificateFileService;
-  certificatePages: CertificatePageService;
-  lookupPages: LookupPageService;
+  certificateFiles: CertificateFileRoutes;
+  certificatePages: CertificatePageRoutes;
+  lookupPages: LookupPageRoutes;
   publicAssets: PublicAssetsService;
   linkPreviews: LinkPreviewService;
-  credentials: CredentialService;
+  credentials: CredentialRoutes;
   api: ApiService;
   compressor: ResponseCompressor;
   revalidator: ResponseRevalidator;
-  /** @default console.log */
-  log?: (line: string) => void;
+  logger: Logger;
 };
 
 /** The app's HTTP server, with its middleware and routes. */
@@ -77,21 +78,21 @@ export class HttpService {
 
   protected readonly locales: LocaleResolver;
 
-  protected readonly messages: MessagesService;
+  protected readonly messages: MessageCatalog;
 
   protected readonly adminPanel: AdminPanelService;
 
-  protected readonly certificateFiles: CertificateFileService;
+  protected readonly certificateFiles: CertificateFileRoutes;
 
-  protected readonly certificatePages: CertificatePageService;
+  protected readonly certificatePages: CertificatePageRoutes;
 
-  protected readonly lookupPages: LookupPageService;
+  protected readonly lookupPages: LookupPageRoutes;
 
   protected readonly publicAssets: PublicAssetsService;
 
   protected readonly linkPreviews: LinkPreviewService;
 
-  protected readonly credentials: CredentialService;
+  protected readonly credentials: CredentialRoutes;
 
   protected readonly api: ApiService;
 
@@ -99,7 +100,7 @@ export class HttpService {
 
   protected readonly revalidator: ResponseRevalidator;
 
-  protected readonly log: (line: string) => void;
+  protected readonly logger: Logger;
 
   protected readonly app: Hono<HttpEnv>;
 
@@ -122,31 +123,55 @@ export class HttpService {
     this.api = options.api;
     this.compressor = options.compressor;
     this.revalidator = options.revalidator;
-    this.log = options.log ?? console.log;
+    this.logger = options.logger;
     this.app = this.createApp();
   }
 
   public static create(options: {
-    config: Config;
+    config: Pick<Config, 'files' | 'lookup' | 'server' | 'site'>;
+    siteUrl: SiteUrl;
     database: DatabaseService;
     dataDirectory: DataDirectoryService;
     api: ApiService;
     adminPanel: AdminPanelService;
     publicAssets: PublicAssetsService;
     linkPreviews: LinkPreviewService;
-    credentials: CredentialService;
-    injections?: Partial<HttpServiceOptions>;
+    credentials: CredentialRoutes;
+    injections?: Partial<
+      Omit<
+        HttpServiceOptions,
+        | 'database'
+        | 'api'
+        | 'adminPanel'
+        | 'publicAssets'
+        | 'linkPreviews'
+        | 'credentials'
+      >
+    >;
   }): HttpService {
-    const { config, dataDirectory, injections } = options;
-    const database = injections?.database ?? options.database;
-    const assets = injections?.publicAssets ?? options.publicAssets;
-    const previews = injections?.linkPreviews ?? options.linkPreviews;
-    const pages = { config, database, assets, previews };
+    const {
+      config,
+      siteUrl,
+      database,
+      dataDirectory,
+      api,
+      adminPanel,
+      publicAssets,
+      linkPreviews,
+      credentials,
+      injections,
+    } = options;
+    const pages = {
+      config,
+      siteUrl,
+      database,
+      assets: publicAssets,
+      previews: linkPreviews,
+    };
 
     return new HttpService({
       port: injections?.port ?? config.server.port,
-      siteUrl:
-        injections?.siteUrl ?? new SiteUrl({ baseUrl: config.site.baseUrl }),
+      siteUrl,
       clientIps:
         injections?.clientIps
         ?? new ClientIpResolver({
@@ -157,21 +182,27 @@ export class HttpService {
       locales:
         injections?.locales
         ?? new LocaleResolver({ defaultLocale: config.site.defaultLocale }),
-      messages: injections?.messages ?? new MessagesService(),
-      adminPanel: injections?.adminPanel ?? options.adminPanel,
+      messages: injections?.messages ?? new MessageCatalog(),
+      adminPanel,
       certificateFiles:
         injections?.certificateFiles
-        ?? CertificateFileService.create({ config, database, dataDirectory }),
+        ?? CertificateFileRoutes.create({
+          config,
+          siteUrl,
+          database,
+          dataDirectory,
+          injections: { logger: injections?.logger },
+        }),
       certificatePages:
-        injections?.certificatePages ?? CertificatePageService.create(pages),
-      lookupPages: injections?.lookupPages ?? LookupPageService.create(pages),
-      publicAssets: assets,
-      linkPreviews: previews,
-      credentials: injections?.credentials ?? options.credentials,
-      api: injections?.api ?? options.api,
-      compressor: injections?.compressor ?? new ResponseCompressor(),
-      revalidator: injections?.revalidator ?? new ResponseRevalidator(),
-      log: injections?.log,
+        injections?.certificatePages ?? CertificatePageRoutes.create(pages),
+      lookupPages: injections?.lookupPages ?? LookupPageRoutes.create(pages),
+      publicAssets,
+      linkPreviews,
+      credentials,
+      api,
+      compressor: injections?.compressor ?? ResponseCompressor.create(),
+      revalidator: injections?.revalidator ?? ResponseRevalidator.create(),
+      logger: injections?.logger ?? ConsoleLogger.Instance,
     });
   }
 
@@ -192,7 +223,9 @@ export class HttpService {
     }
 
     this.server = server;
-    this.log(`Listening on port ${this.port} for ${this.siteUrl.url('/')}`);
+    this.logger.info(
+      `Listening on port ${this.port} for ${this.siteUrl.url('/')}`,
+    );
   }
 
   /** Stops accepting connections and waits for open requests to finish. */
@@ -256,7 +289,7 @@ export class HttpService {
 
       const ms = Math.round(performance.now() - startedAt);
       const { pathname } = new URL(c.req.url);
-      this.log(
+      this.logger.info(
         `${c.req.method} ${pathname} ${c.res.status} ${ms}ms ${c.get('clientIp')}`,
       );
     };

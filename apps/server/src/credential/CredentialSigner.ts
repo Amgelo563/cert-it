@@ -2,7 +2,8 @@ import { gzipSync } from 'node:zlib';
 import type { CertificateId } from '../certificate/Certificate';
 import { IssuerKey } from './key/IssuerKey';
 import type { IssuerKeyService } from './key/IssuerKeyService';
-import type { CredentialSource, OpenBadgeBuilder } from './OpenBadgeBuilder';
+import { type CredentialSource, OpenBadgeBuilder } from './OpenBadgeBuilder';
+import type { SiteUrl } from '@cert-it/hono';
 
 type CredentialSignerOptions = {
   keys: IssuerKeyService;
@@ -21,6 +22,26 @@ export class CredentialSigner {
   constructor(options: CredentialSignerOptions) {
     this.keys = options.keys;
     this.builder = options.builder;
+  }
+
+  public static create(options: {
+    keys: IssuerKeyService;
+    siteUrl: SiteUrl;
+    orgName: string;
+    injections?: Partial<Pick<CredentialSignerOptions, 'builder'>>;
+  }): CredentialSigner {
+    const { keys, siteUrl, orgName, injections } = options;
+
+    return new CredentialSigner({
+      keys,
+      builder:
+        injections?.builder ?? OpenBadgeBuilder.create({ siteUrl, orgName }),
+    });
+  }
+
+  /** Returns the builder of the documents this signer signs. */
+  public getBuilder(): OpenBadgeBuilder {
+    return this.builder;
   }
 
   /** Returns a certificate's signed OpenBadgeCredential, as a compact JWS. The same data always gives the same token. */

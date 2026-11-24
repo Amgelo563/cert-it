@@ -10,17 +10,18 @@ import { LocaleEnum } from '@cert-it/shared';
 import { afterAll, afterEach, describe, expect, test } from 'vite-plus/test';
 import { AdminPanelService } from '../../../src/admin/AdminPanelService';
 import { AccelFileServer } from '../../../src/certificate/file/AccelFileServer';
-import { CertificateFileService } from '../../../src/certificate/file/CertificateFileService';
+import { CertificateFileRoutes } from '../../../src/certificate/file/CertificateFileRoutes';
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { StartupError } from '../../../src/error/StartupError';
 import { ApiService } from '../../../src/http/api/ApiService';
 import { HttpService } from '../../../src/http/HttpService';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
-import { MessagesService } from '../../../src/i18n/MessagesService';
+import { MessageCatalog } from '../../../src/i18n/MessageCatalog';
 import { createAuthOptions } from '../../auth/mocks/createAuthOptions';
 import { createPublicPageOptions } from '../../page/mocks/createPublicPageOptions';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
 import { AdminBuildScript, createAdminBuild } from '../mocks/createAdminBuild';
+import { MockLogger } from '../../log/mocks/MockLogger';
 
 const build = createAdminBuild();
 const databases: DatabaseService[] = [];
@@ -54,17 +55,18 @@ function createHttp(adminPanel: AdminPanelService, baseUrl: string) {
     clientIps: new ClientIpResolver({ trustedProxies: [], getConnInfo }),
     database,
     locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
-    messages: new MessagesService(),
+    messages: new MessageCatalog(),
     adminPanel,
-    certificateFiles: new CertificateFileService({
+    certificateFiles: new CertificateFileRoutes({
       database,
       fileServer: new AccelFileServer({ siteUrl }),
+      logger: new MockLogger(),
     }),
     ...createPublicPageOptions(database, siteUrl),
     api: new ApiService(createAuthOptions(database, siteUrl)),
-    compressor: new ResponseCompressor(),
-    revalidator: new ResponseRevalidator(),
-    log: () => {},
+    compressor: ResponseCompressor.create(),
+    revalidator: ResponseRevalidator.create(),
+    logger: new MockLogger(),
   });
 
   return (path: string, headers: Record<string, string> = {}) =>

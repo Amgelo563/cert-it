@@ -12,17 +12,30 @@ import type { FileIO } from '../../shared/io/FileIO';
 import { parse, stringify } from 'yaml';
 import { readFile, writeFile } from 'node:fs/promises';
 
+type YamlIOOptions = {
+  /** @default false */
+  camelizeKeys?: boolean;
+};
+
 export class YamlIO implements FileIO {
   public static readonly Extension = '.yml';
 
-  public static readonly Instance = new YamlIO();
+  public static readonly Instance = YamlIO.create();
 
-  public static readonly CamelizedInstance = new YamlIO({ camelizeKeys: true });
+  public static readonly CamelizedInstance = YamlIO.create({
+    injections: { camelizeKeys: true },
+  });
 
   protected readonly camelizeKeys: boolean;
 
-  constructor(options: { camelizeKeys?: boolean } = {}) {
+  constructor(options: YamlIOOptions) {
     this.camelizeKeys = options.camelizeKeys ?? false;
+  }
+
+  public static create(options?: {
+    injections?: Partial<YamlIOOptions>;
+  }): YamlIO {
+    return new YamlIO({ ...options?.injections });
   }
 
   public static buildName(file: string): string {

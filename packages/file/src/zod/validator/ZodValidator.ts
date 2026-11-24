@@ -2,13 +2,17 @@ import { type output, prettifyError, type ZodType } from 'zod';
 import type { Validator } from '../../shared/validation/Validator';
 import { Result } from 'better-result';
 
+type ZodValidatorOptions<Schema extends ZodType> = {
+  schema: Schema;
+};
+
 export class ZodValidator<Schema extends ZodType> implements Validator<
   output<Schema>
 > {
   protected readonly schema: Schema;
 
-  constructor(schema: Schema) {
-    this.schema = schema;
+  constructor(options: ZodValidatorOptions<Schema>) {
+    this.schema = options.schema;
   }
 
   public validate(input: unknown): Result<output<Schema>, string> {
