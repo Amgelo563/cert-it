@@ -41,6 +41,19 @@ function fontOption(fonts: Font): { font?: Font } {
 // below this, the canvas and the panels get too cramped to use
 const DesignerMinHeightPx = 360;
 
+// pdfme's widths of the field type bar and the field list
+const DesignerTypeBarPx = 45;
+const DesignerFieldListPx = 400;
+
+// the narrowest canvas worth keeping the field list open beside, about a 1200px window
+const DesignerMinCanvasPx = 400;
+
+// opens the field list only when the canvas still has room beside it
+function sidebarOption(element: HTMLElement): { sidebarOpen: boolean } {
+  const canvas = element.clientWidth - DesignerTypeBarPx - DesignerFieldListPx;
+  return { sidebarOpen: canvas >= DesignerMinCanvasPx };
+}
+
 // after pdfme's own attempt to select the new field, which runs on the next tick
 const FieldSelectDelayMs = 50;
 
@@ -116,7 +129,12 @@ export function TemplateDesigner({
     const instance = new Designer({
       domContainer: container.current,
       template: canvas.current ?? template,
-      options: { lang, theme, ...fontOption(fonts) },
+      options: {
+        lang,
+        theme,
+        ...fontOption(fonts),
+        ...sidebarOption(container.current),
+      },
       plugins,
     });
     designer.current = instance;
