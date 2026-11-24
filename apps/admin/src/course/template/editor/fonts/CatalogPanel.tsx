@@ -53,8 +53,15 @@ export function CatalogPanel({ onImported }: CatalogPanelProps) {
       [search],
     ),
   );
-  const families = request.loading ? null : (request.data?.families ?? null);
+  const pending = request.loading || query.trim() !== search;
+  const families = pending ? null : (request.data?.families ?? null);
   const error = importError ?? request.error;
+
+  // drop the pick once the shown list no longer has it
+  const listed =
+    picked !== null && families?.some((f) => f.id === picked.id) === true;
+  if (picked !== null && families !== null && !listed) setPicked(null);
+  const selected = listed ? picked : null;
 
   const pick = (family: CatalogFamilySummary) => {
     setPicked(family);
@@ -70,7 +77,7 @@ export function CatalogPanel({ onImported }: CatalogPanelProps) {
   };
 
   const importFont = async () => {
-    if (!picked || !variant) return;
+    if (!selected || !variant) return;
     const [weight = '400', style] = variant.split(':');
     setImporting(true);
     setImportError(null);
@@ -78,7 +85,7 @@ export function CatalogPanel({ onImported }: CatalogPanelProps) {
       const font = await api.request((routes) =>
         routes['font-catalog'].import.$post({
           json: {
-            id: picked.id,
+            id: selected.id,
             weight: Number(weight),
             italic: style === 'italic',
             ...(subset ? { subset } : {}),
@@ -138,7 +145,8 @@ export function CatalogPanel({ onImported }: CatalogPanelProps) {
             <UnstyledButton
               key={family.id}
               className={classes.family}
-              data-active={picked?.id === family.id || undefined}
+              data-active={selected?.id === family.id || undefined}
+              aria-pressed={selected?.id === family.id}
               onClick={() => pick(family)}
             >
               <Group justify="space-between" wrap="nowrap">
@@ -153,7 +161,7 @@ export function CatalogPanel({ onImported }: CatalogPanelProps) {
           ))}
         </Stack>
       </ScrollArea.Autosize>
-      {picked && (
+      {selected && (
         <Group grow align="flex-start">
           <Select
             label={t('template.catalog.style')}
@@ -161,26 +169,26 @@ export function CatalogPanel({ onImported }: CatalogPanelProps) {
             value={variant}
             onChange={setVariant}
             allowDeselect={false}
-            data={picked.variants.map((v) => {
+            data={selected.variants.map((v) => {
               const key = variantKey(v);
               return { value: key, label: variantLabel(key) };
             })}
           />
-          {picked.subsets.length > 1 && (
+          {selected.subsets.length > 1 && (
             <Select
               label={t('template.catalog.subset')}
               description={t('template.catalog.subsetHint')}
               value={subset}
               onChange={setSubset}
               allowDeselect={false}
-              data={[...picked.subsets]}
+              data={[...selected.subsets]}
             />
           )}
         </Group>
       )}
-      {picked && variant && (
+      {selected && variant && (
         <CatalogPreview
-          id={picked.id}
+          id={selected.id}
           variant={variant}
           subset={subset}
           text={t('template.sampleName')}
@@ -189,7 +197,7 @@ export function CatalogPanel({ onImported }: CatalogPanelProps) {
       <Group justify="flex-end" gap="sm">
         <Button
           onClick={() => void importFont()}
-          disabled={!picked || !variant}
+          disabled={!selected || !variant}
           loading={importing}
         >
           {t('template.catalog.import')}
