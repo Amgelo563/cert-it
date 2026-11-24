@@ -113,7 +113,12 @@ describe('CertificateRoutes (issue)', () => {
         action: AuditActionEnum.Issue,
         entityId: job.id,
         userId: editor.user.id,
-        details: { courseId: course.id, participants: 2, issueDate: today() },
+        details: {
+          courseId: course.id,
+          retry: false,
+          participants: 2,
+          issueDate: today(),
+        },
       }),
     ]);
   });
@@ -393,7 +398,12 @@ describe('CertificateRoutes (regenerate)', () => {
       expect.objectContaining({
         action: AuditActionEnum.Regenerate,
         entityId: job.id,
-        details: { courseId: course.id, certificates: 1, templateVersion: 2 },
+        details: {
+          courseId: course.id,
+          retry: false,
+          certificates: 1,
+          templateVersion: 2,
+        },
       }),
     ]);
   });

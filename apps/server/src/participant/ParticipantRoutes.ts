@@ -3,7 +3,7 @@ import {
   type ApiErrorCode,
   ApiErrorCodeEnum,
   type ApiPage,
-  type AuditAction,
+  type AuditChange,
   AuditActionEnum,
   AuditEntityEnum,
   type CreateParticipantRequest,
@@ -213,8 +213,11 @@ export class ParticipantRoutes extends AbstractApiRoutes {
             email: normalizeEmail(body.email),
           })
           .map((participant) => {
-            this.audit(c, participant, AuditActionEnum.Create, {
-              email: participant.email,
+            this.audit(c, participant, {
+              action: AuditActionEnum.Create,
+              details: {
+                email: participant.email,
+              },
             });
             return participant;
           }),
@@ -244,9 +247,14 @@ export class ParticipantRoutes extends AbstractApiRoutes {
               body.email === undefined ? undefined : normalizeEmail(body.email),
           })
           .map((participant) => {
-            this.audit(c, participant, AuditActionEnum.Update, {
-              ...(body.name === undefined ? {} : { name: participant.name }),
-              ...(body.email === undefined ? {} : { email: participant.email }),
+            this.audit(c, participant, {
+              action: AuditActionEnum.Update,
+              details: {
+                ...(body.name === undefined ? {} : { name: participant.name }),
+                ...(body.email === undefined
+                  ? {}
+                  : { email: participant.email }),
+              },
             });
             if (participant.name !== target.name) {
               this.regenerate(c, [participant]);
@@ -283,9 +291,12 @@ export class ParticipantRoutes extends AbstractApiRoutes {
       .getUnitOfWork()
       .transaction(({ participants }) =>
         participants.delete(target.id).map(() => {
-          this.audit(c, target, AuditActionEnum.Delete, {
-            name: target.name,
-            email: target.email,
+          this.audit(c, target, {
+            action: AuditActionEnum.Delete,
+            details: {
+              name: target.name,
+              email: target.email,
+            },
           });
         }),
       );
@@ -322,15 +333,13 @@ export class ParticipantRoutes extends AbstractApiRoutes {
   protected audit(
     c: Context<CourseEnv>,
     target: Participant,
-    action: AuditAction,
-    details?: Readonly<Record<string, unknown>>,
+    change: AuditChange<typeof AuditEntityEnum.Participant>,
   ): void {
     this.auditLog.record({
       userId: c.get('user').id,
-      action,
       entity: AuditEntityEnum.Participant,
       entityId: target.id,
-      details,
+      ...change,
     });
   }
 

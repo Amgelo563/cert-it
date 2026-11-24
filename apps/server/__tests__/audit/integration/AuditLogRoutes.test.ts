@@ -102,6 +102,7 @@ describe('AuditLogRoutes (list)', () => {
         action: AuditActionEnum.Update,
         entity: AuditEntityEnum.User,
         entityId: admin.user.id,
+        details: { active: false },
       })
       .unwrap();
 

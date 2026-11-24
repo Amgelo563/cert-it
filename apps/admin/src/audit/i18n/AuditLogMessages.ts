@@ -1,4 +1,8 @@
-import type { AuditActionEnum, AuditEntityEnum } from '@cert-it/shared';
+import type {
+  AuditActionEnum,
+  AuditEntityEnum,
+  FontSourceEnum,
+} from '@cert-it/shared';
 
 /** Texts of the audit log. Placeholders are written as `{key}`. */
 export type AuditLogMessages = {
@@ -20,6 +24,14 @@ export type AuditLogMessages = {
     removedUser: string;
     detailRole: string;
     detailStatus: string;
+    detailParticipants: string;
+    detailCertificates: string;
+    detailIssueDate: string;
+    /** Marks a job that was run again after failing. */
+    detailRetry: string;
+    detailCode: string;
+    /** Keyed by the member names in FontSourceEnum, such as catalog. */
+    fontSources: Record<Uncapitalize<keyof typeof FontSourceEnum>, string>;
     /** Keyed by the member names in AuditActionEnum, such as changePassword. */
     actions: Record<Uncapitalize<keyof typeof AuditActionEnum>, string>;
     /** Keyed by the member names in AuditEntityEnum, such as templateVersion. */

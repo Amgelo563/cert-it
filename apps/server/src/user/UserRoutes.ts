@@ -3,7 +3,7 @@ import {
   type ApiErrorCode,
   ApiErrorCodeEnum,
   type ApiPage,
-  type AuditAction,
+  type AuditChange,
   AuditActionEnum,
   AuditEntityEnum,
   type CreatedUserResponse,
@@ -177,7 +177,10 @@ export class UserRoutes extends AbstractApiRoutes {
           mustChangePassword: true,
         })
         .map((user) => {
-          this.audit(c, user, AuditActionEnum.Create, { role: user.role });
+          this.audit(c, user, {
+            action: AuditActionEnum.Create,
+            details: { role: user.role },
+          });
           return user;
         }),
     );
@@ -216,7 +219,10 @@ export class UserRoutes extends AbstractApiRoutes {
           .mapError(() => ApiErrorCodeEnum.NotFound)
           .map((user) => {
             if (!user.active) this.sessions.endAll(user.id);
-            this.audit(c, user, AuditActionEnum.Update, { ...body });
+            this.audit(c, user, {
+              action: AuditActionEnum.Update,
+              details: { ...body },
+            });
             return user;
           });
       });
@@ -243,7 +249,10 @@ export class UserRoutes extends AbstractApiRoutes {
         .update(target.id, { passwordHash, mustChangePassword: true })
         .map(() => {
           this.sessions.endAll(target.id);
-          this.audit(c, target, AuditActionEnum.ResetPassword);
+          this.audit(c, target, {
+            action: AuditActionEnum.ResetPassword,
+            details: {},
+          });
         }),
     );
     if (updated.isErr()) {
@@ -257,15 +266,13 @@ export class UserRoutes extends AbstractApiRoutes {
   protected audit(
     c: Context<AuthEnv>,
     target: User,
-    action: AuditAction,
-    details?: Readonly<Record<string, unknown>>,
+    change: AuditChange<typeof AuditEntityEnum.User>,
   ): void {
     this.auditLog.record({
       userId: c.get('user').id,
-      action,
       entity: AuditEntityEnum.User,
       entityId: target.id,
-      details,
+      ...change,
     });
   }
 

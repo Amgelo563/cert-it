@@ -81,17 +81,29 @@ export class AuditLogRoutes extends AbstractApiRoutes {
       return names.get(key) ?? null;
     };
 
+    const courseName = (id: number): string | null =>
+      cachedName(
+        `course:${id}`,
+        () => courses.findById(id as CourseId)?.name ?? null,
+      );
+
     // deleted models keep their name in the entry's details
     const nameOf = (entry: AuditEntry): string | null => {
+      // jobs and templates are named after their course
+      if (
+        entry.entity === AuditEntityEnum.Job
+        || entry.entity === AuditEntityEnum.TemplateVersion
+      ) {
+        return courseName(entry.details.courseId);
+      }
+      if (entry.entity === AuditEntityEnum.Font) {
+        return `${entry.details.family} ${entry.details.style}`;
+      }
       const current =
         entry.entity === AuditEntityEnum.User
           ? emailOf(entry.entityId)
           : entry.entity === AuditEntityEnum.Course
-            ? cachedName(
-                `course:${entry.entityId}`,
-                () =>
-                  courses.findById(entry.entityId as CourseId)?.name ?? null,
-              )
+            ? courseName(entry.entityId)
             : entry.entity === AuditEntityEnum.Participant
               ? cachedName(
                   `participant:${entry.entityId}`,
@@ -100,34 +112,22 @@ export class AuditLogRoutes extends AbstractApiRoutes {
                     ?? null,
                 )
               : null;
-      const kept = entry.details['name'];
-      return current ?? (typeof kept === 'string' ? kept : null);
+      const kept = 'name' in entry.details ? entry.details.name : undefined;
+      return current ?? kept ?? null;
     };
 
     return c.json<ApiPage<AuditEntrySummary>, 200>(
       {
         ...page,
+        // spread whole, so each entry keeps its action and details paired
         items: page.items.map((entry) => ({
-          ...AuditLogRoutes.toSummary(entry),
+          ...entry,
+          createdAt: entry.createdAt.toISOString(),
           userEmail: entry.userId === null ? null : emailOf(entry.userId),
           entityName: nameOf(entry),
         })),
       },
       200,
     );
-  }
-
-  protected static toSummary(
-    entry: AuditEntry,
-  ): Omit<AuditEntrySummary, 'userEmail' | 'entityName'> {
-    return {
-      id: entry.id,
-      userId: entry.userId,
-      action: entry.action,
-      entity: entry.entity,
-      entityId: entry.entityId,
-      details: entry.details,
-      createdAt: entry.createdAt.toISOString(),
-    };
   }
 }

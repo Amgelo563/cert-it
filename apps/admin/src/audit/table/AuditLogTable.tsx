@@ -1,12 +1,15 @@
 import {
   type AuditAction,
   AuditActionEnum,
+  type AuditDetailsMap,
+  type AuditEntity,
   AuditEntityEnum,
   type AuditEntrySummary,
+  type AuditRecord,
+  FontSourceEnum,
   ImportModeEnum,
   ImportRowStatusEnum,
-  LocaleEnum,
-  RoleEnum,
+  type Role,
 } from '@cert-it/shared';
 import { type MantineColor, Stack, Text } from '@mantine/core';
 import { DataTable } from 'mantine-datatable';
@@ -20,6 +23,8 @@ import { StatusLabel } from '../../app/layout/StatusLabel';
 const ActionKeys = enumMessageKeys(AuditActionEnum);
 
 const EntityKeys = enumMessageKeys(AuditEntityEnum);
+
+const FontSourceKeys = enumMessageKeys(FontSourceEnum);
 
 // green for additions, red for removals, gray for the rest
 const ActionColors: Record<AuditAction, MantineColor> = {
@@ -35,6 +40,156 @@ const ActionColors: Record<AuditAction, MantineColor> = {
   [AuditActionEnum.ChangePassword]: 'gray',
   [AuditActionEnum.ResetPassword]: 'gray',
 };
+
+type DetailDescribers = {
+  [Entity in keyof AuditDetailsMap]: {
+    [Action in keyof AuditDetailsMap[Entity]]: (
+      details: AuditDetailsMap[Entity][Action],
+    ) => string[];
+  };
+};
+
+type CourseUpdate =
+  AuditDetailsMap[typeof AuditEntityEnum.Course][typeof AuditActionEnum.Update];
+
+type UserUpdate =
+  AuditDetailsMap[typeof AuditEntityEnum.User][typeof AuditActionEnum.Update];
+
+// one describer per entity and action; names the target column shows are left out
+function useDetailDescriber(): (entry: AuditEntrySummary) => string[] {
+  const { t, i18n } = useTranslation();
+  const localeNames = useLocaleNames();
+  // issue dates are calendar days, so they are read as UTC
+  const days = useMemo(
+    () =>
+      new Intl.DateTimeFormat(i18n.language, {
+        dateStyle: 'medium',
+        timeZone: 'UTC',
+      }),
+    [i18n.language],
+  );
+
+  const label = (name: string, value: string | number) => `${name}: ${value}`;
+  const day = (value: string) => days.format(new Date(`${value}T00:00:00Z`));
+  const role = (value: Role) =>
+    label(t('auditLog.detailRole'), t(`roles.${value}`));
+  const status = (active: boolean, inactive: string) =>
+    label(t('auditLog.detailStatus'), active ? t('users.active') : inactive);
+  const code = (value: string) => label(t('auditLog.detailCode'), value);
+  const none = () => [];
+
+  const userUpdate = (d: UserUpdate) => [
+    ...(d.role === undefined ? [] : [role(d.role)]),
+    ...(d.active === undefined ? [] : [status(d.active, t('users.inactive'))]),
+  ];
+  const courseUpdate = (d: CourseUpdate) => [
+    ...(d.name === undefined ? [] : [label(t('courses.name'), d.name)]),
+    ...(d.locale === undefined
+      ? []
+      : [label(t('courses.locale'), localeNames(d.locale))]),
+    ...(d.dateFormat === undefined
+      ? []
+      : [label(t('courses.dateFormat'), d.dateFormat)]),
+    ...(d.lookupEnabled === undefined
+      ? []
+      : [
+          label(
+            t('courses.lookup'),
+            t(d.lookupEnabled ? 'courses.listed' : 'courses.hidden'),
+          ),
+        ]),
+    ...(d.active === undefined
+      ? []
+      : [status(d.active, t('courses.archived'))]),
+  ];
+
+  const describers: DetailDescribers = {
+    [AuditEntityEnum.User]: {
+      [AuditActionEnum.Create]: (d) => [role(d.role)],
+      [AuditActionEnum.Update]: userUpdate,
+      [AuditActionEnum.Login]: none,
+      [AuditActionEnum.ChangePassword]: none,
+      [AuditActionEnum.ResetPassword]: none,
+    },
+    [AuditEntityEnum.Course]: {
+      [AuditActionEnum.Create]: none,
+      [AuditActionEnum.Update]: courseUpdate,
+      [AuditActionEnum.Delete]: none,
+      [AuditActionEnum.Import]: (d) => [
+        t(
+          d.mode === ImportModeEnum.Update
+            ? 'participantImport.modeUpdate'
+            : 'participantImport.modeSkip',
+        ),
+        ...Object.values(ImportRowStatusEnum).map((s) =>
+          label(t(`participantImport.groups.${s}`), d[s]),
+        ),
+      ],
+    },
+    [AuditEntityEnum.Participant]: {
+      [AuditActionEnum.Create]: (d) => [
+        label(t('participants.email'), d.email),
+      ],
+      [AuditActionEnum.Update]: (d) => [
+        ...(d.name === undefined ? [] : [label(t('courses.name'), d.name)]),
+        ...(d.email === undefined
+          ? []
+          : [label(t('participants.email'), d.email)]),
+      ],
+      [AuditActionEnum.Delete]: (d) => [
+        label(t('participants.email'), d.email),
+      ],
+    },
+    [AuditEntityEnum.Font]: {
+      [AuditActionEnum.Create]: (d) => [
+        t(`auditLog.fontSources.${FontSourceKeys[d.source]}`),
+      ],
+    },
+    [AuditEntityEnum.TemplateVersion]: {
+      [AuditActionEnum.Create]: (d) => [
+        t('certificates.templateVersion', { version: d.version }),
+      ],
+    },
+    [AuditEntityEnum.Certificate]: {
+      [AuditActionEnum.Update]: (d) => [
+        code(d.code),
+        ...(d.name === undefined ? [] : [label(t('courses.name'), d.name)]),
+        ...(d.issueDate === undefined
+          ? []
+          : [label(t('auditLog.detailIssueDate'), day(d.issueDate))]),
+      ],
+      [AuditActionEnum.Delete]: (d) => [code(d.code)],
+      [AuditActionEnum.Revoke]: (d) => [
+        code(d.code),
+        label(t('certificates.reasonLabel'), d.reason),
+      ],
+      [AuditActionEnum.Reinstate]: (d) => [code(d.code)],
+    },
+    [AuditEntityEnum.Job]: {
+      [AuditActionEnum.Issue]: (d) =>
+        d.retry
+          ? [t('auditLog.detailRetry')]
+          : [
+              label(t('auditLog.detailParticipants'), d.participants),
+              label(t('auditLog.detailIssueDate'), day(d.issueDate)),
+            ],
+      [AuditActionEnum.Regenerate]: (d) =>
+        d.retry
+          ? [t('auditLog.detailRetry')]
+          : [
+              label(t('auditLog.detailCertificates'), d.certificates),
+              t('certificates.templateVersion', { version: d.templateVersion }),
+            ],
+    },
+  };
+
+  // the server pairs each action with its details, which TS can't correlate here
+  const byPair = describers as unknown as Record<
+    AuditEntity,
+    Record<AuditAction, (details: AuditRecord['details']) => string[]>
+  >;
+  return (entry) => byPair[entry.entity][entry.action](entry.details);
+}
 
 type AuditLogTableProps = {
   entries: readonly AuditEntrySummary[];
@@ -55,7 +210,6 @@ export function AuditLogTable({
   onPageChange,
 }: AuditLogTableProps) {
   const { t, i18n } = useTranslation();
-  const localeNames = useLocaleNames();
   const dates = useMemo(
     () =>
       new Intl.DateTimeFormat(i18n.language, {
@@ -64,54 +218,7 @@ export function AuditLogTable({
       }),
     [i18n.language],
   );
-
-  // the known detail fields, translated; anything else is shown as it is
-  const describeDetail = (
-    entry: AuditEntrySummary,
-    key: string,
-    value: unknown,
-  ): string | null => {
-    const isCourse = entry.entity === AuditEntityEnum.Course;
-    // the target column already names it, unless it was renamed
-    if (key === 'name' && entry.action !== AuditActionEnum.Update) return null;
-    if (key === 'name' && typeof value === 'string') {
-      return `${t('courses.name')}: ${value}`;
-    }
-    if (key === 'email' && typeof value === 'string') {
-      return `${t('participants.email')}: ${value}`;
-    }
-    if (key === 'role') {
-      const role = Object.values(RoleEnum).find((r) => r === value);
-      if (role) return `${t('auditLog.detailRole')}: ${t(`roles.${role}`)}`;
-    }
-    if (key === 'active' && typeof value === 'boolean') {
-      const inactive = isCourse ? t('courses.archived') : t('users.inactive');
-      return `${t('auditLog.detailStatus')}: ${value ? t('users.active') : inactive}`;
-    }
-    if (isCourse && key === 'locale') {
-      const locale = Object.values(LocaleEnum).find((l) => l === value);
-      if (locale) return `${t('courses.locale')}: ${localeNames(locale)}`;
-    }
-    if (isCourse && key === 'dateFormat' && typeof value === 'string') {
-      return `${t('courses.dateFormat')}: ${value}`;
-    }
-    if (entry.action === AuditActionEnum.Import) {
-      const status = Object.values(ImportRowStatusEnum).find((s) => s === key);
-      if (status)
-        return `${t(`participantImport.groups.${status}`)}: ${String(value)}`;
-      if (key === 'mode') {
-        return value === ImportModeEnum.Update
-          ? t('participantImport.modeUpdate')
-          : t('participantImport.modeSkip');
-      }
-    }
-    if (isCourse && key === 'lookupEnabled' && typeof value === 'boolean') {
-      return `${t('courses.lookup')}: ${
-        value ? t('courses.listed') : t('courses.hidden')
-      }`;
-    }
-    return `${key}: ${typeof value === 'string' ? value : JSON.stringify(value)}`;
-  };
+  const describeDetails = useDetailDescriber();
 
   return (
     <DataTable<AuditEntrySummary>
@@ -187,10 +294,7 @@ export function AuditLogTable({
           title: t('auditLog.details'),
           render: (entry) => (
             <Text size="sm" c="dimmed">
-              {Object.entries(entry.details)
-                .map(([key, value]) => describeDetail(entry, key, value))
-                .filter((detail) => detail !== null)
-                .join(' · ')}
+              {describeDetails(entry).join(' · ')}
             </Text>
           ),
         },

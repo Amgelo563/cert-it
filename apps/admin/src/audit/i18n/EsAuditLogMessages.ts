@@ -17,6 +17,12 @@ export const EsAuditLogMessages = {
     removedUser: 'Usuario #{id}',
     detailRole: 'Rol',
     detailStatus: 'Estado',
+    detailParticipants: 'Participantes',
+    detailCertificates: 'Certificados',
+    detailIssueDate: 'Fecha de emisión',
+    detailRetry: 'Reintento',
+    detailCode: 'Código',
+    fontSources: { upload: 'Subida', catalog: 'Del catálogo' },
     actions: {
       create: 'Creó',
       update: 'Actualizó',

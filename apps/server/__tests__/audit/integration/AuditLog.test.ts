@@ -12,7 +12,7 @@ afterEach(() => {
 });
 
 describe('AuditLog (record)', () => {
-  test('GIVEN an entry WHEN recording it THEN stores it with empty details by default', () => {
+  test('GIVEN an entry WHEN recording it THEN stores it with its details', () => {
     const database = createTestDatabase();
     databases.push(database);
     const auditLog = AuditLog.create({ database });
@@ -23,10 +23,14 @@ describe('AuditLog (record)', () => {
       action: AuditActionEnum.Update,
       entity: AuditEntityEnum.User,
       entityId: user.id,
+      details: { active: false },
     });
 
     expect(
       database.getRepositories().auditLog.list({ page: 1, size: 10 }),
-    ).toMatchObject({ total: 1, items: [{ id: entry.id, details: {} }] });
+    ).toMatchObject({
+      total: 1,
+      items: [{ id: entry.id, details: { active: false } }],
+    });
   });
 });

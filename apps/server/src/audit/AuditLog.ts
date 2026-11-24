@@ -1,4 +1,4 @@
-import type { AuditAction, AuditEntity } from '@cert-it/shared';
+import type { AuditRecord } from '@cert-it/shared';
 import type { DatabaseService } from '../database/DatabaseService';
 import type { UserId } from '../user/User';
 import type { AuditEntry } from './AuditEntry';
@@ -20,14 +20,13 @@ export class AuditLog {
   }
 
   /** Appends an entry to the audit log. */
-  public record(entry: {
-    /** The user who made the change, or null if the app made it on its own. */
-    userId: UserId | null;
-    action: AuditAction;
-    entity: AuditEntity;
-    entityId: number;
-    details?: Readonly<Record<string, unknown>>;
-  }): AuditEntry {
+  public record(
+    entry: AuditRecord & {
+      /** The user who made the change, or null if the app made it on its own. */
+      readonly userId: UserId | null;
+      readonly entityId: number;
+    },
+  ): AuditEntry {
     return this.database.getRepositories().auditLog.create(entry).unwrap();
   }
 }

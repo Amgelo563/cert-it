@@ -1,7 +1,7 @@
 import {
   type ApiErrorCode,
   ApiErrorCodeEnum,
-  type AuditAction,
+  type AuditChange,
   AuditActionEnum,
   AuditEntityEnum,
   CertificateStatusEnum,
@@ -130,6 +130,7 @@ export class CertificateManager {
           entityId: job.id,
           details: {
             courseId: course.id,
+            retry: false,
             participants: participantIds.length,
             issueDate,
           },
@@ -215,10 +216,13 @@ export class CertificateManager {
                 .unwrapOr(null);
         if (!updated) return Result.err(ApiErrorCodeEnum.NotFound);
 
-        this.audit(userId, updated, AuditActionEnum.Update, {
-          code: updated.code,
-          ...(name === undefined ? {} : { name }),
-          ...(issueDate === undefined ? {} : { issueDate }),
+        this.audit(userId, updated, {
+          action: AuditActionEnum.Update,
+          details: {
+            code: updated.code,
+            ...(name === undefined ? {} : { name }),
+            ...(issueDate === undefined ? {} : { issueDate }),
+          },
         });
         return Result.ok(
           this.regenerator.queue({
@@ -242,10 +246,13 @@ export class CertificateManager {
         const removed = repositories.certificates.delete(certificate.id);
         if (removed.isErr()) return Result.err(ApiErrorCodeEnum.NotFound);
 
-        this.audit(userId, certificate, AuditActionEnum.Delete, {
-          code: certificate.code,
-          name: repositories.participants.findById(certificate.participantId)
-            ?.name,
+        this.audit(userId, certificate, {
+          action: AuditActionEnum.Delete,
+          details: {
+            code: certificate.code,
+            name: repositories.participants.findById(certificate.participantId)
+              ?.name,
+          },
         });
         return Result.ok(undefined);
       });
@@ -277,9 +284,12 @@ export class CertificateManager {
         });
         if (revoked.isErr()) return Result.err(ApiErrorCodeEnum.NotFound);
 
-        this.audit(userId, revoked.value, AuditActionEnum.Revoke, {
-          code: certificate.code,
-          reason,
+        this.audit(userId, revoked.value, {
+          action: AuditActionEnum.Revoke,
+          details: {
+            code: certificate.code,
+            reason,
+          },
         });
         return Result.ok(revoked.value);
       });
@@ -304,8 +314,11 @@ export class CertificateManager {
         });
         if (reinstated.isErr()) return Result.err(ApiErrorCodeEnum.NotFound);
 
-        this.audit(userId, reinstated.value, AuditActionEnum.Reinstate, {
-          code: certificate.code,
+        this.audit(userId, reinstated.value, {
+          action: AuditActionEnum.Reinstate,
+          details: {
+            code: certificate.code,
+          },
         });
         return Result.ok(reinstated.value);
       });
@@ -355,15 +368,13 @@ export class CertificateManager {
   protected audit(
     userId: UserId,
     target: Certificate,
-    action: AuditAction,
-    details: Readonly<Record<string, unknown>>,
+    change: AuditChange<typeof AuditEntityEnum.Certificate>,
   ): void {
     this.auditLog.record({
       userId,
-      action,
       entity: AuditEntityEnum.Certificate,
       entityId: target.id,
-      details,
+      ...change,
     });
   }
 }

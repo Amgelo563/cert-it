@@ -18,7 +18,8 @@ export class SqliteAuditLogRepository
     return this.findPage(page, { orderBy: [desc(auditLogTable.id)] });
   }
 
+  // rows are only written through the typed create, so they match their pair
   protected toModel(row: typeof auditLogTable.$inferSelect): AuditEntry {
-    return row;
+    return row as AuditEntry;
   }
 }

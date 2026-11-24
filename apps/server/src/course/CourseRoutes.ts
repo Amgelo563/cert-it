@@ -3,7 +3,7 @@ import {
   type ApiErrorCode,
   ApiErrorCodeEnum,
   type ApiPage,
-  type AuditAction,
+  type AuditChange,
   AuditActionEnum,
   AuditEntityEnum,
   CertificateStatusEnum,
@@ -191,8 +191,11 @@ export class CourseRoutes extends AbstractApiRoutes {
           lookupEnabled: body.lookupEnabled,
         })
         .unwrap();
-      this.audit(c.get('user').id, created, AuditActionEnum.Create, {
-        name: created.name,
+      this.audit(c.get('user').id, created, {
+        action: AuditActionEnum.Create,
+        details: {
+          name: created.name,
+        },
       });
       return created;
     });
@@ -205,8 +208,11 @@ export class CourseRoutes extends AbstractApiRoutes {
     const { id } = c.get('course');
     const updated = this.database.getUnitOfWork().transaction(({ courses }) =>
       courses.update(id, body).map((course) => {
-        this.audit(c.get('user').id, course, AuditActionEnum.Update, {
-          ...body,
+        this.audit(c.get('user').id, course, {
+          action: AuditActionEnum.Update,
+          details: {
+            ...body,
+          },
         });
         return course;
       }),
@@ -228,8 +234,11 @@ export class CourseRoutes extends AbstractApiRoutes {
 
     const deleted = this.database.getUnitOfWork().transaction(({ courses }) =>
       courses.delete(course.id).map(() => {
-        this.audit(c.get('user').id, course, AuditActionEnum.Delete, {
-          name: course.name,
+        this.audit(c.get('user').id, course, {
+          action: AuditActionEnum.Delete,
+          details: {
+            name: course.name,
+          },
         });
       }),
     );
@@ -287,15 +296,13 @@ export class CourseRoutes extends AbstractApiRoutes {
   protected audit(
     userId: UserId,
     target: Course,
-    action: AuditAction,
-    details?: Readonly<Record<string, unknown>>,
+    change: AuditChange<typeof AuditEntityEnum.Course>,
   ): void {
     this.auditLog.record({
       userId,
-      action,
       entity: AuditEntityEnum.Course,
       entityId: target.id,
-      details,
+      ...change,
     });
   }
 }

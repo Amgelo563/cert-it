@@ -12,11 +12,12 @@ import { ApiRequestError } from '../../../../src/app/api/errors/ApiRequestError'
 
 const BaseUrl = new URL('https://example.org/certs/');
 
+// a copy per call, since a body can only be read once
 function createClient(response: Response | Error) {
   const fetch = vi.fn<typeof globalThis.fetch>(() =>
     response instanceof Error
       ? Promise.reject(response)
-      : Promise.resolve(response),
+      : Promise.resolve(response.clone()),
   );
   const client = ApiClient.create({ injections: { baseUrl: BaseUrl, fetch } });
   return { client, fetch };

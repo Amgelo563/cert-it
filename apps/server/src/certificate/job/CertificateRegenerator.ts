@@ -70,6 +70,7 @@ export class CertificateRegenerator {
         entityId: job.id,
         details: {
           courseId,
+          retry: false,
           certificates: certificates.length,
           templateVersion: version.version,
         },

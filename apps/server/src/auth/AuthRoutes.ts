@@ -1,7 +1,7 @@
 import { RateLimiter } from '@cert-it/hono';
 import {
   ApiErrorCodeEnum,
-  type AuditAction,
+  type AuditChange,
   AuditActionEnum,
   AuditEntityEnum,
   type ChangePasswordRequest,
@@ -165,7 +165,7 @@ export class AuthRoutes extends AbstractApiRoutes {
     this.accountLimiter.reset(accountKey);
     this.database.atomically(() => {
       this.sessions.open(c, user.id);
-      this.audit(user, AuditActionEnum.Login);
+      this.audit(user, { action: AuditActionEnum.Login, details: {} });
     });
     return c.json<CurrentUser, 200>(AuthRoutes.toCurrentUser(user), 200);
   }
@@ -203,19 +203,22 @@ export class AuthRoutes extends AbstractApiRoutes {
         .unwrap();
       this.sessions.endAll(user.id);
       this.sessions.open(c, user.id);
-      this.audit(user, AuditActionEnum.ChangePassword);
+      this.audit(user, { action: AuditActionEnum.ChangePassword, details: {} });
       return changed;
     });
     this.accountLimiter.reset(accountKey);
     return c.json<CurrentUser, 200>(AuthRoutes.toCurrentUser(updated), 200);
   }
 
-  protected audit(user: User, action: AuditAction): void {
+  protected audit(
+    user: User,
+    change: AuditChange<typeof AuditEntityEnum.User>,
+  ): void {
     this.auditLog.record({
       userId: user.id,
-      action,
       entity: AuditEntityEnum.User,
       entityId: user.id,
+      ...change,
     });
   }
 

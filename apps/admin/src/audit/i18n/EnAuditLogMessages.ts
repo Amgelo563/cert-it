@@ -16,6 +16,12 @@ export const EnAuditLogMessages = {
     removedUser: 'User #{id}',
     detailRole: 'Role',
     detailStatus: 'Status',
+    detailParticipants: 'Participants',
+    detailCertificates: 'Certificates',
+    detailIssueDate: 'Issue date',
+    detailRetry: 'Retry',
+    detailCode: 'Code',
+    fontSources: { upload: 'Uploaded', catalog: 'From the catalog' },
     actions: {
       create: 'Created',
       update: 'Updated',
