@@ -12,6 +12,7 @@ import { SqliteCourseRepository } from '../course/repository/SqliteCourseReposit
 import { StartupError } from '../error/StartupError';
 import { SqliteFontRepository } from '../font/repository/SqliteFontRepository';
 import { SqliteJobRepository } from '../job/repository/SqliteJobRepository';
+import { SqliteOnboardingRepository } from '../onboarding/repository/SqliteOnboardingRepository';
 import { SqliteParticipantRepository } from '../participant/repository/SqliteParticipantRepository';
 import { SqliteTemplateVersionRepository } from '../template/repository/SqliteTemplateVersionRepository';
 import { SqliteUserRepository } from '../user/repository/SqliteUserRepository';
@@ -172,6 +173,7 @@ export class DatabaseService {
       certificates: new SqliteCertificateRepository({ db }),
       jobs: new SqliteJobRepository({ db }),
       auditLog: new SqliteAuditLogRepository({ db }),
+      onboarding: new SqliteOnboardingRepository({ db }),
     };
   }
 }

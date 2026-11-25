@@ -7,6 +7,7 @@ import { AuthProvider } from '../../auth/AuthProvider';
 import { RequireAuth } from '../../auth/guard/RequireAuth';
 import { RequireGuest } from '../../auth/guard/RequireGuest';
 import { RequirePermission } from '../../auth/guard/RequirePermission';
+import { OnboardingProvider } from '../../onboarding/OnboardingProvider';
 import { RouteErrorPage } from '../error/RouteErrorPage';
 import { AdminLayout } from '../layout/AdminLayout';
 import { PageLoader } from '../layout/PageLoader';
@@ -128,7 +129,9 @@ export const AdminRoutes: RouteObject[] = [
       {
         element: (
           <RequireAuth>
-            <AdminLayout />
+            <OnboardingProvider>
+              <AdminLayout />
+            </OnboardingProvider>
           </RequireAuth>
         ),
         children: [

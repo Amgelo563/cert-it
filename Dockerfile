@@ -46,6 +46,7 @@ COPY --from=build /out/server/package.json ./
 COPY --from=build /out/server/node_modules ./node_modules
 COPY --from=build /out/server/dist ./dist
 COPY --from=build /out/server/drizzle ./drizzle
+COPY --from=build /out/server/assets ./assets
 COPY --from=build /repo/apps/admin/dist /admin/dist
 COPY --from=build /repo/apps/public/dist /public/dist
 

@@ -18,6 +18,7 @@ import {
   OneTimePasswordModal,
 } from './password/OneTimePasswordModal';
 import { UsersTable } from './table/UsersTable';
+import { TourTargetEnum } from '../onboarding/tour/TourTargetEnum';
 
 const PageSize = 25;
 
@@ -140,6 +141,7 @@ export function UsersPage() {
         description={t('users.description')}
         actions={
           <Button
+            data-tour={TourTargetEnum.UsersAdd}
             leftSection={<IconUserPlus size={16} stroke={1.5} />}
             onClick={openAdd}
           >
@@ -148,7 +150,7 @@ export function UsersPage() {
         }
       />
 
-      <Surface p="lg">
+      <Surface p="lg" data-tour={TourTargetEnum.UsersTable}>
         <Stack gap="md">
           <Group justify="space-between">
             <Text fw={500} size="lg">

@@ -28,6 +28,7 @@ import { CertificateRoutes } from '../../../src/certificate/CertificateRoutes';
 import { CertificateRegenerator } from '../../../src/certificate/job/CertificateRegenerator';
 import { CertificateExportRoutes } from '../../../src/certificate/export/CertificateExportRoutes';
 import { JobRoutes } from '../../../src/job/JobRoutes';
+import { OnboardingRoutes } from '../../../src/onboarding/OnboardingRoutes';
 import { QueueOnlyJobService } from '../../job/mocks/QueueOnlyJobService';
 import { UserRoutes } from '../../../src/user/UserRoutes';
 import { createTestCredentials } from '../../credential/mocks/createTestCredentials';
@@ -176,6 +177,7 @@ export function createAuthOptions(
     fontCatalog,
     templates,
     audit: new AuditLogRoutes({ database, guard }),
+    onboarding: new OnboardingRoutes({ database, guard }),
     csrf: ApiService.createCsrfGuard(siteUrl),
   };
 }

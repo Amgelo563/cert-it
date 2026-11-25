@@ -47,6 +47,7 @@ import { RegenerateCertificatesModal } from './regenerate/RegenerateCertificates
 import { useOutdatedCertificates } from './regenerate/useOutdatedCertificates';
 import { RevokeCertificateModal } from './revoke/RevokeCertificateModal';
 import { CertificatesTable } from './table/CertificatesTable';
+import { TourTargetEnum } from '../../onboarding/tour/TourTargetEnum';
 
 const PageSize = 25;
 
@@ -259,7 +260,7 @@ export function CertificatesTab() {
         </Surface>
       )}
 
-      <Surface p="lg">
+      <Surface p="lg" data-tour={TourTargetEnum.CertificatesTable}>
         <Stack gap="md">
           <Flex
             justify="space-between"
@@ -306,6 +307,7 @@ export function CertificatesTab() {
                   </>
                 ) : (
                   <Button
+                    data-tour={TourTargetEnum.CertificatesIssue}
                     leftSection={<IconCertificate size={16} stroke={1.5} />}
                     disabled={running || withoutCertificate === 0}
                     onClick={() => setIssuing(null)}

@@ -33,6 +33,7 @@ import { AdminPathEnum } from '../app/router/AdminPathEnum';
 import { usePermissions } from '../auth/usePermissions';
 import { type CourseTab, CourseTabEnum, coursePath } from './CourseTabEnum';
 import type { CourseContext } from './useCourse';
+import { TourTargetEnum } from '../onboarding/tour/TourTargetEnum';
 
 /** A course's page: its name, counts and status, with a tab for each part of it. */
 export function CoursePage() {
@@ -170,7 +171,10 @@ export function CoursePage() {
           if (tab) void navigate(coursePath(course.id, tab as CourseTab));
         }}
       >
-        <Tabs.List aria-label={t('courses.tabsLabel')}>
+        <Tabs.List
+          aria-label={t('courses.tabsLabel')}
+          data-tour={TourTargetEnum.CourseTabs}
+        >
           {tabs.map(({ value, icon: Icon }) => (
             <Tabs.Tab
               key={value}

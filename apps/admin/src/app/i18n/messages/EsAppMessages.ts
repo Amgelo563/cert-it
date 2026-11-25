@@ -93,6 +93,8 @@ export const EsAppMessages = {
         'Todos los certificados ya usan la última plantilla.',
       jobNotFailed:
         'Solo se puede reintentar una tarea que falló. Recarga la página.',
+      unavailableInPractice:
+        'Esto no está disponible en la práctica. Sal de la práctica para hacerlo de verdad.',
     },
     network:
       'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.',

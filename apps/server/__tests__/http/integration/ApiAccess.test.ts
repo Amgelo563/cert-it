@@ -47,6 +47,7 @@ const RouteAccessTable: Readonly<Record<string, RouteAccess>> = {
   'GET /font-catalog': PermissionEnum.EditCourses,
   'POST /font-catalog/import': PermissionEnum.EditCourses,
   'GET /font-catalog/preview': PermissionEnum.EditCourses,
+  'GET /font-catalog/download': PermissionEnum.EditCourses,
   'POST /courses/:courseId/certificates/issue':
     PermissionEnum.IssueCertificates,
   'GET /courses/:courseId/certificates/outdated': PermissionEnum.ViewRecords,
@@ -66,6 +67,9 @@ const RouteAccessTable: Readonly<Record<string, RouteAccess>> = {
   'GET /courses/:courseId/jobs/:id': PermissionEnum.ViewRecords,
   'POST /courses/:courseId/jobs/:id/retry': PermissionEnum.IssueCertificates,
   'GET /audit': PermissionEnum.ViewAuditLog,
+  'GET /onboarding': 'session',
+  'PUT /onboarding/steps/:step': 'session',
+  'PUT /onboarding/dismissed': 'session',
 };
 
 type Caller =

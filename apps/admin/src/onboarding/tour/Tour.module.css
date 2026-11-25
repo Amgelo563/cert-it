@@ -1,0 +1,20 @@
+/* driver.js's popover as a panel card: body color, large radius and shadow, no border or arrow */
+.popover {
+  font-family: var(--mantine-font-family);
+  color: var(--mantine-color-text);
+  background-color: var(--mantine-color-body);
+  border-radius: var(--mantine-radius-lg);
+  box-shadow: var(--mantine-shadow-lg);
+  padding: var(--mantine-spacing-md);
+  min-width: rem(280px);
+  max-width: rem(340px);
+
+  @mixin dark {
+    box-shadow: none;
+    border: rem(1px) solid var(--mantine-color-dark-5);
+  }
+
+  :global(.driver-popover-arrow) {
+    display: none;
+  }
+}

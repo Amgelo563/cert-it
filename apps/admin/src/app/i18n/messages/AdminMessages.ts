@@ -3,6 +3,7 @@ import type { AuthMessages } from '../../../auth/i18n/AuthMessages';
 import type { CourseMessages } from '../../../course/i18n/CourseMessages';
 import type { ParticipantMessages } from '../../../course/participants/i18n/ParticipantMessages';
 import type { CertificateMessages } from '../../../course/certificates/i18n/CertificateMessages';
+import type { OnboardingMessages } from '../../../onboarding/i18n/OnboardingMessages';
 import type { UserMessages } from '../../../user/i18n/UserMessages';
 import type { AppMessages } from './AppMessages';
 
@@ -13,4 +14,5 @@ export type AdminMessages = AppMessages
   & ParticipantMessages
   & CertificateMessages
   & UserMessages
-  & AuditLogMessages;
+  & AuditLogMessages
+  & OnboardingMessages;

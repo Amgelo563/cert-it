@@ -3,6 +3,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, useNavigation } from 'react-router';
+import { PracticeBar } from '../../onboarding/practice/PracticeBar';
 import classes from './AdminLayout.module.css';
 import { AdminHeader } from './header/AdminHeader';
 import { AdminSidebar } from './sidebar/AdminSidebar';
@@ -57,6 +58,7 @@ export function AdminLayout() {
 
       <AppShell.Main className={classes.main}>
         <div className={classes.content}>
+          <PracticeBar />
           <Outlet />
         </div>
       </AppShell.Main>

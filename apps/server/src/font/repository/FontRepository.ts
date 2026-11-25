@@ -36,6 +36,6 @@ export interface FontRepository {
   /** Returns every font, sorted by family and style. */
   list(): Font[];
 
-  /** Returns the fonts that no template version uses. */
+  /** Returns the fonts that no template version uses, except the bundled ones. */
   listUnused(): Font[];
 }

@@ -22,7 +22,11 @@ export const EsAuditLogMessages = {
     detailIssueDate: 'Fecha de emisión',
     detailRetry: 'Reintento',
     detailCode: 'Código',
-    fontSources: { upload: 'Subida', catalog: 'Del catálogo' },
+    fontSources: {
+      upload: 'Subida',
+      catalog: 'Del catálogo',
+      bundled: 'Incluida',
+    },
     actions: {
       create: 'Creó',
       update: 'Actualizó',

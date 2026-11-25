@@ -10,6 +10,8 @@ import {
   type ApiErrorCode,
   ApiErrorCodeEnum,
   type CatalogFamilySummary,
+  type CatalogFontDownloadQuery,
+  CatalogFontDownloadQuerySchema,
   type CatalogFontPreviewQuery,
   CatalogFontPreviewQuerySchema,
   type FontCatalogSearchQuery,
@@ -47,7 +49,7 @@ type FontCatalogRoutesOptions = {
   active: ActiveCatalog;
 };
 
-/** Serves the font catalog routes, for Editors: search the configured online catalog, and import a font from it. The server downloads it, so rendering never depends on the catalog. */
+/** Serves the font catalog routes, for Editors: search the configured online catalog, download a font to try, and import one. The server downloads it, so rendering never depends on the catalog. */
 export class FontCatalogRoutes extends AbstractApiRoutes {
   /** Path of the routes, relative to the base path. */
   public static readonly Path = '/api/font-catalog';
@@ -145,6 +147,12 @@ export class FontCatalogRoutes extends AbstractApiRoutes {
         FontCatalogRoutes.validator('query', CatalogFontPreviewQuerySchema),
         (c) => this.preview(c, c.req.valid('query')),
       )
+      .get(
+        '/download',
+        guard.requirePermission(PermissionEnum.EditCourses),
+        FontCatalogRoutes.validator('query', CatalogFontDownloadQuerySchema),
+        (c) => this.download(c, c.req.valid('query')),
+      )
       .post(
         '/import',
         guard.requirePermission(PermissionEnum.EditCourses),
@@ -205,6 +213,25 @@ export class FontCatalogRoutes extends AbstractApiRoutes {
 
     c.header('Cache-Control', FontRoutes.PreviewCacheControl);
     return c.json<FontPreview, 200>(preview, 200);
+  }
+
+  // the file as the catalog has it, stored nowhere, so the panel can try it without importing
+  protected async download(
+    c: Context<AuthEnv>,
+    query: CatalogFontDownloadQuery,
+  ) {
+    if (!this.active) return this.error(c, ApiErrorCodeEnum.NotFound);
+
+    const downloaded = await this.active.catalog.download(
+      query.id,
+      { weight: query.weight, italic: query.italic === 'true' },
+      { subset: query.subset },
+    );
+    if (downloaded.isErr()) return this.downloadError(c, downloaded.error);
+
+    c.header('Cache-Control', FontRoutes.PreviewCacheControl);
+    c.header('Content-Type', 'application/octet-stream');
+    return c.body(downloaded.value.slice().buffer, 200);
   }
 
   protected remember(key: string, preview: FontPreview): void {

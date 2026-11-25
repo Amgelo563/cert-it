@@ -12,6 +12,10 @@ export const userTable = sqliteTable('users', {
   mustChangePassword: integer('must_change_password', { mode: 'boolean' })
     .notNull()
     .default(true),
+  /** When the user stopped the getting started guide from opening on its own. */
+  onboardingDismissedAt: integer('onboarding_dismissed_at', {
+    mode: 'timestamp_ms',
+  }),
   createdAt: integer('created_at', { mode: 'timestamp_ms' })
     .notNull()
     .$defaultFn(() => new Date()),

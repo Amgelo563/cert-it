@@ -6,10 +6,12 @@ import {
   Text,
   UnstyledButton,
 } from '@mantine/core';
-import { IconKey, IconLogout } from '@tabler/icons-react';
+import { IconHelpCircle, IconKey, IconLogout } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../../../auth/useAuth';
+import { useOnboarding } from '../../../onboarding/useOnboarding';
+import { MonoFigure } from '../MonoFigure';
 import { AdminPathEnum } from '../../router/AdminPathEnum';
 
 /** Avatar with the logged-in user's email, role, password change and logout. */
@@ -17,6 +19,7 @@ export function UserMenu() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const onboarding = useOnboarding();
   if (!user) return null;
 
   const signOut = async () => {
@@ -42,6 +45,22 @@ export function UserMenu() {
             {t(`roles.${user.role}`)}
           </Badge>
         </Stack>
+        <Menu.Item
+          leftSection={<IconHelpCircle size={16} stroke={1.5} />}
+          rightSection={
+            onboarding.state && (
+              <MonoFigure>
+                {t('onboarding.hub.progress', {
+                  done: onboarding.state.completedSteps.length,
+                  total: onboarding.steps.length,
+                })}
+              </MonoFigure>
+            )
+          }
+          onClick={onboarding.openHub}
+        >
+          {t('onboarding.hub.menuItem')}
+        </Menu.Item>
         <Menu.Item
           component={Link}
           to={AdminPathEnum.ChangePassword}

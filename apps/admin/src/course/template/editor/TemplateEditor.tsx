@@ -50,6 +50,7 @@ import {
   type GlyphWarning,
   withFontNames,
 } from './templateFields';
+import { TourTargetEnum } from '../../../onboarding/tour/TourTargetEnum';
 
 /** A base PDF the editor holds: its hash for saving, its bytes for the canvas. */
 export type EditorBasePdf = {
@@ -444,6 +445,7 @@ export function TemplateEditor({
           </FileButton>
           <Button
             variant="default"
+            data-tour={TourTargetEnum.TemplateFonts}
             loading={busy === 'font'}
             disabled={busy !== null && busy !== 'font'}
             leftSection={<IconTypography size={16} stroke={1.5} />}
@@ -482,6 +484,7 @@ export function TemplateEditor({
             fontLabel={(sha256) => fontLabelOf(fontInfo, sha256)}
           />
           <Button
+            data-tour={TourTargetEnum.TemplateSave}
             onClick={confirmSave}
             loading={busy === 'save'}
             disabled={!changed || (busy !== null && busy !== 'save')}
@@ -492,7 +495,11 @@ export function TemplateEditor({
         </Group>
       </Group>
       {!hasFonts && (
-        <Alert variant="light" icon={<IconInfoCircle size={18} stroke={1.5} />}>
+        <Alert
+          variant="light"
+          data-tour={TourTargetEnum.TemplateNeedsFont}
+          icon={<IconInfoCircle size={18} stroke={1.5} />}
+        >
           {t('template.needsFont')}
         </Alert>
       )}
@@ -523,15 +530,17 @@ export function TemplateEditor({
           </Text>
         </Alert>
       )}
-      <TemplateDesigner
-        ref={designer}
-        template={template}
-        fonts={fontOption}
-        plugins={plugins}
-        fieldNames={fieldNames}
-        onLoad={onLoad}
-        onChange={onChange}
-      />
+      <div data-tour={TourTargetEnum.TemplateDesigner}>
+        <TemplateDesigner
+          ref={designer}
+          template={template}
+          fonts={fontOption}
+          plugins={plugins}
+          fieldNames={fieldNames}
+          onLoad={onLoad}
+          onChange={onChange}
+        />
+      </div>
     </Stack>
   );
 }

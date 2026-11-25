@@ -11,6 +11,7 @@ import { CredentialRoutes } from '../credential/CredentialRoutes';
 import { CredentialSigner } from '../credential/CredentialSigner';
 import { IssuerKeyService } from '../credential/key/IssuerKeyService';
 import { DatabaseService } from '../database/DatabaseService';
+import { FontSeeder } from '../font/FontSeeder';
 import { ApiService } from '../http/api/ApiService';
 import { HttpService } from '../http/HttpService';
 import { BackgroundJobService } from '../job/BackgroundJobService';
@@ -33,6 +34,7 @@ type AppServiceOptions = {
   /** Null when backups are off. */
   backups: BackupService | null;
   jobs: BackgroundJobService;
+  fontSeeder: FontSeeder;
   api: ApiService;
   adminPanel: AdminPanelService;
   publicAssets: PublicAssetsService;
@@ -64,6 +66,8 @@ export class AppService {
 
   protected readonly jobs: BackgroundJobService;
 
+  protected readonly fontSeeder: FontSeeder;
+
   protected readonly api: ApiService;
 
   protected readonly adminPanel: AdminPanelService;
@@ -86,6 +90,7 @@ export class AppService {
     this.storageCleanup = options.storageCleanup;
     this.backups = options.backups;
     this.jobs = options.jobs;
+    this.fontSeeder = options.fontSeeder;
     this.api = options.api;
     this.adminPanel = options.adminPanel;
     this.publicAssets = options.publicAssets;
@@ -204,6 +209,9 @@ export class AppService {
               })
             : null,
       jobs,
+      fontSeeder:
+        injections?.fontSeeder
+        ?? FontSeeder.create({ database, dataDirectory }),
       api,
       adminPanel,
       publicAssets,
@@ -257,6 +265,7 @@ export class AppService {
     try {
       this.dataDirectory.start();
       this.database.start();
+      await this.fontSeeder.start();
       // before anything is issued under a new address
       await this.baseUrls.start();
       // before the jobs, whose generator only reads the key

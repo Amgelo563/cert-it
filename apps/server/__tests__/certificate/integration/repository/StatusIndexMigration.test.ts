@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { sql } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, test } from 'vite-plus/test';
 import { DatabaseService } from '../../../../src/database/DatabaseService';
+import type { User } from '../../../../src/user/User';
 import { MockSeeder } from '../../../database/mocks/MockSeeder';
 
 const MigrationsFolder = join(import.meta.dirname, '../../../../drizzle');
@@ -52,10 +53,18 @@ function seedLegacy(path: string): void {
 
   const seeder = new MockSeeder(database.getRepositories());
   const course = seeder.course();
-  const version = seeder.templateVersion(course, seeder.user());
   const executor = database.getExecutor();
+  // raw, as the users table of that time lacks columns added since
+  executor.run(sql`
+    INSERT INTO users (email, password_hash, role, created_at)
+    VALUES ('legacy@example.org', 'hash', 'admin', 0)
+  `);
+  const user = { id: 1 } as User;
+  const version = seeder.templateVersion(course, user);
   for (let i = 1; i <= 3; i++) {
-    const participant = seeder.participant(course);
+    const participant = seeder.participant(course, {
+      email: `legacy${i}@example.org`,
+    });
     executor.run(sql`
       INSERT INTO certificates (code, course_id, participant_id, template_version_id, issue_date, created_at, updated_at)
       VALUES (${`CODE-000${i}-XX`}, ${course.id}, ${participant.id}, ${version.id}, '2026-11-18', 0, 0)

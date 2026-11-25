@@ -4,6 +4,7 @@ import type { CertificateRepository } from '../certificate/repository/Certificat
 import type { CourseRepository } from '../course/repository/CourseRepository';
 import type { FontRepository } from '../font/repository/FontRepository';
 import type { JobRepository } from '../job/repository/JobRepository';
+import type { OnboardingRepository } from '../onboarding/repository/OnboardingRepository';
 import type { ParticipantRepository } from '../participant/repository/ParticipantRepository';
 import type { TemplateVersionRepository } from '../template/repository/TemplateVersionRepository';
 import type { UserRepository } from '../user/repository/UserRepository';
@@ -19,4 +20,5 @@ export type Repositories = {
   readonly certificates: CertificateRepository;
   readonly jobs: JobRepository;
   readonly auditLog: AuditLogRepository;
+  readonly onboarding: OnboardingRepository;
 };

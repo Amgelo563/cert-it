@@ -1,5 +1,6 @@
 import { AbstractSqliteRepository } from '@cert-it/data';
-import { eq, notExists } from 'drizzle-orm';
+import { FontSourceEnum } from '@cert-it/shared';
+import { and, eq, ne, notExists } from 'drizzle-orm';
 import { templateVersionFontTable } from '../../template/repository/templateVersionFontTable';
 import type { Font } from '../Font';
 import { fontTable } from './fontTable';
@@ -21,11 +22,15 @@ export class SqliteFontRepository
 
   public listUnused(): Font[] {
     return this.findMany({
-      where: notExists(
-        this.db
-          .select({ fontId: templateVersionFontTable.fontId })
-          .from(templateVersionFontTable)
-          .where(eq(templateVersionFontTable.fontId, fontTable.id)),
+      // bundled fonts stay, as they're meant to be there before any template uses them
+      where: and(
+        ne(fontTable.source, FontSourceEnum.Bundled),
+        notExists(
+          this.db
+            .select({ fontId: templateVersionFontTable.fontId })
+            .from(templateVersionFontTable)
+            .where(eq(templateVersionFontTable.fontId, fontTable.id)),
+        ),
       ),
     });
   }

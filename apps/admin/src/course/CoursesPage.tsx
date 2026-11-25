@@ -12,6 +12,7 @@ import { readSiteDefaultLocale } from '../app/i18n/readSiteDefaultLocale';
 import { PageHeader } from '../app/layout/PageHeader';
 import { Surface } from '../app/layout/Surface';
 import { usePermissions } from '../auth/usePermissions';
+import { TourTargetEnum } from '../onboarding/tour/TourTargetEnum';
 import { AddCourseModal } from './add/AddCourseModal';
 import { coursePath } from './CourseTabEnum';
 import { CoursesTable } from './table/CoursesTable';
@@ -48,6 +49,7 @@ export function CoursesPage() {
         actions={
           can(PermissionEnum.EditCourses) && (
             <Button
+              data-tour={TourTargetEnum.CoursesAdd}
               leftSection={<IconPlus size={16} stroke={1.5} />}
               onClick={() => setAdding(true)}
             >
@@ -57,7 +59,7 @@ export function CoursesPage() {
         }
       />
 
-      <Surface p="lg">
+      <Surface p="lg" data-tour={TourTargetEnum.CoursesTable}>
         <Stack gap="md">
           <Group justify="space-between">
             <Text fw={500} size="lg">

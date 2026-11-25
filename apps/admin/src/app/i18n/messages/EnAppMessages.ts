@@ -91,6 +91,8 @@ export const EnAppMessages = {
       nothingToRegenerate:
         'Every certificate already uses the latest template.',
       jobNotFailed: 'Only a job that failed can be retried. Reload the page.',
+      unavailableInPractice:
+        "This isn't available in practice. Exit practice to do it for real.",
     },
     network: "Couldn't reach the server. Check your connection and try again.",
     unexpected: 'Something went wrong. Try again.',

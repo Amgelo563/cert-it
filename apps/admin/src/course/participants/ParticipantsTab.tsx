@@ -29,6 +29,7 @@ import { useCourse } from '../useCourse';
 import { ParticipantFormModal } from './form/ParticipantFormModal';
 import { ImportParticipantsModal } from './import/ImportParticipantsModal';
 import { ParticipantsTable } from './table/ParticipantsTable';
+import { TourTargetEnum } from '../../onboarding/tour/TourTargetEnum';
 
 const PageSize = 25;
 
@@ -117,7 +118,7 @@ export function ParticipantsTab() {
     });
 
   return (
-    <Surface p="lg">
+    <Surface p="lg" data-tour={TourTargetEnum.ParticipantsTable}>
       <Stack gap="md">
         <Flex
           justify="space-between"
@@ -145,12 +146,14 @@ export function ParticipantsTab() {
             <Group gap="sm">
               <Button
                 variant="default"
+                data-tour={TourTargetEnum.ParticipantsImport}
                 leftSection={<IconFileImport size={16} stroke={1.5} />}
                 onClick={() => setImporting(true)}
               >
                 {t('participantImport.open')}
               </Button>
               <Button
+                data-tour={TourTargetEnum.ParticipantsAdd}
                 leftSection={<IconUserPlus size={16} stroke={1.5} />}
                 onClick={() => setEditing(null)}
               >

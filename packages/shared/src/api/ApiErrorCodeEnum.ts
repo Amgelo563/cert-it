@@ -56,6 +56,8 @@ export const ApiErrorCodeEnum = {
   NothingToRegenerate: 'nothing_to_regenerate',
   /** Only a failed job can run again. */
   JobNotFailed: 'job_not_failed',
+  /** Answered by the panel's practice mode, never by the server, for what it can't pretend to do. */
+  UnavailableInPractice: 'unavailable_in_practice',
 } as const;
 
 /** The code in the body of an API error response. */

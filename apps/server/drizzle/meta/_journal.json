@@ -36,6 +36,13 @@
       "when": 1795497960539,
       "tag": "0004_random_status_index",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1795572664709,
+      "tag": "0005_onboarding",
+      "breakpoints": true
     }
   ]
 }

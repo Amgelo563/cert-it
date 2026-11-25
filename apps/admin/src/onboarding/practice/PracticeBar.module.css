@@ -1,0 +1,10 @@
+/* a flat tint above the page, no border or color */
+.bar {
+  padding: rem(4px) var(--mantine-spacing-xs) rem(4px) var(--mantine-spacing-md);
+  margin-bottom: var(--mantine-spacing-lg);
+  border-radius: var(--mantine-radius-md);
+  background-color: light-dark(
+    var(--mantine-color-gray-1),
+    var(--mantine-color-dark-6)
+  );
+}

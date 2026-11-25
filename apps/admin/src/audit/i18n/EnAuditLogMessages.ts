@@ -21,7 +21,11 @@ export const EnAuditLogMessages = {
     detailIssueDate: 'Issue date',
     detailRetry: 'Retry',
     detailCode: 'Code',
-    fontSources: { upload: 'Uploaded', catalog: 'From the catalog' },
+    fontSources: {
+      upload: 'Uploaded',
+      catalog: 'From the catalog',
+      bundled: 'Included',
+    },
     actions: {
       create: 'Created',
       update: 'Updated',

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiRoutes } from '../../../../app/api/ApiClient';
 import { useApiRequest } from '../../../../app/api/useApiRequest';
+import { TourTargetEnum } from '../../../../onboarding/tour/TourTargetEnum';
 import { CatalogNames } from './CatalogNames';
 import { CatalogPanel } from './CatalogPanel';
 import { StoredFontsPanel } from './StoredFontsPanel';
@@ -58,7 +59,9 @@ export function FontsModal({ opened, onClose, ...props }: FontsModalProps) {
       centered={false}
       yOffset="8vh"
     >
-      <FontsTabs {...props} />
+      <div data-tour={TourTargetEnum.FontsModal}>
+        <FontsTabs {...props} />
+      </div>
     </Modal>
   );
 }

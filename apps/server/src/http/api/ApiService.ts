@@ -21,6 +21,7 @@ import { FontLibrary } from '../../font/FontLibrary';
 import { FontRoutes } from '../../font/FontRoutes';
 import type { BackgroundJobService } from '../../job/BackgroundJobService';
 import { JobRoutes } from '../../job/JobRoutes';
+import { OnboardingRoutes } from '../../onboarding/OnboardingRoutes';
 import { ParticipantRoutes } from '../../participant/ParticipantRoutes';
 import type { DataDirectoryService } from '../../storage/DataDirectoryService';
 import { TemplateRoutes } from '../../template/TemplateRoutes';
@@ -41,6 +42,7 @@ type ApiServiceOptions = {
   fontCatalog: FontCatalogRoutes;
   templates: TemplateRoutes;
   audit: AuditLogRoutes;
+  onboarding: OnboardingRoutes;
   csrf: CsrfGuard;
 };
 
@@ -70,6 +72,8 @@ export class ApiService {
 
   protected readonly audit: AuditLogRoutes;
 
+  protected readonly onboarding: OnboardingRoutes;
+
   protected readonly csrf: CsrfGuard;
 
   protected readonly app: ReturnType<ApiService['createApp']>;
@@ -86,6 +90,7 @@ export class ApiService {
     this.fontCatalog = options.fontCatalog;
     this.templates = options.templates;
     this.audit = options.audit;
+    this.onboarding = options.onboarding;
     this.csrf = options.csrf;
     this.app = this.createApp();
   }
@@ -177,6 +182,8 @@ export class ApiService {
         injections?.templates
         ?? TemplateRoutes.create({ ...shared, dataDirectory }),
       audit: injections?.audit ?? AuditLogRoutes.create({ database, guard }),
+      onboarding:
+        injections?.onboarding ?? OnboardingRoutes.create({ database, guard }),
       csrf: injections?.csrf ?? ApiService.createCsrfGuard(siteUrl),
     });
   }
@@ -217,7 +224,8 @@ export class ApiService {
       .route(TemplateRoutes.Path, this.templates.getApp())
       .route(FontRoutes.Path, this.fonts.getApp())
       .route(FontCatalogRoutes.Path, this.fontCatalog.getApp())
-      .route(AuditLogRoutes.Path, this.audit.getApp());
+      .route(AuditLogRoutes.Path, this.audit.getApp())
+      .route(OnboardingRoutes.Path, this.onboarding.getApp());
   }
 
   // answers are per user and change with every write, unless a route says otherwise

@@ -233,3 +233,37 @@ describe('FontCatalogRoutes (preview)', () => {
     expect(response.status).toBe(404);
   });
 });
+
+describe('FontCatalogRoutes (download)', () => {
+  test('GIVEN a family style WHEN downloading THEN answers its file without storing it', async () => {
+    const { database, request } = await setup();
+
+    const response = await request(
+      'GET',
+      '/download?id=inter&weight=400&italic=false&subset=latin',
+    );
+
+    expect(response.status).toBe(200);
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(
+      new Uint8Array(readFontFixture('basic.ttf')),
+    );
+    expect(database.getRepositories().fonts.list()).toEqual([]);
+  });
+
+  test.each([
+    ['an unknown style', new FakeCatalog(), 404],
+    ['imports turned off', null, 404],
+  ])(
+    'GIVEN %s WHEN downloading THEN answers %i',
+    async (_, catalog, status) => {
+      const { request } = await setup(catalog);
+
+      const response = await request(
+        'GET',
+        '/download?id=inter&weight=700&italic=false',
+      );
+
+      expect(response.status).toBe(status);
+    },
+  );
+});
