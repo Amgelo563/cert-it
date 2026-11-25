@@ -3,6 +3,7 @@ import { CsrfGuard, RateLimiter } from '@cert-it/hono';
 import { type Context, Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { html } from 'hono/html';
+import type { BrandingService } from '../../branding/BrandingService';
 import type { Config } from '../../config/schema/ConfigSchema';
 import type { Course, CourseId } from '../../course/Course';
 import type { DatabaseService } from '../../database/DatabaseService';
@@ -17,6 +18,7 @@ import { LookupPage } from './LookupPage';
 type LookupPageRoutesOptions = {
   database: DatabaseService;
   assets: PublicAssetsService;
+  branding: BrandingService;
   previews: LinkPreviewService;
   siteUrl: SiteUrl;
   /** Limits searches per client IP. */
@@ -47,6 +49,8 @@ export class LookupPageRoutes {
 
   protected readonly assets: PublicAssetsService;
 
+  protected readonly branding: BrandingService;
+
   protected readonly previews: LinkPreviewService;
 
   protected readonly siteUrl: SiteUrl;
@@ -62,6 +66,7 @@ export class LookupPageRoutes {
   constructor(options: LookupPageRoutesOptions) {
     this.database = options.database;
     this.assets = options.assets;
+    this.branding = options.branding;
     this.previews = options.previews;
     this.siteUrl = options.siteUrl;
     this.limiter = options.limiter;
@@ -75,17 +80,30 @@ export class LookupPageRoutes {
     siteUrl: SiteUrl;
     database: DatabaseService;
     assets: PublicAssetsService;
+    branding: BrandingService;
     previews: LinkPreviewService;
     injections?: Partial<
-      Omit<LookupPageRoutesOptions, 'database' | 'assets' | 'previews'>
+      Omit<
+        LookupPageRoutesOptions,
+        'database' | 'assets' | 'branding' | 'previews'
+      >
     >;
   }): LookupPageRoutes {
-    const { config, siteUrl, database, assets, previews, injections } = options;
+    const {
+      config,
+      siteUrl,
+      database,
+      assets,
+      branding,
+      previews,
+      injections,
+    } = options;
     const { maxRequests, windowMinutes } = config.lookup.rateLimit;
 
     return new LookupPageRoutes({
       database,
       assets,
+      branding,
       previews,
       siteUrl,
       limiter:
@@ -183,6 +201,7 @@ export class LookupPageRoutes {
     const courses = this.database.getRepositories().courses.listForLookup();
     const org = { org: this.orgName };
     const description = messages.format(texts.description, org);
+    const branding = this.branding.getPublicBranding();
 
     return c.html(
       html`<!doctype html>${(
@@ -193,6 +212,7 @@ export class LookupPageRoutes {
             description={description}
             orgName={this.orgName}
             assets={this.assets.getPage(LookupPageRoutes.AssetsEntry)}
+            branding={branding}
             preview={this.previews.getPreview({
               path: LookupPageRoutes.Path,
               title: texts.title,
@@ -208,6 +228,7 @@ export class LookupPageRoutes {
               noCourses={messages.format(texts.noCourses, org)}
               help={messages.format(texts.help, org)}
               validLabel={messages.get(locale).certificatePage.valid}
+              image={branding.lookupImage}
             />
           </PublicLayout>
         )}`,

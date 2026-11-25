@@ -1,5 +1,6 @@
 import type { Locale } from '@cert-it/shared';
 import type { Child } from 'hono/jsx';
+import type { PublicBranding } from '../branding/PublicBranding';
 import type { MessageCatalog } from '../i18n/MessageCatalog';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import type { LinkPreview } from './preview/LinkPreview';
@@ -13,6 +14,7 @@ type PublicLayoutProps = {
   /** Name of the issuing organization, shown in the header. */
   orgName: string;
   assets: PublicPageAssets;
+  branding: PublicBranding;
   /** Open Graph tags for when the page's link is shared. */
   preview?: LinkPreview | undefined;
   children?: Child;
@@ -27,6 +29,7 @@ export function PublicLayout(props: PublicLayoutProps) {
     description,
     orgName,
     assets,
+    branding,
     preview,
     children,
   } = props;
@@ -41,21 +44,53 @@ export function PublicLayout(props: PublicLayoutProps) {
         {/* pages hold people's names, so search engines shouldn't list them */}
         <meta name="robots" content="noindex" />
         {preview && <LinkPreviewTags preview={preview} />}
+        <link
+          rel="icon"
+          type={branding.favicon.type}
+          href={branding.favicon.url}
+        />
         {assets.styles.map((href) => (
           <link rel="stylesheet" href={href} />
         ))}
+        {/* after the page's styles, so its values win */}
+        {branding.stylesheet && (
+          <link rel="stylesheet" href={branding.stylesheet} />
+        )}
         <script type="module" src={assets.script} />
       </head>
       <body>
         <header class="site-header">
           <div class="container">
-            <span class="site-org">{orgName}</span>
+            {branding.logo ? (
+              <SiteLogo
+                logo={branding.logo}
+                logoDark={branding.logoDark}
+                alt={orgName}
+              />
+            ) : (
+              <span class="site-org">{orgName}</span>
+            )}
             <LanguageSwitcher locale={locale} messages={messages} />
           </div>
         </header>
         {children}
       </body>
     </html>
+  );
+}
+
+function SiteLogo(props: {
+  logo: string;
+  logoDark: string | null;
+  alt: string;
+}) {
+  return (
+    <picture class="site-logo">
+      {props.logoDark && (
+        <source srcset={props.logoDark} media="(prefers-color-scheme: dark)" />
+      )}
+      <img src={props.logo} alt={props.alt} />
+    </picture>
   );
 }
 

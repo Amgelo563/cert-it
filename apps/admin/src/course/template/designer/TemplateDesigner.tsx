@@ -1,9 +1,16 @@
-import { ThemeValues } from '@cert-it/shared';
+import { type AdminBranding, ThemeValues } from '@cert-it/shared';
 import type { Font, Lang, Plugins, Template } from '@pdfme/common';
 import { Designer } from '@pdfme/ui';
 import { useComputedColorScheme } from '@mantine/core';
-import { type Ref, useEffect, useImperativeHandle, useRef } from 'react';
+import {
+  type Ref,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBranding } from '../../../app/branding/useBranding';
 import { Surface } from '../../../app/layout/Surface';
 import { DesignerContainer } from './DesignerContainer';
 import { nameNewField } from './nameNewField';
@@ -14,25 +21,27 @@ import { useFillWindowHeight } from './useFillWindowHeight';
 const DesignerRadiusPx = 8;
 
 // antd themes of the Designer, with the same colors and radius as the Mantine theme
-const DesignerThemes = {
-  light: {
-    token: {
-      colorPrimary: ThemeValues.brandShades[ThemeValues.brandShadeIndex],
-      borderRadius: DesignerRadiusPx,
-      fontFamily: ThemeValues.fontFamily,
+function designerThemes(branding: AdminBranding) {
+  return {
+    light: {
+      token: {
+        colorPrimary: branding.brandShades[ThemeValues.brandShadeIndex],
+        borderRadius: DesignerRadiusPx,
+        fontFamily: branding.fontFamily,
+      },
     },
-  },
-  // pdfme switches to antd's dark algorithm on a dark background
-  dark: {
-    token: {
-      colorPrimary: ThemeValues.brandShades[ThemeValues.brandShadeIndexDark],
-      colorBgBase: ThemeValues.darkShades[7],
-      colorTextBase: ThemeValues.darkShades[0],
-      borderRadius: DesignerRadiusPx,
-      fontFamily: ThemeValues.fontFamily,
+    // pdfme switches to antd's dark algorithm on a dark background
+    dark: {
+      token: {
+        colorPrimary: branding.brandShades[ThemeValues.brandShadeIndexDark],
+        colorBgBase: ThemeValues.darkShades[7],
+        colorTextBase: ThemeValues.darkShades[0],
+        borderRadius: DesignerRadiusPx,
+        fontFamily: branding.fontFamily,
+      },
     },
-  },
-};
+  };
+}
 
 // pdfme refuses a font map without a fallback, so none keeps its own default
 function fontOption(fonts: Font): { font?: Font } {
@@ -98,7 +107,13 @@ export function TemplateDesigner({
   const container = useRef<HTMLDivElement>(null);
   const designer = useRef<Designer | null>(null);
   const lang = i18n.language as Lang;
-  const theme = DesignerThemes[useComputedColorScheme('light')];
+  const branding = useBranding();
+  const scheme = useComputedColorScheme('light');
+  // stable between renders, since a new theme updates the Designer
+  const theme = useMemo(
+    () => designerThemes(branding)[scheme],
+    [branding, scheme],
+  );
   useFillWindowHeight(container, DesignerMinHeightPx);
   // the latest callbacks, since the Designer keeps the first ones it gets
   const callbacks = useRef({ onLoad, onChange, fieldNames });

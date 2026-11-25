@@ -24,6 +24,7 @@ import { createAdminBuild } from '../../admin/mocks/createAdminBuild';
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
 import { MockSeeder } from '../../database/mocks/MockSeeder';
 import { MockLogger } from '../../log/mocks/MockLogger';
+import { createTestBranding } from '../../branding/mocks/createTestBranding';
 
 const databases: DatabaseService[] = [];
 const adminBuild = createAdminBuild();
@@ -39,6 +40,7 @@ function createAdminPanel(siteUrl: SiteUrl): AdminPanelService {
     directory: adminBuild.directory,
     siteUrl,
     defaultLocale: LocaleEnum.Es,
+    branding: createTestBranding(siteUrl),
   });
 }
 

@@ -113,7 +113,8 @@ admin:
 ```
 
 The [`config.example.yml`](config.example.yml) lists every option with its default and what it does: language, LinkedIn,
-favicon, link previews (Open Graph and Discord), PDF delivery, upload limits, font catalog, rate limits and backups.
+branding (name, colors, logo, favicon, font and images), link previews (Open Graph and Discord), PDF delivery, upload
+limits, font catalog, rate limits and backups.
 
 To change a setting later, edit `config/config.yml` and run `docker compose restart` from `/opt/cert-it/deploy`. If the
 file is invalid, the app stops at startup and `docker compose logs app` says what to fix.

@@ -24,6 +24,7 @@ import {
 } from '../../page/mocks/createPublicPageOptions';
 import { sessionCookie } from '../../auth/mocks/createAuthApp';
 import { MockLogger } from '../../log/mocks/MockLogger';
+import { createTestBranding } from '../../branding/mocks/createTestBranding';
 
 export type ApiRequestInit = {
   /** Sent as JSON, except text and bytes, which are sent as they are. */
@@ -48,10 +49,13 @@ export function createApiHarness(
     linkPreviews?: LinkPreviewSettings;
     /** Null hides the LinkedIn button. */
     linkedinOrgId?: string | null;
+    /** Branding settings, with the built-in look by default. */
+    branding?: Parameters<typeof createTestBranding>[1];
   } = {},
 ) {
   const siteUrl = new SiteUrl({ baseUrl: `${ApiHarnessOrigin}/certs` });
   const api = new ApiService(createAuthOptions(database, siteUrl, options));
+  const branding = createTestBranding(siteUrl, options.branding);
   const http = new HttpService({
     port: 0,
     siteUrl,
@@ -66,6 +70,7 @@ export function createApiHarness(
       directory: '.',
       siteUrl,
       defaultLocale: LocaleEnum.En,
+      branding,
     }),
     certificateFiles: new CertificateFileRoutes({
       database,
@@ -77,6 +82,7 @@ export function createApiHarness(
       siteUrl,
       { dataDirectory: options.dataDirectory, ...options.linkPreviews },
       options.linkedinOrgId,
+      branding,
     ),
     api,
     compressor: ResponseCompressor.create(),

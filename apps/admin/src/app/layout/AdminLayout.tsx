@@ -7,18 +7,20 @@ import { PracticeBar } from '../../onboarding/practice/PracticeBar';
 import classes from './AdminLayout.module.css';
 import { AdminHeader } from './header/AdminHeader';
 import { AdminSidebar } from './sidebar/AdminSidebar';
+import { useBranding } from '../branding/useBranding';
 
 /** Sidebar and header around every admin page. */
 export function AdminLayout() {
   const { t } = useTranslation();
+  const { name } = useBranding();
   const navigation = useNavigation();
   const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] =
     useDisclosure(false);
   const [desktopOpened, { toggle: toggleDesktop }] = useDisclosure(true);
 
   useEffect(() => {
-    document.title = t('app.title');
-  }, [t]);
+    document.title = t('app.title', { name });
+  }, [t, name]);
 
   return (
     <AppShell

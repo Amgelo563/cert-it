@@ -12,6 +12,7 @@ import { type Context, Hono, type MiddlewareHandler } from 'hono';
 import { getCookie, setCookie } from 'hono/cookie';
 import { secureHeaders } from 'hono/secure-headers';
 import { AdminPanelService } from '../admin/AdminPanelService';
+import type { BrandingService } from '../branding/BrandingService';
 import { CertificateFileRoutes } from '../certificate/file/CertificateFileRoutes';
 import { LookupPageRoutes } from '../certificate/lookup/LookupPageRoutes';
 import { CertificatePageRoutes } from '../certificate/page/CertificatePageRoutes';
@@ -41,6 +42,7 @@ type HttpServiceOptions = {
   certificatePages: CertificatePageRoutes;
   lookupPages: LookupPageRoutes;
   publicAssets: PublicAssetsService;
+  branding: BrandingService;
   linkPreviews: LinkPreviewService;
   credentials: CredentialRoutes;
   api: ApiService;
@@ -93,6 +95,8 @@ export class HttpService {
 
   protected readonly publicAssets: PublicAssetsService;
 
+  protected readonly branding: BrandingService;
+
   protected readonly linkPreviews: LinkPreviewService;
 
   protected readonly credentials: CredentialRoutes;
@@ -121,6 +125,7 @@ export class HttpService {
     this.certificatePages = options.certificatePages;
     this.lookupPages = options.lookupPages;
     this.publicAssets = options.publicAssets;
+    this.branding = options.branding;
     this.linkPreviews = options.linkPreviews;
     this.credentials = options.credentials;
     this.api = options.api;
@@ -138,6 +143,7 @@ export class HttpService {
     api: ApiService;
     adminPanel: AdminPanelService;
     publicAssets: PublicAssetsService;
+    branding: BrandingService;
     linkPreviews: LinkPreviewService;
     credentials: CredentialRoutes;
     injections?: Partial<
@@ -147,6 +153,7 @@ export class HttpService {
         | 'api'
         | 'adminPanel'
         | 'publicAssets'
+        | 'branding'
         | 'linkPreviews'
         | 'credentials'
       >
@@ -160,6 +167,7 @@ export class HttpService {
       api,
       adminPanel,
       publicAssets,
+      branding,
       linkPreviews,
       credentials,
       injections,
@@ -169,6 +177,7 @@ export class HttpService {
       siteUrl,
       database,
       assets: publicAssets,
+      branding,
       previews: linkPreviews,
     };
 
@@ -200,6 +209,7 @@ export class HttpService {
         injections?.certificatePages ?? CertificatePageRoutes.create(pages),
       lookupPages: injections?.lookupPages ?? LookupPageRoutes.create(pages),
       publicAssets,
+      branding,
       linkPreviews,
       credentials,
       api,
@@ -269,6 +279,7 @@ export class HttpService {
     app.route('/', this.api.getApp());
     app.route(AdminPanelService.Path, this.adminPanel.getApp());
     app.route(PublicAssetsService.Path, this.publicAssets.getApp());
+    app.route('/', this.branding.getApp());
     app.route('/', this.linkPreviews.getApp());
     app.route('/', this.certificateFiles.getApp());
     app.route('/', this.credentials.getApp());

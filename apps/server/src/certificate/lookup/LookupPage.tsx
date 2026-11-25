@@ -22,6 +22,8 @@ type LookupPageProps = {
   help: string;
   /** Badge of the illustration, as on a valid certificate's page. */
   validLabel: string;
+  /** URL of an image shown in place of the illustration. Null for the illustration. */
+  image: string | null;
 };
 
 /** The main content of the "Find my certificate" page: a form posting an email and a course, beside a drawn certificate. */
@@ -105,7 +107,13 @@ export function LookupPage(props: LookupPageProps) {
             )}
           </div>
 
-          <LookupIllustration badge={props.validLabel} />
+          {props.image ? (
+            <div class="lookup-art" aria-hidden="true">
+              <img class="lookup-art-image" src={props.image} alt="" />
+            </div>
+          ) : (
+            <LookupIllustration badge={props.validLabel} />
+          )}
         </div>
       </main>
 

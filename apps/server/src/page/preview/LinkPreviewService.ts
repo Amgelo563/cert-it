@@ -91,7 +91,7 @@ export class LinkPreviewService {
   }
 
   public static create(options: {
-    config: Pick<Config, 'linkPreviews' | 'site'>;
+    config: Pick<Config, 'branding' | 'linkPreviews' | 'site'>;
     siteUrl: SiteUrl;
     dataDirectory: DataDirectoryService;
     injections?: Partial<Omit<LinkPreviewServiceOptions, 'dataDirectory'>>;
@@ -110,7 +110,10 @@ export class LinkPreviewService {
       image: injections?.image ?? previews.image,
       imageAlt: injections?.imageAlt ?? previews.imageAlt,
       largeImage: injections?.largeImage ?? previews.largeImage,
-      themeColor: injections?.themeColor ?? previews.themeColor,
+      themeColor:
+        injections?.themeColor
+        ?? previews.themeColor
+        ?? config.branding.primaryColor,
     });
   }
 

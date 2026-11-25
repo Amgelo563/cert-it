@@ -22,6 +22,10 @@ import { createPublicPageOptions } from '../../page/mocks/createPublicPageOption
 import { createTestDatabase } from '../../database/mocks/createTestDatabase';
 import { AdminBuildScript, createAdminBuild } from '../mocks/createAdminBuild';
 import { MockLogger } from '../../log/mocks/MockLogger';
+import {
+  createTestBranding,
+  TestDefaultFavicon,
+} from '../../branding/mocks/createTestBranding';
 
 const build = createAdminBuild();
 const databases: DatabaseService[] = [];
@@ -35,11 +39,14 @@ afterAll(() => build.remove());
 function createPanel(
   baseUrl: string,
   directory = build.directory,
+  branding: Parameters<typeof createTestBranding>[1] = {},
 ): AdminPanelService {
+  const siteUrl = new SiteUrl({ baseUrl });
   return new AdminPanelService({
     directory,
-    siteUrl: new SiteUrl({ baseUrl }),
+    siteUrl,
     defaultLocale: LocaleEnum.Es,
+    branding: createTestBranding(siteUrl, branding),
   });
 }
 
@@ -206,6 +213,53 @@ describe.each([
     const html = await (await request(`${base}/admin/index.html`)).text();
 
     expect(html).toContain(`<base href="${base}/admin/">`);
+  });
+});
+
+describe('AdminPanelService (branding)', () => {
+  const baseUrl = 'https://example.org/certs';
+
+  test('GIVEN the built-in branding WHEN opening a page THEN injects it with the built-in favicon and no stylesheet', async () => {
+    const panel = createPanel(baseUrl);
+    await panel.start();
+    const request = createHttp(panel, baseUrl);
+
+    const html = await (await request('/certs/admin/')).text();
+
+    expect(html).toContain(
+      '<meta name="cert-it-branding" content="{&quot;name&quot;:&quot;cert-it&quot;',
+    );
+    expect(html).toContain(
+      `<link rel="icon" type="image/svg+xml" href="${TestDefaultFavicon}">`,
+    );
+    expect(html).not.toContain('./favicon.svg');
+    expect(html).not.toContain('/branding/');
+  });
+
+  test('GIVEN a name and a primary color WHEN opening a page THEN injects them and links the stylesheet before the head ends', async () => {
+    const panel = createPanel(baseUrl, build.directory, {
+      name: 'Acme <Certs>',
+      primaryColor: '#c2185b',
+    });
+    await panel.start();
+    const request = createHttp(panel, baseUrl);
+
+    const html = await (await request('/certs/admin/')).text();
+    const content =
+      /<meta name="cert-it-branding" content="([^"]+)">/.exec(html)?.[1] ?? '';
+    const branding = JSON.parse(
+      content
+        .replaceAll('&quot;', '"')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&amp;', '&'),
+    ) as { name: string; brandShades: string[] };
+
+    expect(branding.name).toBe('Acme <Certs>');
+    expect(branding.brandShades[6]).toBe('#c2185b');
+    expect(html).toMatch(
+      /<link rel="stylesheet" href="\/certs\/branding\/[0-9a-f]{16}\.css"><\/head>/,
+    );
   });
 });
 

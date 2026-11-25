@@ -8,6 +8,7 @@ export const AdminBuildIndexHtml = `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <title>cert-it admin</title>
     <script type="module" crossorigin src="./assets/index-abc123.js"></script>
   </head>

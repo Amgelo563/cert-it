@@ -35,12 +35,49 @@ site:
   # Empty: en.
   default_locale: en
 
-  # Favicon for the public pages and the admin panel: an .ico, .png or .svg
-  # file placed in the data directory, given relative to it (e.g. favicon.png
-  # for /srv/cert-it/data/favicon.png). The app serves it from its own address,
-  # so it works under a strict CSP.
+# Look of the public pages and the admin panel. Files are placed in the data
+# directory and given relative to it (e.g. logo.svg for
+# /srv/cert-it/data/logo.svg). The app reads them at startup and serves them
+# from its own address, so they work under a strict CSP; restart it after
+# replacing one.
+branding:
+  # Name of the admin panel, next to its logo and in its browser tabs.
+  # Empty: cert-it.
+  name: ''
+
+  # Main color of buttons, links and highlights, as a hex color. Lighter and
+  # darker shades are derived from it; on dark backgrounds a lighter one is
+  # used, so pick a color dark enough for white text (4.5:1 contrast).
+  # Empty: '#0050b4'.
+  primary_color: '#0050b4'
+
+  # Logo in the header of the public pages, in place of site.org_name, and in
+  # the admin panel, in place of the built-in mark and name. Shown 32 px tall.
+  # A .png, .jpg, .webp or .svg file.
+  # Empty: the org name on public pages, the built-in mark in the admin panel.
+  logo: ''
+
+  # Logo for the dark color scheme, with the same rules as logo.
+  # Empty: logo in both schemes.
+  logo_dark: ''
+
+  # Favicon of the public pages and the admin panel: an .ico, .png or .svg file.
   # Empty: the built-in cert-it icon.
   favicon: ''
+
+  # Font of the interface, in place of Inter: a .woff2, .woff, .ttf or .otf
+  # file. A variable font covers every weight; with a static one, browsers
+  # fake the bold.
+  # Certificates keep the fonts of their templates.
+  # Empty: Inter.
+  font: ''
+
+  # Image beside the "Find my certificate" form, in place of the drawn
+  # certificate. Shown at the column's width on large screens, hidden on small
+  # ones.
+  # A .png, .jpg, .webp or .svg file.
+  # Empty: the drawing.
+  lookup_image: ''
 
 # Settings for how a certificate link looks when shared, through Open Graph tags
 link_previews:
@@ -76,8 +113,8 @@ link_previews:
 
   # Color of the stripe beside Discord previews (theme-color), and of the
   # Discord component embed's border.
-  # Empty: '#0050b4'.
-  theme_color: '#0050b4'
+  # Empty: branding.primary_color.
+  theme_color: ''
 
   # Discord component embed: a richer Discord preview with the holder's name,
   # course, date and status, plus link buttons to view and download the

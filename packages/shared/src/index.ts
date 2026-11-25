@@ -85,6 +85,8 @@ export * from './template/hasParticipantNameField';
 export * from './template/TemplateCourseFields';
 export * from './template/TemplateFieldTypeEnum';
 export * from './template/TemplateFieldValue';
+export * from './theme/AdminBranding';
+export * from './theme/createBrandShades';
 export * from './theme/ThemeValues';
 export * from './types/Brand';
 export * from './types/Identifiable';

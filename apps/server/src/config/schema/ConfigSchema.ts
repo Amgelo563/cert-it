@@ -1,4 +1,4 @@
-import { LocaleEnum } from '@cert-it/shared';
+import { LocaleEnum, ThemeValues } from '@cert-it/shared';
 import ipaddr from 'ipaddr.js';
 import {
   array,
@@ -31,6 +31,24 @@ const blank = <T extends ZodType>(schema: T) =>
     schema,
   );
 
+const hexColor = string().regex(
+  /^#([0-9a-f]{3}|[0-9a-f]{6})$/i,
+  'Must be a hex color',
+);
+
+/** A file in the data directory, given relative to it, with one of the extensions the pattern allows. */
+const dataFile = (extension: RegExp, message: string) =>
+  string()
+    .regex(/^[^:]+$/, 'Must be a file in the data directory')
+    .regex(extension, message)
+    .optional();
+
+const ImageFile = /\.(png|jpe?g|webp|svg)$/i;
+
+const ImageFileMessage = 'Must be a .png, .jpg, .webp or .svg file';
+
+const DefaultBrandColor = ThemeValues.brandShades[ThemeValues.brandShadeIndex];
+
 const DefaultTrustedProxies = [
   '127.0.0.0/8',
   '10.0.0.0/8',
@@ -52,12 +70,24 @@ export const ConfigSchema = strictObject({
       ).optional(),
     ),
     defaultLocale: blank(zEnum(LocaleEnum).default(LocaleEnum.En)),
-    favicon: blank(
-      string()
-        .regex(/\.(ico|png|svg)$/i, 'Must be an .ico, .png or .svg file')
-        .optional(),
-    ),
   }),
+
+  branding: strictObject({
+    name: blank(string().trim().min(1).max(60).default('cert-it')),
+    primaryColor: blank(hexColor.default(DefaultBrandColor)),
+    logo: blank(dataFile(ImageFile, ImageFileMessage)),
+    logoDark: blank(dataFile(ImageFile, ImageFileMessage)),
+    favicon: blank(
+      dataFile(/\.(ico|png|svg)$/i, 'Must be an .ico, .png or .svg file'),
+    ),
+    font: blank(
+      dataFile(
+        /\.(woff2?|ttf|otf)$/i,
+        'Must be a .woff2, .woff, .ttf or .otf file',
+      ),
+    ),
+    lookupImage: blank(dataFile(ImageFile, ImageFileMessage)),
+  }).prefault({}),
 
   linkPreviews: strictObject({
     siteName: blank(string().max(100).optional()),
@@ -74,11 +104,7 @@ export const ConfigSchema = strictObject({
     ),
     imageAlt: blank(string().max(200).optional()),
     largeImage: blank(boolean().default(true)),
-    themeColor: blank(
-      string()
-        .regex(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i, 'Must be a hex color')
-        .default('#0050b4'),
-    ),
+    themeColor: blank(hexColor.optional()),
     discordComponentEmbed: blank(boolean().default(true)),
   }).prefault({}),
 

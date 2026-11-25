@@ -3,6 +3,7 @@ import { AdminPanelService } from '../admin/AdminPanelService';
 import { AuditLog } from '../audit/AuditLog';
 import { AuthGuard } from '../auth/AuthGuard';
 import { BackupService } from '../backup/BackupService';
+import { BrandingService } from '../branding/BrandingService';
 import { PasswordHasher } from '../auth/password/PasswordHasher';
 import { CertificateRegenerator } from '../certificate/job/CertificateRegenerator';
 import { SessionService } from '../auth/session/SessionService';
@@ -38,6 +39,7 @@ type AppServiceOptions = {
   api: ApiService;
   adminPanel: AdminPanelService;
   publicAssets: PublicAssetsService;
+  branding: BrandingService;
   linkPreviews: LinkPreviewService;
   http: HttpService;
   logger: Logger;
@@ -74,6 +76,8 @@ export class AppService {
 
   protected readonly publicAssets: PublicAssetsService;
 
+  protected readonly branding: BrandingService;
+
   protected readonly linkPreviews: LinkPreviewService;
 
   protected readonly http: HttpService;
@@ -94,6 +98,7 @@ export class AppService {
     this.api = options.api;
     this.adminPanel = options.adminPanel;
     this.publicAssets = options.publicAssets;
+    this.branding = options.branding;
     this.linkPreviews = options.linkPreviews;
     this.http = options.http;
     this.logger = options.logger;
@@ -167,8 +172,17 @@ export class AppService {
           logger,
         },
       });
+    const branding =
+      injections?.branding
+      ?? BrandingService.create({
+        config,
+        siteUrl,
+        dataDirectory,
+        defaultFavicon: siteUrl.path(AdminPanelService.FaviconPath),
+      });
     const adminPanel =
-      injections?.adminPanel ?? AdminPanelService.create({ config, siteUrl });
+      injections?.adminPanel
+      ?? AdminPanelService.create({ config, siteUrl, branding });
     const publicAssets =
       injections?.publicAssets ?? PublicAssetsService.create({ siteUrl });
     const linkPreviews =
@@ -215,6 +229,7 @@ export class AppService {
       api,
       adminPanel,
       publicAssets,
+      branding,
       linkPreviews,
       http:
         injections?.http
@@ -226,6 +241,7 @@ export class AppService {
           api,
           adminPanel,
           publicAssets,
+          branding,
           linkPreviews,
           credentials: CredentialRoutes.create({ database, signer }),
           injections: { logger },
@@ -276,6 +292,8 @@ export class AppService {
       await this.backups?.start();
       this.jobs.start();
       await this.baseUrls.completeMove();
+      // before the admin panel, which injects it into its page
+      this.branding.start();
       await this.startAdminPanel();
       this.publicAssets.start();
       this.linkPreviews.start();

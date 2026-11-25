@@ -4,6 +4,7 @@ import type { SiteUrl } from '@cert-it/hono';
 import type { Locale } from '@cert-it/shared';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { type Context, Hono, type MiddlewareHandler } from 'hono';
+import type { BrandingService } from '../branding/BrandingService';
 import type { Config } from '../config/schema/ConfigSchema';
 import { StartupError } from '../error/StartupError';
 import type { HttpEnv } from '../http/HttpEnv';
@@ -14,12 +15,16 @@ type AdminPanelServiceOptions = {
   siteUrl: SiteUrl;
   /** Language of the panel when neither the user nor the browser chose one. */
   defaultLocale: Locale;
+  branding: BrandingService;
 };
 
 /** Serves the admin panel's build under `{base_path}/admin/`, with the base path injected into its page. */
 export class AdminPanelService {
   /** Path the panel is served under, relative to the base path. */
   public static readonly Path = '/admin';
+
+  /** Path of the built-in favicon, relative to the base path. */
+  public static readonly FaviconPath = `${AdminPanelService.Path}/favicon.svg`;
 
   // relative to the working directory, like config/ and the data directory: apps/server in the repo
   protected static readonly DefaultDirectory = '../admin/dist';
@@ -28,6 +33,9 @@ export class AdminPanelService {
 
   // read by AdminI18n
   protected static readonly DefaultLocaleMeta = 'cert-it-default-locale';
+
+  // read by readSiteBranding
+  protected static readonly BrandingMeta = 'cert-it-branding';
 
   // hashed by Vite, so their content never changes
   protected static readonly ImmutableCacheControl =
@@ -41,6 +49,8 @@ export class AdminPanelService {
 
   protected readonly defaultLocale: Locale;
 
+  protected readonly branding: BrandingService;
+
   protected readonly app: Hono<HttpEnv>;
 
   /** The panel's page, read at start. */
@@ -50,20 +60,23 @@ export class AdminPanelService {
     this.directory = resolve(options.directory);
     this.siteUrl = options.siteUrl;
     this.defaultLocale = options.defaultLocale;
+    this.branding = options.branding;
     this.app = this.createApp();
   }
 
   public static create(options: {
     config: Pick<Config, 'site'>;
     siteUrl: SiteUrl;
-    injections?: Partial<AdminPanelServiceOptions>;
+    branding: BrandingService;
+    injections?: Partial<Omit<AdminPanelServiceOptions, 'branding'>>;
   }): AdminPanelService {
-    const { config, siteUrl, injections } = options;
+    const { config, siteUrl, branding, injections } = options;
 
     return new AdminPanelService({
       directory: injections?.directory ?? AdminPanelService.DefaultDirectory,
       siteUrl,
       defaultLocale: injections?.defaultLocale ?? config.site.defaultLocale,
+      branding,
     });
   }
 
@@ -151,14 +164,26 @@ export class AdminPanelService {
   protected injectIntoPage(html: string, locale: Locale): string {
     const base = this.escape(this.siteUrl.path(`${AdminPanelService.Path}/`));
     const defaultLocale = this.escape(this.defaultLocale);
+    const branding = this.escape(
+      JSON.stringify(this.branding.getAdminBranding()),
+    );
+    const { favicon, stylesheet } = this.branding.getPublicBranding();
     const head = [
       `<base href="${base}">`,
       `<meta name="${AdminPanelService.DefaultLocaleMeta}" content="${defaultLocale}">`,
+      `<meta name="${AdminPanelService.BrandingMeta}" content="${branding}">`,
     ].join('');
+    const icon = `<link rel="icon" type="${this.escape(favicon.type)}" href="${this.escape(favicon.url)}">`;
+    // after the panel's own styles
+    const styles = stylesheet
+      ? `<link rel="stylesheet" href="${this.escape(stylesheet)}">`
+      : '';
 
     return html
       .replace(/<html\b[^>]*>/i, `<html lang="${this.escape(locale)}">`)
-      .replace(/<head>/i, `<head>${head}`);
+      .replace(/<head>/i, `<head>${head}`)
+      .replace(/<link\b[^>]*\brel="icon"[^>]*>/i, icon)
+      .replace(/<\/head>/i, `${styles}</head>`);
   }
 
   protected escape(value: string): string {

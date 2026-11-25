@@ -2,8 +2,7 @@ import type { AppMessages } from './AppMessages';
 
 export const EsAppMessages = {
   app: {
-    title: 'Administración de cert-it',
-    name: 'cert-it',
+    title: 'Administración de {name}',
     loading: 'Cargando…',
   },
   language: {

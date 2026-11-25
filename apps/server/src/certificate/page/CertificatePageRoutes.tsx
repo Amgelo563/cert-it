@@ -2,6 +2,7 @@ import type { SiteUrl } from '@cert-it/hono';
 import { CertificateStatusEnum, CourseDateFormatter } from '@cert-it/shared';
 import { type Context, Hono } from 'hono';
 import { html } from 'hono/html';
+import type { BrandingService } from '../../branding/BrandingService';
 import type { Config } from '../../config/schema/ConfigSchema';
 import { OpenBadgeBuilder } from '../../credential/OpenBadgeBuilder';
 import type { DatabaseService } from '../../database/DatabaseService';
@@ -19,6 +20,7 @@ import { LinkedInProfileLink } from './LinkedInProfileLink';
 type CertificatePageRoutesOptions = {
   database: DatabaseService;
   assets: PublicAssetsService;
+  branding: BrandingService;
   previews: LinkPreviewService;
   siteUrl: SiteUrl;
   locales: LocaleResolver;
@@ -43,6 +45,8 @@ export class CertificatePageRoutes {
 
   protected readonly assets: PublicAssetsService;
 
+  protected readonly branding: BrandingService;
+
   protected readonly previews: LinkPreviewService;
 
   protected readonly siteUrl: SiteUrl;
@@ -58,6 +62,7 @@ export class CertificatePageRoutes {
   constructor(options: CertificatePageRoutesOptions) {
     this.database = options.database;
     this.assets = options.assets;
+    this.branding = options.branding;
     this.previews = options.previews;
     this.siteUrl = options.siteUrl;
     this.locales = options.locales;
@@ -71,16 +76,29 @@ export class CertificatePageRoutes {
     siteUrl: SiteUrl;
     database: DatabaseService;
     assets: PublicAssetsService;
+    branding: BrandingService;
     previews: LinkPreviewService;
     injections?: Partial<
-      Omit<CertificatePageRoutesOptions, 'database' | 'assets' | 'previews'>
+      Omit<
+        CertificatePageRoutesOptions,
+        'database' | 'assets' | 'branding' | 'previews'
+      >
     >;
   }): CertificatePageRoutes {
-    const { config, siteUrl, database, assets, previews, injections } = options;
+    const {
+      config,
+      siteUrl,
+      database,
+      assets,
+      branding,
+      previews,
+      injections,
+    } = options;
 
     return new CertificatePageRoutes({
       database,
       assets,
+      branding,
       previews,
       siteUrl,
       locales:
@@ -179,6 +197,7 @@ export class CertificatePageRoutes {
             description={description}
             orgName={this.orgName}
             assets={this.assets.getPage(CertificatePageRoutes.AssetsEntry)}
+            branding={this.branding.getPublicBranding()}
             preview={preview}
           >
             <CertificatePage
@@ -218,6 +237,7 @@ export class CertificatePageRoutes {
             title={texts.certificateNotFound}
             orgName={this.orgName}
             assets={this.assets.getPage(CertificatePageRoutes.AssetsEntry)}
+            branding={this.branding.getPublicBranding()}
           >
             <CertificateNotFound
               title={texts.certificateNotFound}

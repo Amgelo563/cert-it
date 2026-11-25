@@ -18,3 +18,12 @@
   background-color: var(--mantine-color-brand-6);
   color: var(--mantine-color-white);
 }
+
+/* branding.logo, in place of the tile and name */
+.logoImage {
+  display: block;
+  width: auto;
+  max-width: rem(180px);
+  height: rem(32px);
+  object-fit: contain;
+}

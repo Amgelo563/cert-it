@@ -15,12 +15,16 @@ import { ApiClientContext } from './app/api/ApiClientContext';
 import { AdminI18n } from './app/i18n/AdminI18n';
 import { AdminBaseUrl } from './app/router/AdminBaseUrl';
 import { AdminRoutes } from './app/router/AdminRoutes';
-import { AdminCssVariables, AdminTheme } from './app/theme/AdminTheme';
+import { BrandingContext } from './app/branding/BrandingContext';
+import { readSiteBranding } from './app/branding/readSiteBranding';
+import { AdminCssVariables, createAdminTheme } from './app/theme/AdminTheme';
 
 const i18n = AdminI18n.create();
 await i18n.start();
 
 const api = ApiClient.create();
+
+const branding = readSiteBranding(document);
 
 // the server injects <base href="{base_path}/admin/">, so one build works under any path
 const router = createBrowserRouter(AdminRoutes, {
@@ -31,18 +35,20 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <I18nextProvider i18n={i18n.getInstance()}>
       {/* no ColorSchemeScript: it's an inline script, which the admin CSP blocks */}
-      <MantineProvider
-        theme={AdminTheme}
-        cssVariablesResolver={AdminCssVariables}
-        defaultColorScheme="auto"
-      >
-        <Notifications position="bottom-right" />
-        <ApiClientContext value={api}>
-          <ModalsProvider>
-            <RouterProvider router={router} />
-          </ModalsProvider>
-        </ApiClientContext>
-      </MantineProvider>
+      <BrandingContext value={branding}>
+        <MantineProvider
+          theme={createAdminTheme(branding)}
+          cssVariablesResolver={AdminCssVariables}
+          defaultColorScheme="auto"
+        >
+          <Notifications position="bottom-right" />
+          <ApiClientContext value={api}>
+            <ModalsProvider>
+              <RouterProvider router={router} />
+            </ModalsProvider>
+          </ApiClientContext>
+        </MantineProvider>
+      </BrandingContext>
     </I18nextProvider>
   </StrictMode>,
 );

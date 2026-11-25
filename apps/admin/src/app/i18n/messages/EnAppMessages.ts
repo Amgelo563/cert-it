@@ -2,8 +2,7 @@ import type { AppMessages } from './AppMessages';
 
 export const EnAppMessages = {
   app: {
-    title: 'cert-it admin',
-    name: 'cert-it',
+    title: '{name} admin',
     loading: 'Loading…',
   },
   language: {

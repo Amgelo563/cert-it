@@ -3,10 +3,8 @@ import type { ApiErrorCodeEnum } from '@cert-it/shared';
 /** Texts of the panel shell: the layout, navigation, tables and errors. Placeholders are written as `{key}`. */
 export type AppMessages = {
   app: {
-    /** Title of the browser tab. */
+    /** Title of the browser tab, with the site's {name}. */
     title: string;
-    /** Short name shown next to the logo. */
-    name: string;
     loading: string;
   };
   language: {

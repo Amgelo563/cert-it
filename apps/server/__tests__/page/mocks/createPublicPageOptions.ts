@@ -11,10 +11,12 @@ import type { CredentialRoutes } from '../../../src/credential/CredentialRoutes'
 import type { DatabaseService } from '../../../src/database/DatabaseService';
 import { LocaleResolver } from '../../../src/i18n/LocaleResolver';
 import { MessageCatalog } from '../../../src/i18n/MessageCatalog';
+import type { BrandingService } from '../../../src/branding/BrandingService';
 import { LinkPreviewService } from '../../../src/page/preview/LinkPreviewService';
 import { PublicAssetsService } from '../../../src/page/PublicAssetsService';
 import { DataDirectoryService } from '../../../src/storage/DataDirectoryService';
 import { createTestCredentials } from '../../credential/mocks/createTestCredentials';
+import { createTestBranding } from '../../branding/mocks/createTestBranding';
 
 /** Fake build of apps/public, shaped like Vite's output. */
 export const PublicBuildDirectory = fileURLToPath(
@@ -58,8 +60,10 @@ export function createPublicPageOptions(
   siteUrl: SiteUrl,
   previewSettings: LinkPreviewSettings = {},
   linkedinOrgId: string | null = PublicPageLinkedInOrgId,
+  branding: BrandingService = createTestBranding(siteUrl),
 ): {
   publicAssets: PublicAssetsService;
+  branding: BrandingService;
   linkPreviews: LinkPreviewService;
   certificatePages: CertificatePageRoutes;
   lookupPages: LookupPageRoutes;
@@ -89,10 +93,12 @@ export function createPublicPageOptions(
 
   return {
     publicAssets,
+    branding,
     linkPreviews,
     certificatePages: new CertificatePageRoutes({
       database,
       assets: publicAssets,
+      branding,
       previews: linkPreviews,
       siteUrl,
       locales: new LocaleResolver({ defaultLocale: LocaleEnum.En }),
@@ -104,6 +110,7 @@ export function createPublicPageOptions(
     lookupPages: new LookupPageRoutes({
       database,
       assets: publicAssets,
+      branding,
       previews: linkPreviews,
       siteUrl,
       limiter: new RateLimiter({
