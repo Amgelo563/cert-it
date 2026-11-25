@@ -1,4 +1,6 @@
 import {
+  type CourseFieldSummary,
+  FieldValueErrorEnum,
   type ImportParticipantsResponse,
   type ImportRow,
   type ImportRowResult,
@@ -7,11 +9,13 @@ import {
   ImportSkipReasonEnum,
 } from '@cert-it/shared';
 import {
+  Alert,
   type MantineColor,
   SegmentedControl,
   Stack,
   Text,
 } from '@mantine/core';
+import { IconInfoCircle } from '@tabler/icons-react';
 import { DataTable } from 'mantine-datatable';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,10 +43,14 @@ const ErrorKeys = {
 
 const SkipKeys = enumMessageKeys(ImportSkipReasonEnum);
 
+const FieldErrorKeys = enumMessageKeys(FieldValueErrorEnum);
+
 type PreviewStepProps = {
   table: CsvTable;
   rows: readonly ImportRow[];
   preview: ImportParticipantsResponse;
+  /** The course's fields, to name them in errors. */
+  fields: readonly CourseFieldSummary[];
 };
 
 type PreviewRecord = ImportRowResult & {
@@ -52,7 +60,12 @@ type PreviewRecord = ImportRowResult & {
 };
 
 /** What the import would do with each row, filterable by outcome. */
-export function PreviewStep({ table, rows, preview }: PreviewStepProps) {
+export function PreviewStep({
+  table,
+  rows,
+  preview,
+  fields,
+}: PreviewStepProps) {
   const { t, i18n } = useTranslation();
   const [filter, setFilter] = useState<string>(AllFilter);
   const [page, setPage] = useState(1);
@@ -79,12 +92,24 @@ export function PreviewStep({ table, rows, preview }: PreviewStepProps) {
     [filter, records],
   );
 
+  const labels = useMemo(
+    () => new Map(fields.map((field) => [field.id, field.label])),
+    [fields],
+  );
+
   // why the row ends up as it does, under its status
   const explain = (record: PreviewRecord): string | null => {
-    if (record.errors) {
-      return record.errors
-        .map((error) => t(`participantImport.errors.${ErrorKeys[error]}`))
-        .join(' · ');
+    if (record.errors || record.fieldErrors) {
+      return [
+        ...(record.errors ?? []).map((error) =>
+          t(`participantImport.errors.${ErrorKeys[error]}`),
+        ),
+        ...(record.fieldErrors ?? []).map(({ fieldId, error }) =>
+          t(`fieldImport.errors.${FieldErrorKeys[error]}`, {
+            field: labels.get(fieldId) ?? '',
+          }),
+        ),
+      ].join(' · ');
     }
     if (record.reason === ImportSkipReasonEnum.DuplicateInFile) {
       const earlier = record.duplicateOf ?? 0;
@@ -107,6 +132,18 @@ export function PreviewStep({ table, rows, preview }: PreviewStepProps) {
 
   return (
     <Stack gap="md">
+      {Object.entries(preview.dateOrders).map(([fieldId, order]) => (
+        <Alert
+          key={fieldId}
+          variant="light"
+          py="xs"
+          icon={<IconInfoCircle size={18} stroke={1.5} />}
+        >
+          {t(`fieldImport.dateOrders.${order}`, {
+            field: labels.get(Number(fieldId)) ?? '',
+          })}
+        </Alert>
+      ))}
       <SegmentedControl
         value={filter}
         onChange={(value) => {

@@ -34,3 +34,21 @@ export const QrCodeIcon = tablerSvg([
   'M17 17l3 0',
   'M20 17l0 3',
 ]);
+
+/** Sidebar icon of fields that print a course field's text. */
+export const CourseFieldIcon = tablerSvg([
+  'M12 3a3 3 0 0 0 -3 3v12a3 3 0 0 0 3 3',
+  'M6 3a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3',
+  'M13 7h7a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-7',
+  'M5 7h-1a1 1 0 0 0 -1 1v8a1 1 0 0 0 1 1h1',
+  'M17 12h.01',
+  'M13 12h.01',
+]);
+
+/** Sidebar icon of fields that draw a course field's image. */
+export const ImageFieldIcon = tablerSvg([
+  'M15 8h.01',
+  'M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12',
+  'M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5',
+  'M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3',
+]);

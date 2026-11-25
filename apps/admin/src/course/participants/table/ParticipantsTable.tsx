@@ -1,5 +1,7 @@
 import {
   CertificateStatusEnum,
+  type CourseFieldSummary,
+  type CourseSummary,
   type ParticipantSummary,
   PermissionEnum,
 } from '@cert-it/shared';
@@ -10,13 +12,14 @@ import {
   IconPencil,
   IconTrash,
 } from '@tabler/icons-react';
-import { DataTable } from 'mantine-datatable';
+import { type DataTableColumn, DataTable } from 'mantine-datatable';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTableScroll } from '../../../app/layout/useTableScroll';
 import { MonoFigure } from '../../../app/layout/MonoFigure';
 import { StatusLabel } from '../../../app/layout/StatusLabel';
 import { usePermissions } from '../../../auth/usePermissions';
+import { FieldValueView } from '../../fields/FieldValueView';
 import { certificateFileUrl } from '../certificateFileUrl';
 
 type ParticipantsTableProps = {
@@ -25,8 +28,13 @@ type ParticipantsTableProps = {
   page: number;
   pageSize: number;
   loading: boolean;
-  /** Newest template version of the course, to point out older certificates. */
-  latestTemplateVersion: number | null;
+  /** The course, for its newest template version and how its values are shown. */
+  course: Pick<
+    CourseSummary,
+    'id' | 'locale' | 'dateFormat' | 'latestTemplateVersion'
+  >;
+  /** The course's fields, one column each. */
+  fields: readonly CourseFieldSummary[];
   /** Shown when there are no rows, such as for a search without matches. */
   emptyText: string;
   /** The participant whose change is being sent, whose menu is disabled meanwhile. */
@@ -43,7 +51,8 @@ export function ParticipantsTable({
   page,
   pageSize,
   loading,
-  latestTemplateVersion,
+  course,
+  fields,
   emptyText,
   busyId,
   onPageChange,
@@ -58,6 +67,22 @@ export function ParticipantsTable({
   const can = usePermissions();
   const canEdit = can(PermissionEnum.EditParticipants);
   const canDelete = can(PermissionEnum.DeleteRecords);
+  const { latestTemplateVersion } = course;
+  // with field columns the table scrolls, so the email goes under the pinned name
+  const withFields = fields.length > 0;
+  const fieldColumns = fields.map(
+    (field): DataTableColumn<ParticipantSummary> => ({
+      accessor: `field-${field.id}`,
+      title: field.label,
+      render: (participant) => (
+        <FieldValueView
+          field={field}
+          course={course}
+          value={participant.fieldValues[String(field.id)]}
+        />
+      ),
+    }),
+  );
 
   const dates = useMemo(
     () => new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }),
@@ -75,6 +100,7 @@ export function ParticipantsTable({
       // a visible scrollbar, and keyboard scrolling while it overflows
       {...tableScroll}
       pinLastColumn
+      pinFirstColumn={withFields}
       noRecordsText={emptyText}
       loadingText={t('app.loading')}
       totalRecords={total}
@@ -91,30 +117,32 @@ export function ParticipantsTable({
         {
           accessor: 'name',
           title: t('participants.name'),
-          render: (participant) => {
-            const extra = Object.entries(participant.extra);
-            return (
-              <Stack gap={4}>
-                <Text size="sm" fw={500}>
-                  {participant.name}
+          render: (participant) => (
+            <Stack gap={4}>
+              <Text size="sm" fw={500}>
+                {participant.name}
+              </Text>
+              {withFields && (
+                <Text size="xs" c="dimmed">
+                  {participant.email}
                 </Text>
-                {extra.length > 0 && (
-                  <Text size="xs" c="dimmed">
-                    {extra
-                      .map(([key, value]) => `${key}: ${value}`)
-                      .join(' · ')}
-                  </Text>
-                )}
-              </Stack>
-            );
-          },
+              )}
+            </Stack>
+          ),
         },
-        {
-          accessor: 'email',
-          title: t('participants.email'),
-          noWrap: true,
-          render: (participant) => <Text size="sm">{participant.email}</Text>,
-        },
+        ...(withFields
+          ? []
+          : [
+              {
+                accessor: 'email',
+                title: t('participants.email'),
+                noWrap: true,
+                render: (participant: ParticipantSummary) => (
+                  <Text size="sm">{participant.email}</Text>
+                ),
+              },
+            ]),
+        ...fieldColumns,
         {
           accessor: 'certificate',
           title: t('participants.certificate'),

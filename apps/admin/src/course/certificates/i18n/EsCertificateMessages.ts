@@ -112,8 +112,9 @@ export const EsCertificateMessages = {
     rendered: 'Listos: {count}',
     skippedTitle: 'Quedaron fuera: {count}',
     skippedText:
-      'A las fuentes de la plantilla les faltan algunos caracteres de los datos de estos participantes. Agrega una fuente que los tenga e inténtalo de nuevo.',
+      'A estos participantes les falta un campo obligatorio, o a las fuentes de la plantilla les faltan algunos caracteres de sus datos. Completa el campo o agrega una fuente que los tenga, y vuelve a intentarlo.',
     missingCharacters: '{field}: {characters}',
+    missingFields: 'falta {fields}',
     failedText:
       'La tarea se detuvo: {error}. Los certificados ya hechos se conservan, y al reintentar se hacen los demás.',
     retry: 'Reintentar',

@@ -112,8 +112,9 @@ export const EnCertificateMessages = {
     rendered: 'Done: {count}',
     skippedTitle: 'Left out: {count}',
     skippedText:
-      "The template's fonts are missing some characters in these participants' details. Add a font that has them, then try again.",
+      "These participants lack a required field, or the template's fonts are missing some characters in their details. Fill in the field or add a font that has them, then try again.",
     missingCharacters: '{field}: {characters}',
+    missingFields: 'missing {fields}',
     failedText:
       'The job stopped: {error}. Certificates already made are kept, and retrying makes the rest.',
     retry: 'Retry',

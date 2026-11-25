@@ -23,6 +23,9 @@ import { TemplateRoutes } from '../../../src/template/TemplateRoutes';
 import { createTestConfig } from '../../config/mocks/createTestConfig';
 import { ParticipantImporter } from '../../../src/participant/import/ParticipantImporter';
 import { ParticipantRoutes } from '../../../src/participant/ParticipantRoutes';
+import { CourseFieldRoutes } from '../../../src/field/CourseFieldRoutes';
+import { FieldValueMerger } from '../../../src/field/FieldValueMerger';
+import { FieldImageRoutes } from '../../../src/field/image/FieldImageRoutes';
 import { CertificateManager } from '../../../src/certificate/CertificateManager';
 import { CertificateRoutes } from '../../../src/certificate/CertificateRoutes';
 import { CertificateRegenerator } from '../../../src/certificate/job/CertificateRegenerator';
@@ -124,6 +127,7 @@ export function createAuthOptions(
     certificates: certificateManager,
     regenerator,
     importer: new ParticipantImporter({ database }),
+    merger: new FieldValueMerger({ dataDirectory }),
   });
 
   const certificates = new CertificateRoutes({
@@ -170,6 +174,8 @@ export function createAuthOptions(
     users,
     courses,
     participants,
+    fields: CourseFieldRoutes.create({ database, guard, auditLog }),
+    images: FieldImageRoutes.create({ database, dataDirectory, guard }),
     certificates,
     certificateExports,
     jobs,

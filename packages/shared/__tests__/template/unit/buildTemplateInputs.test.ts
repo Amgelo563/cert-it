@@ -61,4 +61,47 @@ describe('buildTemplateInputs', () => {
   test('GIVEN no fields WHEN building THEN gives one empty input', () => {
     expect(buildTemplateInputs([[]], Values)).toEqual([{}]);
   });
+
+  test('GIVEN course fields WHEN building THEN each gets the value of the field its type names', () => {
+    const inputs = buildTemplateInputs(
+      [
+        [
+          { name: 'Group', type: 'fieldText:1' },
+          {
+            name: 'Honors',
+            type: 'fieldText:2',
+            trueText: 'With honors',
+            falseText: '',
+          },
+          { name: 'Photo', type: 'fieldImage:3' },
+          { name: 'Grade', type: 'fieldText:4' },
+        ],
+      ],
+      Values,
+      {
+        '1': { kind: 'text', text: 'A' },
+        '2': { kind: 'boolean', value: true },
+        '3': { kind: 'image', dataUrl: 'data:image/png;base64,AA==' },
+      },
+    );
+
+    expect(inputs).toEqual([
+      {
+        Group: 'A',
+        Honors: 'With honors',
+        Photo: 'data:image/png;base64,AA==',
+        Grade: '',
+      },
+    ]);
+  });
+
+  test('GIVEN a false boolean without wording WHEN building THEN prints nothing', () => {
+    const inputs = buildTemplateInputs(
+      [[{ name: 'Honors', type: 'fieldText:2', trueText: 'Yes' }]],
+      Values,
+      { '2': { kind: 'boolean', value: false } },
+    );
+
+    expect(inputs).toEqual([{ Honors: '' }]);
+  });
 });

@@ -86,7 +86,7 @@ describe('ParticipantRoutes (list)', () => {
       courseId: course.id,
       name: 'Bob',
       email: 'bob@example.org',
-      extra: {},
+      fieldValues: {},
       certificate: null,
       createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
     });

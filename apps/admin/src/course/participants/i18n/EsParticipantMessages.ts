@@ -63,18 +63,15 @@ export const EsParticipantMessages = {
     roles: {
       name: 'Nombre',
       email: 'Correo',
-      extra: 'Columna extra',
       ignore: 'No importar',
     },
     needNameAndEmail: 'Elige una columna para el nombre y otra para el correo.',
-    tooManyExtras:
-      'Se pueden importar hasta {max} columnas extra. Marca las demás como "No importar".',
     modeLabel: 'Participantes que ya están en el curso (mismo correo)',
     modeSkip: 'Dejarlos como están',
     modeSkipDescription: 'Sus filas se omiten.',
     modeUpdate: 'Actualizarlos',
     modeUpdateDescription:
-      'Su nombre se reemplaza por el del archivo, y las columnas extra del archivo se agregan o reemplazan.',
+      'Su nombre y los valores de sus campos se reemplazan por los del archivo. Las celdas vacías conservan el valor actual.',
     check: 'Revisar',
     back: 'Atrás',
     import: 'Importar {count}',

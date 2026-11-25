@@ -1,5 +1,5 @@
 import type { ImportRowStatus, ImportSkipReasonEnum } from '@cert-it/shared';
-import type { ColumnRole } from '../import/ColumnRoleEnum';
+import type { BasicColumnRole } from '../import/ColumnRoleEnum';
 
 /** Texts of a course's participants and their import. Placeholders are written as `{key}`. */
 export type ParticipantMessages = {
@@ -71,11 +71,9 @@ export type ParticipantMessages = {
     useOf: string;
     /** A column without a header, with its number in `{n}`. */
     untitled: string;
-    /** What a column holds, keyed by ColumnRoleEnum value. */
-    roles: Record<ColumnRole, string>;
+    /** What a column holds, keyed by ColumnRoleEnum value, but for new fields. */
+    roles: Record<Exclude<BasicColumnRole, 'new'>, string>;
     needNameAndEmail: string;
-    /** With the most extra columns in `{max}`. */
-    tooManyExtras: string;
     modeLabel: string;
     modeSkip: string;
     modeSkipDescription: string;

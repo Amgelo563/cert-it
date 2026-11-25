@@ -235,6 +235,67 @@ describe('TemplateRoutes (save)', () => {
     });
   });
 
+  test.each([
+    { case: 'an unknown field', type: 'fieldText:999', fieldType: 'text' },
+    {
+      case: 'an image field as text',
+      type: 'fieldText:ID',
+      fieldType: 'image',
+    },
+    {
+      case: 'a text field as an image',
+      type: 'fieldImage:ID',
+      fieldType: 'text',
+    },
+  ] as const)(
+    'GIVEN $case WHEN saving THEN answers unknown_field',
+    async ({ type, fieldType }) => {
+      const { course, database, template, uploadFont, uploadPdf } =
+        await setup();
+      const font = await uploadFont();
+      const { basePdf } = await uploadPdf();
+      const field = new MockSeeder(database.getRepositories()).field(course, {
+        type: fieldType,
+      });
+      const body = request(basePdf, font.sha256);
+      body.template.schemas[0]!.push({
+        name: 'Field',
+        type: type.replace('ID', String(field.id)) as 'fieldText:1',
+        position: { x: 20, y: 120 },
+        width: 50,
+        height: 10,
+        fontName: font.sha256,
+      });
+
+      const response = await template('POST', '', body);
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({
+        error: ApiErrorCodeEnum.UnknownField,
+      });
+    },
+  );
+
+  test('GIVEN a field of the course WHEN saving THEN saves it', async () => {
+    const { course, database, template, uploadFont, uploadPdf } = await setup();
+    const font = await uploadFont();
+    const { basePdf } = await uploadPdf();
+    const field = new MockSeeder(database.getRepositories()).field(course);
+    const body = request(basePdf, font.sha256);
+    body.template.schemas[0]!.push({
+      name: 'Group',
+      type: `fieldText:${field.id}`,
+      position: { x: 20, y: 120 },
+      width: 50,
+      height: 10,
+      fontName: font.sha256,
+    });
+
+    const response = await template('POST', '', body);
+
+    expect(response.status).toBe(201);
+  });
+
   test('GIVEN a base PDF that was never uploaded WHEN saving THEN answers unknown_base_pdf', async () => {
     const { template, uploadFont } = await setup();
     const font = await uploadFont();

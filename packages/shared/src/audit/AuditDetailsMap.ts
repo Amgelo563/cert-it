@@ -1,5 +1,6 @@
 import type { ImportMode } from '../api/participant/ImportParticipantsRequest';
 import type { ImportRowStatus } from '../api/participant/ImportParticipantsResponse';
+import type { CourseFieldType } from '../field/CourseFieldTypeEnum';
 import type { FontSource } from '../font/FontSourceEnum';
 import type { Locale } from '../i18n/LocaleEnum';
 import type { Role } from '../role/RoleEnum';
@@ -37,12 +38,37 @@ export type AuditDetailsMap = {
     [AuditActionEnum.Import]: Readonly<Record<ImportRowStatus, number>> & {
       readonly mode: ImportMode;
     };
+    /** Labels of the course's fields, in their new order. */
+    [AuditActionEnum.Reorder]: { readonly fields: readonly string[] };
+  };
+  [AuditEntityEnum.CourseField]: {
+    [AuditActionEnum.Create]: {
+      readonly courseId: number;
+      readonly label: string;
+      readonly type: CourseFieldType;
+      readonly required: boolean;
+    };
+    [AuditActionEnum.Update]: {
+      readonly courseId: number;
+      readonly label?: string;
+      readonly type?: CourseFieldType;
+      readonly required?: boolean;
+    };
+    /** How many participants lost a value, and the template version made without the field, if any. */
+    [AuditActionEnum.Delete]: {
+      readonly courseId: number;
+      readonly label: string;
+      readonly values: number;
+      readonly templateVersion?: number;
+    };
   };
   [AuditEntityEnum.Participant]: {
     [AuditActionEnum.Create]: { readonly email: string };
     [AuditActionEnum.Update]: {
       readonly name?: string;
       readonly email?: string;
+      /** Labels of the fields whose value changed. */
+      readonly fields?: readonly string[];
     };
     [AuditActionEnum.Delete]: { readonly name: string; readonly email: string };
   };

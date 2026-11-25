@@ -4,7 +4,7 @@ import type { TemplateTextFieldType } from '../../template/TemplateFieldTypeEnum
 export type CertificateJobResult = {
   /** How many certificates the job rendered. */
   readonly rendered: number;
-  /** Participants left out because the template's fonts can't draw some of their characters. */
+  /** Participants left out because the template's fonts can't draw some of their characters, or required fields have no value. */
   readonly skipped: readonly {
     readonly participantId: number;
     readonly name: string;
@@ -14,5 +14,7 @@ export type CertificateJobResult = {
       readonly type: TemplateTextFieldType;
       readonly missing: readonly string[];
     }[];
+    /** Labels of the required fields they have no value for. */
+    readonly missingFields?: readonly string[];
   }[];
 };

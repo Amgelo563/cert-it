@@ -65,10 +65,11 @@ export class CertificateJobFixture {
     };
   }
 
-  /** Saves a template version with a name, a date and a QR field, on a blank base PDF. */
+  /** Saves a template version with a name, a date and a QR field, plus any extra fields, on a blank base PDF. */
   public async templateVersion(
     nameY = 50,
     fontName = this.fontSha256,
+    extra: TemplateContent['schemas'][number] = [],
   ): Promise<TemplateVersion> {
     const { templateVersions } = this.database.getRepositories();
     const pdf = await this.basePdf();
@@ -85,7 +86,11 @@ export class CertificateJobFixture {
       .create({
         courseId: this.course.id,
         version,
-        template: this.template(nameY, fontName),
+        template: {
+          schemas: [
+            [...(this.template(nameY, fontName).schemas[0] ?? []), ...extra],
+          ],
+        },
         basePdfPath,
         createdBy: this.editor.id,
       })

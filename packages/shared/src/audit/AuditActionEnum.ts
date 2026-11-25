@@ -3,6 +3,7 @@ export const AuditActionEnum = {
   Update: 'update',
   Delete: 'delete',
   Import: 'import',
+  Reorder: 'reorder',
   Issue: 'issue',
   Regenerate: 'regenerate',
   Revoke: 'revoke',

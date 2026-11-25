@@ -90,6 +90,16 @@ export const EnAppMessages = {
       certificateActive: 'The certificate is already active. Reload the page.',
       nothingToRegenerate:
         'Every certificate already uses the latest template.',
+      fieldLabelTaken: 'Another field of this course already has this label.',
+      tooManyFields: 'This course already has the most fields it can take.',
+      fieldHasValues:
+        "Participants have values for this field, so its type can't change.",
+      unknownField:
+        'A field was deleted or changed meanwhile. Reload the page.',
+      invalidFieldValue:
+        "A field's value doesn't fit its type. Check the values and try again.",
+      fieldRequired: 'Fill in the required fields.',
+      invalidImage: "This file isn't a PNG or JPEG image.",
       jobNotFailed: 'Only a job that failed can be retried. Reload the page.',
       unavailableInPractice:
         "This isn't available in practice. Exit practice to do it for real.",

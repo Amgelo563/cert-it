@@ -1,6 +1,7 @@
 import { readdir, rm, rmdir, stat } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { FontStore } from '@cert-it/fonts/node';
+import { CourseFieldTypeEnum } from '@cert-it/shared';
 import type { DatabaseService } from '../database/DatabaseService';
 import type { DataDirectoryService } from './DataDirectoryService';
 import type { Clock } from '../clock/Clock';
@@ -25,10 +26,11 @@ export type CleanupResult = {
   templateVersions: number;
   fonts: number;
   basePdfs: number;
+  images: number;
 };
 
 /**
- * Deletes old template versions no certificate uses, then the fonts and base PDFs no template version uses, once they've been unused for a while.
+ * Deletes old template versions no certificate uses, then the fonts and base PDFs no template version uses, and the field images no participant has, once they've been unused for a while.
  *
  * Nothing is deleted at once: an editor may have just uploaded a file and not saved the template yet, and a job may still use a version just replaced.
  */
@@ -91,10 +93,10 @@ export class StorageCleanupService {
   public start(): void {
     const runLogged = () => {
       this.run().then(
-        ({ templateVersions, fonts, basePdfs }) => {
-          if (templateVersions + fonts + basePdfs > 0) {
+        ({ templateVersions, fonts, basePdfs, images }) => {
+          if (templateVersions + fonts + basePdfs + images > 0) {
             this.logger.info(
-              `Deleted ${templateVersions} unused template versions, ${fonts} unused fonts and ${basePdfs} unused base PDFs`,
+              `Deleted ${templateVersions} unused template versions, ${fonts} unused fonts, ${basePdfs} unused base PDFs and ${images} unused images`,
             );
           }
         },
@@ -114,7 +116,7 @@ export class StorageCleanupService {
   }
 
   /**
-   * Deletes the template versions, fonts and base PDFs that have been unused for longer than the grace period.
+   * Deletes the template versions, fonts, base PDFs and field images that have been unused for longer than the grace period.
    *
    * Versions go first, so the fonts and base PDFs only they used are deleted in the same run.
    *
@@ -126,6 +128,7 @@ export class StorageCleanupService {
       templateVersions: this.deleteTemplateVersions(cutoff),
       fonts: await this.deleteFonts(cutoff),
       basePdfs: await this.deleteBasePdfs(cutoff),
+      images: await this.deleteImages(cutoff),
     };
   }
 
@@ -194,6 +197,43 @@ export class StorageCleanupService {
           .split(sep)
           .join('/');
         if (used.has(stored) || (await stat(filePath)).mtimeMs > cutoff) {
+          continue;
+        }
+
+        await rm(filePath, { force: true });
+        deleted += 1;
+      }
+
+      // a deleted course leaves an empty folder behind
+      if ((await readdir(path)).length === 0) await rmdir(path);
+    }
+
+    return deleted;
+  }
+
+  // an image's age is its file's, as uploads keep no row; a participant may have just been given it
+  protected async deleteImages(cutoff: number): Promise<number> {
+    const { courseFields, participants } = this.database.getRepositories();
+    const imageFields = courseFields.listByType(CourseFieldTypeEnum.Image);
+    const used = new Set(
+      participants
+        .listFieldValues(imageFields.map((field) => field.id))
+        .map(({ courseId, value }) => `${courseId}/${String(value)}`),
+    );
+    const root = this.dataDirectory.getImagesFolder();
+    let deleted = 0;
+
+    for (const folder of await readdir(root, { withFileTypes: true })) {
+      if (!folder.isDirectory()) continue;
+
+      const path = join(root, folder.name);
+      for (const file of await readdir(path, { withFileTypes: true })) {
+        if (!file.isFile()) continue;
+        const filePath = join(path, file.name);
+        if (
+          used.has(`${folder.name}/${file.name}`)
+          || (await stat(filePath)).mtimeMs > cutoff
+        ) {
           continue;
         }
 

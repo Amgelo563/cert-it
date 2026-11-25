@@ -50,7 +50,11 @@ async function setup() {
     database
       .getRepositories()
       .participants.listByCourse(course.id, { page: 1, size: 100 })
-      .items.map(({ name, email, extra }) => ({ name, email, extra }));
+      .items.map(({ name, email, fieldValues }) => ({
+        name,
+        email,
+        fieldValues,
+      }));
   const imports = () =>
     database
       .getRepositories()
@@ -109,6 +113,7 @@ describe('ParticipantImport (dry run)', () => {
           errors: [ImportRowErrorEnum.NameTooLong],
         },
       ],
+      dateOrders: {},
     });
     expect(stored()).toEqual([]);
     expect(imports()).toEqual([]);
@@ -149,20 +154,20 @@ describe('ParticipantImport (modes)', () => {
       },
     ]);
     expect(stored()).toEqual([
-      { name: 'Ada', email: 'ada@example.org', extra: {} },
+      { name: 'Ada', email: 'ada@example.org', fieldValues: {} },
     ]);
   });
 
-  test('GIVEN an existing email WHEN importing in update mode THEN replaces the name and merges extra columns', async () => {
-    const { course, database, runImport, seeder, stored } = await setup();
-    const ada = seeder.participant(course, {
+  test('GIVEN an existing email WHEN importing in update mode THEN replaces the name and the values the row has', async () => {
+    const { course, runImport, seeder, stored } = await setup();
+    const group = seeder.field(course, { label: 'Group' });
+    const city = seeder.field(course, { label: 'City' });
+    const id = seeder.field(course, { label: 'ID', type: 'number' });
+    seeder.participant(course, {
       name: 'Ada',
       email: 'ada@example.org',
+      fieldValues: { [group.id]: 'A', [city.id]: 'Lima' },
     });
-    database
-      .getRepositories()
-      .participants.update(ada.id, { extra: { group: 'A', city: 'Lima' } })
-      .unwrap();
 
     const { body } = await runImport({
       mode: 'update',
@@ -170,7 +175,7 @@ describe('ParticipantImport (modes)', () => {
         {
           name: 'Ada Lovelace',
           email: 'ada@example.org',
-          extra: { group: 'B', id: ' 42 ', empty: '  ' },
+          fields: { [group.id]: 'B', [id.id]: ' 42 ', [city.id]: '  ' },
         },
       ],
     });
@@ -182,7 +187,7 @@ describe('ParticipantImport (modes)', () => {
       {
         name: 'Ada Lovelace',
         email: 'ada@example.org',
-        extra: { group: 'B', city: 'Lima', id: '42' },
+        fieldValues: { [group.id]: 'B', [city.id]: 'Lima', [id.id]: 42 },
       },
     ]);
   });
@@ -234,7 +239,7 @@ describe('ParticipantImport (certificates)', () => {
 
   const rows: ImportRow[] = [
     { name: 'Ada Lovelace', email: 'ada@example.org' },
-    { name: 'bob', email: 'bob@example.org', extra: { group: 'B' } },
+    { name: 'bob', email: 'bob@example.org' },
     { name: 'Cy Young', email: 'cy@example.org' },
     { name: 'Eve Online', email: 'eve@example.org' },
   ];
@@ -275,7 +280,6 @@ describe('ParticipantImport (1,000 rows)', () => {
       rows.push({
         name: `Participant ${i}`,
         email: `p${i}@example.org`,
-        extra: { group: String(i % 7) },
       });
     }
     for (let i = 0; i < 50; i += 1) {

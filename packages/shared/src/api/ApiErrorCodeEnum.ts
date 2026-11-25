@@ -54,6 +54,20 @@ export const ApiErrorCodeEnum = {
   /** The certificate is active, so there's nothing to reinstate. */
   CertificateActive: 'certificate_active',
   NothingToRegenerate: 'nothing_to_regenerate',
+  /** Another field of the course has the label, compared without case or accents. */
+  FieldLabelTaken: 'field_label_taken',
+  /** The course already has the most fields it takes. */
+  TooManyFields: 'too_many_fields',
+  /** Participants have values for the field, so its type can't change. */
+  FieldHasValues: 'field_has_values',
+  /** A value or template field names a field the course doesn't have, or one of another type. */
+  UnknownField: 'unknown_field',
+  /** A value doesn't fit its field's type. */
+  InvalidFieldValue: 'invalid_field_value',
+  /** A required field is left without a value. */
+  FieldRequired: 'field_required',
+  /** The file isn't a PNG or JPEG image. */
+  InvalidImage: 'invalid_image',
   /** Only a failed job can run again. */
   JobNotFailed: 'job_not_failed',
   /** Answered by the panel's practice mode, never by the server, for what it can't pretend to do. */

@@ -14,9 +14,11 @@ import {
   type ParticipantListQuery,
   ParticipantListQuerySchema,
   type ParticipantSummary,
+  type TemplateContent,
   PermissionEnum,
   type UpdateParticipantRequest,
   UpdateParticipantRequestSchema,
+  listCourseFieldIds,
 } from '@cert-it/shared';
 import { type Context, Hono } from 'hono';
 import type { ClientErrorStatusCode } from 'hono/utils/http-status';
@@ -27,6 +29,10 @@ import type { CertificateRegenerator } from '../certificate/job/CertificateRegen
 import type { DatabaseService } from '../database/DatabaseService';
 import { AbstractApiRoutes } from '../http/api/AbstractApiRoutes';
 import { normalizeEmail } from '../util/email/NormalizedEmail';
+import { FieldValueMerger } from '../field/FieldValueMerger';
+import type { DataDirectoryService } from '../storage/DataDirectoryService';
+import type { TemplateVersionId } from '../template/TemplateVersion';
+import type { ParticipantChange } from './import/ImportOutcome';
 import { ParticipantImporter } from './import/ParticipantImporter';
 import type { Participant, ParticipantId } from './Participant';
 import type { CourseEnv } from '../course/CourseEnv';
@@ -39,9 +45,11 @@ type ParticipantRoutesOptions = {
   auditLog: AuditLog;
   /** Deletes a participant's certificate PDF with them. */
   certificates: CertificateManager;
-  /** Renders a certificate again when its participant's name changes. */
+  /** Renders a certificate again when its participant's name, or a value it prints, changes. */
   regenerator: CertificateRegenerator;
   importer: ParticipantImporter;
+  /** Checks field values given by hand. */
+  merger: FieldValueMerger;
 };
 
 /** Serves a course's participant routes: anyone can read them, Editors change them and Admins delete them. */
@@ -57,6 +65,9 @@ export class ParticipantRoutes extends AbstractApiRoutes {
   > = {
     [ApiErrorCodeEnum.NotFound]: 404,
     [ApiErrorCodeEnum.ParticipantEmailTaken]: 409,
+    [ApiErrorCodeEnum.FieldRequired]: 422,
+    [ApiErrorCodeEnum.InvalidFieldValue]: 422,
+    [ApiErrorCodeEnum.UnknownField]: 422,
   };
 
   protected readonly database: DatabaseService;
@@ -73,6 +84,8 @@ export class ParticipantRoutes extends AbstractApiRoutes {
 
   protected readonly regenerator: CertificateRegenerator;
 
+  protected readonly merger: FieldValueMerger;
+
   protected readonly app: ReturnType<ParticipantRoutes['createApp']>;
 
   constructor(options: ParticipantRoutesOptions) {
@@ -84,20 +97,22 @@ export class ParticipantRoutes extends AbstractApiRoutes {
     this.importer = options.importer;
     this.certificates = options.certificates;
     this.regenerator = options.regenerator;
+    this.merger = options.merger;
     this.app = this.createApp();
   }
 
   public static create(options: {
     database: DatabaseService;
+    dataDirectory: DataDirectoryService;
     guard: AuthGuard;
     auditLog: AuditLog;
     certificates: CertificateManager;
     regenerator: CertificateRegenerator;
     injections?: Partial<
-      Pick<ParticipantRoutesOptions, 'importer' | 'courseLoader'>
+      Pick<ParticipantRoutesOptions, 'importer' | 'courseLoader' | 'merger'>
     >;
   }): ParticipantRoutes {
-    const { injections, ...defaults } = options;
+    const { injections, dataDirectory, ...defaults } = options;
 
     return new ParticipantRoutes({
       ...defaults,
@@ -107,6 +122,7 @@ export class ParticipantRoutes extends AbstractApiRoutes {
       importer:
         injections?.importer
         ?? new ParticipantImporter({ database: defaults.database }),
+      merger: injections?.merger ?? new FieldValueMerger({ dataDirectory }),
     });
   }
 
@@ -161,16 +177,32 @@ export class ParticipantRoutes extends AbstractApiRoutes {
   }
 
   // one audit entry for the whole import, and none for a dry run
-  protected import(c: Context<CourseEnv>, body: ImportParticipantsRequest) {
+  protected async import(
+    c: Context<CourseEnv>,
+    body: ImportParticipantsRequest,
+  ) {
     const course = c.get('course');
+    // a dry run comes before the images are uploaded
+    const missingImages = body.dryRun
+      ? new Set<string>()
+      : await this.merger.listMissingImages(
+          course.id,
+          ParticipantImporter.listImages(
+            this.database
+              .getRepositories()
+              .courseFields.listByCourse(course.id),
+            body.rows,
+          ),
+        );
 
     // the rows, their audit entry and the jobs, or none of them
     const response = this.database.atomically(() => {
       const imported = this.importer.run({
-        courseId: course.id,
+        course,
         rows: body.rows,
         mode: body.mode,
         dryRun: body.dryRun,
+        missingImages,
       });
       if (!body.dryRun) {
         this.auditLog.record({
@@ -180,7 +212,7 @@ export class ParticipantRoutes extends AbstractApiRoutes {
           entityId: course.id,
           details: { mode: body.mode, ...imported.response.totals },
         });
-        this.regenerate(c, imported.renamed);
+        this.regenerate(c, imported.changed);
       }
       return imported.response;
     });
@@ -200,8 +232,17 @@ export class ParticipantRoutes extends AbstractApiRoutes {
     );
   }
 
-  protected add(c: Context<CourseEnv>, body: CreateParticipantRequest) {
+  protected async add(c: Context<CourseEnv>, body: CreateParticipantRequest) {
     const course = c.get('course');
+    const merged = await this.merger.merge({
+      courseId: course.id,
+      fields: this.database
+        .getRepositories()
+        .courseFields.listByCourse(course.id),
+      current: {},
+      input: body.fieldValues ?? {},
+    });
+    if (merged.isErr()) return this.error(c, merged.error);
 
     const created = this.database
       .getUnitOfWork()
@@ -211,6 +252,7 @@ export class ParticipantRoutes extends AbstractApiRoutes {
             courseId: course.id,
             name: body.name,
             email: normalizeEmail(body.email),
+            fieldValues: merged.value.values,
           })
           .map((participant) => {
             this.audit(c, participant, {
@@ -233,9 +275,24 @@ export class ParticipantRoutes extends AbstractApiRoutes {
     );
   }
 
-  protected update(c: Context<CourseEnv>, body: UpdateParticipantRequest) {
+  protected async update(
+    c: Context<CourseEnv>,
+    body: UpdateParticipantRequest,
+  ) {
     const target = this.findParticipant(c);
     if (!target) return this.error(c, ApiErrorCodeEnum.NotFound);
+    const merged = body.fieldValues
+      ? await this.merger.merge({
+          courseId: target.courseId,
+          fields: this.database
+            .getRepositories()
+            .courseFields.listByCourse(target.courseId),
+          current: target.fieldValues,
+          input: body.fieldValues,
+        })
+      : null;
+    if (merged?.isErr()) return this.error(c, merged.error);
+    const changedFields = merged?.isOk() ? merged.value.changed : [];
 
     const updated = this.database
       .getUnitOfWork()
@@ -245,6 +302,7 @@ export class ParticipantRoutes extends AbstractApiRoutes {
             name: body.name,
             email:
               body.email === undefined ? undefined : normalizeEmail(body.email),
+            fieldValues: merged?.isOk() ? merged.value.values : undefined,
           })
           .map((participant) => {
             this.audit(c, participant, {
@@ -254,11 +312,18 @@ export class ParticipantRoutes extends AbstractApiRoutes {
                 ...(body.email === undefined
                   ? {}
                   : { email: participant.email }),
+                ...(changedFields.length === 0
+                  ? {}
+                  : { fields: changedFields.map((field) => field.label) }),
               },
             });
-            if (participant.name !== target.name) {
-              this.regenerate(c, [participant]);
-            }
+            this.regenerate(c, [
+              {
+                participant,
+                renamed: participant.name !== target.name,
+                fieldIds: changedFields.map((field) => field.id),
+              },
+            ]);
             return participant;
           }),
       );
@@ -306,16 +371,37 @@ export class ParticipantRoutes extends AbstractApiRoutes {
     return c.body(null, 204);
   }
 
-  // each certificate keeps its code and template version; only the name changes
+  // each certificate keeps its code and template version; only what it prints changes
   protected regenerate(
     c: Context<CourseEnv>,
-    renamed: readonly Participant[],
+    changes: readonly ParticipantChange[],
   ): void {
-    const issued = this.database
-      .getRepositories()
-      .certificates.listByParticipants(
-        renamed.map((participant) => participant.id),
-      );
+    const { certificates, templateVersions } = this.database.getRepositories();
+    const byParticipant = new Map(
+      changes.map((change) => [change.participant.id, change]),
+    );
+    const printed = new Map<TemplateVersionId, ReadonlySet<number>>();
+    const printedBy = (id: TemplateVersionId) => {
+      let ids = printed.get(id);
+      if (!ids) {
+        const version = templateVersions.findById(id);
+        ids = version
+          ? listCourseFieldIds(version.template as TemplateContent)
+          : new Set();
+        printed.set(id, ids);
+      }
+      return ids;
+    };
+
+    const issued = certificates
+      .listByParticipants(changes.map((change) => change.participant.id))
+      .filter((certificate) => {
+        const change = byParticipant.get(certificate.participantId);
+        if (!change) return false;
+        if (change.renamed) return true;
+        const ids = printedBy(certificate.templateVersionId);
+        return change.fieldIds.some((id) => ids.has(id));
+      });
     this.regenerator.queueAll(issued, c.get('user').id);
   }
 
@@ -365,7 +451,7 @@ export class ParticipantRoutes extends AbstractApiRoutes {
         courseId: participant.courseId,
         name: participant.name,
         email: participant.email,
-        extra: participant.extra,
+        fieldValues: participant.fieldValues,
         certificate: certificate
           ? {
               id: certificate.id,

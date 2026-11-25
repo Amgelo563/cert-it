@@ -4,6 +4,7 @@ import {
   type PageRequest,
 } from '@cert-it/data';
 import {
+  type FieldValues,
   ParticipantCertificateFilterEnum,
   type ParticipantCertificateFilter,
 } from '@cert-it/shared';
@@ -108,6 +109,52 @@ export class SqliteParticipantRepository
       .all();
 
     return new Map(rows.map(({ courseId, total }) => [courseId, total]));
+  }
+
+  public countFieldValues(courseId: CourseId): ReadonlyMap<string, number> {
+    const rows = this.db.all<{ key: string; total: number }>(
+      sql`SELECT entry.key AS key, count(*) AS total
+        FROM ${participantTable}, json_each(${participantTable.fieldValues}) AS entry
+        WHERE ${participantTable.courseId} = ${courseId}
+        GROUP BY entry.key`,
+    );
+    return new Map(rows.map(({ key, total }) => [String(key), total]));
+  }
+
+  public removeFieldValue(courseId: CourseId, fieldId: number): number {
+    const path = SqliteParticipantRepository.pathOf(fieldId);
+    return this.db
+      .update(participantTable)
+      .set({
+        fieldValues: sql`json_remove(${participantTable.fieldValues}, ${path})`,
+      })
+      .where(
+        and(
+          eq(participantTable.courseId, courseId),
+          sql`json_type(${participantTable.fieldValues}, ${path}) IS NOT NULL`,
+        ),
+      )
+      .run().changes;
+  }
+
+  public listFieldValues(
+    fieldIds: readonly number[],
+  ): { courseId: CourseId; value: FieldValues[string] }[] {
+    if (fieldIds.length === 0) return [];
+    const keys = sql.join(
+      fieldIds.map((id) => sql`${String(id)}`),
+      sql`, `,
+    );
+    return this.db.all<{ courseId: CourseId; value: FieldValues[string] }>(
+      sql`SELECT ${participantTable.courseId} AS courseId, entry.value AS value
+        FROM ${participantTable}, json_each(${participantTable.fieldValues}) AS entry
+        WHERE entry.key IN (${keys})`,
+    );
+  }
+
+  // keys are numbers, so they're quoted in the path
+  protected static pathOf(fieldId: number): string {
+    return `$."${fieldId}"`;
   }
 
   // none: no certificate row; otherwise one in that status

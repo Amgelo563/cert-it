@@ -91,6 +91,16 @@ export const EsAppMessages = {
       certificateActive: 'El certificado ya está activo. Recarga la página.',
       nothingToRegenerate:
         'Todos los certificados ya usan la última plantilla.',
+      fieldLabelTaken: 'Otro campo de este curso ya tiene este nombre.',
+      tooManyFields: 'Este curso ya tiene la cantidad máxima de campos.',
+      fieldHasValues:
+        'Hay participantes con valores para este campo, así que su tipo no se puede cambiar.',
+      unknownField:
+        'Un campo se eliminó o cambió mientras tanto. Recarga la página.',
+      invalidFieldValue:
+        'El valor de un campo no corresponde a su tipo. Revisa los valores e inténtalo de nuevo.',
+      fieldRequired: 'Completa los campos obligatorios.',
+      invalidImage: 'Este archivo no es una imagen PNG o JPEG.',
       jobNotFailed:
         'Solo se puede reintentar una tarea que falló. Recarga la página.',
       unavailableInPractice:

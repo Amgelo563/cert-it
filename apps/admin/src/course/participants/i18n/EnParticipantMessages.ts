@@ -63,18 +63,15 @@ export const EnParticipantMessages = {
     roles: {
       name: 'Name',
       email: 'Email',
-      extra: 'Extra column',
       ignore: "Don't import",
     },
     needNameAndEmail: 'Pick one column for the name and one for the email.',
-    tooManyExtras:
-      'Up to {max} extra columns can be imported. Set the others to "Don\'t import".',
     modeLabel: 'Participants already in the course (same email)',
     modeSkip: 'Leave them as they are',
     modeSkipDescription: 'Their rows are skipped.',
     modeUpdate: 'Update them',
     modeUpdateDescription:
-      "Their name is replaced with the one in the file, and the file's extra columns are added or replaced.",
+      "Their name and field values are replaced with the file's. Empty cells keep the current value.",
     check: 'Review',
     back: 'Back',
     import: 'Import {count}',

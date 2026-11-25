@@ -1,9 +1,11 @@
 import { type ParticipantSummary, PermissionEnum } from '@cert-it/shared';
 import {
+  ActionIcon,
   Alert,
   Button,
   Flex,
   Group,
+  Menu,
   Stack,
   Text,
   TextInput,
@@ -13,7 +15,9 @@ import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import {
   IconAlertCircle,
+  IconChevronDown,
   IconFileImport,
+  IconForms,
   IconSearch,
   IconUserPlus,
 } from '@tabler/icons-react';
@@ -25,6 +29,7 @@ import { useApiClient } from '../../app/api/useApiClient';
 import { useApiRequest } from '../../app/api/useApiRequest';
 import { Surface } from '../../app/layout/Surface';
 import { usePermissions } from '../../auth/usePermissions';
+import { CourseFieldsModal } from '../fields/CourseFieldsModal';
 import { useCourse } from '../useCourse';
 import { ParticipantFormModal } from './form/ParticipantFormModal';
 import { ImportParticipantsModal } from './import/ImportParticipantsModal';
@@ -40,7 +45,7 @@ export function ParticipantsTab() {
   const { t, i18n } = useTranslation();
   const api = useApiClient();
   const can = usePermissions();
-  const { course, reload: reloadCourse } = useCourse();
+  const { course, reload: reloadCourse, fields, reloadFields } = useCourse();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebouncedValue(search.trim(), SearchDelayMs);
@@ -51,6 +56,7 @@ export function ParticipantsTab() {
   // the participant whose change is being sent, so their row can't send another
   const [busyId, setBusyId] = useState<number | null>(null);
   const [importing, setImporting] = useState(false);
+  const [managingFields, setManagingFields] = useState(false);
 
   const participants = useApiRequest(
     useCallback(
@@ -67,10 +73,11 @@ export function ParticipantsTab() {
     ),
   );
 
-  // the header's count changes too
+  // the header's count and the fields' value counts change too
   const reloadAll = () => {
     participants.reload();
     reloadCourse();
+    reloadFields();
   };
 
   const remove = (participant: ParticipantSummary) =>
@@ -144,14 +151,47 @@ export function ParticipantsTab() {
           </Group>
           {can(PermissionEnum.EditParticipants) && (
             <Group gap="sm">
-              <Button
-                variant="default"
-                data-tour={TourTargetEnum.ParticipantsImport}
-                leftSection={<IconFileImport size={16} stroke={1.5} />}
-                onClick={() => setImporting(true)}
-              >
-                {t('participantImport.open')}
-              </Button>
+              <Group gap={0} wrap="nowrap">
+                <Button
+                  variant="default"
+                  data-tour={TourTargetEnum.ParticipantsImport}
+                  leftSection={<IconFileImport size={16} stroke={1.5} />}
+                  onClick={() => setImporting(true)}
+                  style={
+                    can(PermissionEnum.EditCourses)
+                      ? { borderTopRightRadius: 0, borderBottomRightRadius: 0 }
+                      : undefined
+                  }
+                >
+                  {t('participantImport.open')}
+                </Button>
+                {can(PermissionEnum.EditCourses) && (
+                  <Menu position="bottom-end" width={200}>
+                    <Menu.Target>
+                      <ActionIcon
+                        variant="default"
+                        size={36}
+                        aria-label={t('courseFields.manage')}
+                        style={{
+                          borderTopLeftRadius: 0,
+                          borderBottomLeftRadius: 0,
+                          borderLeft: 0,
+                        }}
+                      >
+                        <IconChevronDown size={16} stroke={1.5} />
+                      </ActionIcon>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      <Menu.Item
+                        leftSection={<IconForms size={16} stroke={1.5} />}
+                        onClick={() => setManagingFields(true)}
+                      >
+                        {t('courseFields.manage')}
+                      </Menu.Item>
+                    </Menu.Dropdown>
+                  </Menu>
+                )}
+              </Group>
               <Button
                 data-tour={TourTargetEnum.ParticipantsAdd}
                 leftSection={<IconUserPlus size={16} stroke={1.5} />}
@@ -188,7 +228,8 @@ export function ParticipantsTab() {
           page={page}
           pageSize={PageSize}
           loading={participants.loading}
-          latestTemplateVersion={course.latestTemplateVersion}
+          course={course}
+          fields={fields}
           emptyText={
             debouncedSearch
               ? t('participants.noMatches')
@@ -201,15 +242,28 @@ export function ParticipantsTab() {
         />
       </Stack>
 
+      <CourseFieldsModal
+        opened={managingFields}
+        courseId={course.id}
+        fields={fields}
+        onClose={() => setManagingFields(false)}
+        onChanged={() => {
+          reloadFields();
+          participants.reload();
+        }}
+      />
       <ImportParticipantsModal
         opened={importing}
-        courseId={course.id}
+        course={course}
+        fields={fields}
+        onFieldsAdded={reloadFields}
         onClose={() => setImporting(false)}
         onImported={reloadAll}
       />
       <ParticipantFormModal
         opened={editing !== undefined}
-        courseId={course.id}
+        course={course}
+        fields={fields}
         participant={editing ?? null}
         onClose={() => setEditing(undefined)}
         onSaved={(participant) => {

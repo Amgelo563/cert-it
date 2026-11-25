@@ -43,6 +43,13 @@
       "when": 1795572664709,
       "tag": "0005_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1795578464081,
+      "tag": "0006_course_fields",
+      "breakpoints": true
     }
   ]
 }

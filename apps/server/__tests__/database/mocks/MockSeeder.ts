@@ -1,4 +1,8 @@
 import {
+  type CourseFieldType,
+  CourseFieldTypeEnum,
+  type FieldValues,
+  fieldLabelKey,
   FontSourceEnum,
   LocaleEnum,
   RoleEnum,
@@ -8,6 +12,7 @@ import type { Template } from '@pdfme/common';
 import type { CertificateCode } from '../../../src/certificate/code/CertificateCode';
 import type { Certificate } from '../../../src/certificate/Certificate';
 import type { Course } from '../../../src/course/Course';
+import type { CourseField } from '../../../src/field/CourseField';
 import type { Repositories } from '../../../src/database/Repositories';
 import type { Font } from '../../../src/font/Font';
 import type { Participant } from '../../../src/participant/Participant';
@@ -62,7 +67,10 @@ export class MockSeeder {
 
   public participant(
     course: Course,
-    options: Partial<Pick<Participant, 'name'>> & { email?: string } = {},
+    options: Partial<Pick<Participant, 'name'>> & {
+      email?: string;
+      fieldValues?: FieldValues;
+    } = {},
   ): Participant {
     const n = this.next();
     return this.repositories.participants
@@ -70,6 +78,30 @@ export class MockSeeder {
         courseId: course.id,
         name: options.name ?? `Participant ${n}`,
         email: normalizeEmail(options.email ?? `participant${n}@example.org`),
+        fieldValues: options.fieldValues,
+      })
+      .unwrap();
+  }
+
+  /** Adds a field after the course's others, a text field by default. */
+  public field(
+    course: Course,
+    options: {
+      label?: string;
+      type?: CourseFieldType;
+      required?: boolean;
+    } = {},
+  ): CourseField {
+    const n = this.next();
+    const label = options.label ?? `Field ${n}`;
+    return this.repositories.courseFields
+      .create({
+        courseId: course.id,
+        label,
+        labelKey: fieldLabelKey(label),
+        type: options.type ?? CourseFieldTypeEnum.Text,
+        required: options.required ?? false,
+        position: this.repositories.courseFields.listByCourse(course.id).length,
       })
       .unwrap();
   }

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import type { JobContext } from '@cert-it/jobs';
 import {
@@ -11,11 +12,17 @@ import {
 } from 'vite-plus/test';
 import { CertificateCodeGenerator } from '../../../../src/certificate/code/CertificateCodeGenerator';
 import { IssueJobHandler } from '../../../../src/certificate/job/IssueJobHandler';
-import { JobTypeEnum } from '@cert-it/shared';
+import {
+  CourseFieldTypeEnum,
+  JobTypeEnum,
+  TemplateFieldTypeEnum,
+  courseFieldTemplateType,
+} from '@cert-it/shared';
 import type { ParticipantId } from '../../../../src/participant/Participant';
 import { readPdfCredential } from '../../../credential/mocks/readPdfCredential';
 import { StubIssuerKeyService } from '../../../credential/mocks/StubIssuerKeyService';
 import { verifyJwt } from '../../../credential/mocks/verifyJwt';
+import { TinyPng } from '../../../field/mocks/TinyPng';
 import { CertificateJobFixture } from '../../mocks/CertificateJobFixture';
 
 const CodePattern = /^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{2}$/;
@@ -203,5 +210,90 @@ describe('IssueJobHandler (run)', () => {
     );
 
     expect(result.isErr() && result.error._tag).toBe('NoTemplateError');
+  });
+});
+
+describe('IssueJobHandler (course fields)', () => {
+  test('GIVEN a participant without a required value WHEN running THEN skips them with the field and issues the rest', async () => {
+    await fixture.templateVersion();
+    const group = fixture.seed.field(fixture.course, {
+      label: 'Group',
+      required: true,
+    });
+    const ana = fixture.seed.participant(fixture.course, {
+      name: 'Ana',
+      fieldValues: { [group.id]: 'A' },
+    });
+    const bob = fixture.seed.participant(fixture.course, { name: 'Bob' });
+
+    const output = (
+      await IssueJobHandler.create(fixture.handlerOptions()).run(
+        issueJob([ana.id, bob.id]),
+        createContext(),
+      )
+    ).unwrap();
+
+    expect(output).toEqual({
+      rendered: 1,
+      skipped: [
+        {
+          participantId: bob.id,
+          name: 'Bob',
+          missing: [],
+          missingFields: ['Group'],
+        },
+      ],
+    });
+  });
+
+  test('GIVEN a template printing text and image fields WHEN running THEN renders their values, and blanks without one', async () => {
+    const grade = fixture.seed.field(fixture.course, {
+      type: CourseFieldTypeEnum.Number,
+    });
+    const photo = fixture.seed.field(fixture.course, {
+      type: CourseFieldTypeEnum.Image,
+    });
+    await fixture.templateVersion(50, fixture.fontSha256, [
+      {
+        name: 'Grade',
+        type: courseFieldTemplateType(
+          TemplateFieldTypeEnum.FieldText,
+          grade.id,
+        ),
+        fontName: fixture.fontSha256,
+        position: { x: 20, y: 120 },
+        width: 50,
+        height: 10,
+      },
+      {
+        name: 'Photo',
+        type: courseFieldTemplateType(
+          TemplateFieldTypeEnum.FieldImage,
+          photo.id,
+        ),
+        position: { x: 100, y: 120 },
+        width: 20,
+        height: 20,
+      },
+    ]);
+    const image = `${createHash('sha256').update(TinyPng).digest('hex')}.png`;
+    await fixture.dataDirectory.writeFile(
+      fixture.dataDirectory.getImageFile(fixture.course.id, image),
+      TinyPng,
+    );
+    const ana = fixture.seed.participant(fixture.course, {
+      name: 'Ana',
+      fieldValues: { [grade.id]: 18.5, [photo.id]: image },
+    });
+    const bob = fixture.seed.participant(fixture.course, { name: 'Bob' });
+
+    const output = (
+      await IssueJobHandler.create(fixture.handlerOptions()).run(
+        issueJob([ana.id, bob.id]),
+        createContext(),
+      )
+    ).unwrap();
+
+    expect(output).toEqual({ rendered: 2, skipped: [] });
   });
 });

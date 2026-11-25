@@ -11,7 +11,7 @@ type DataDirectoryServiceOptions = {
   directory: ManagedDirectory;
 };
 
-/** The directory that holds the database and every stored file: `app.db`, `site.json`, `fonts/`, `templates/`, `certificates/` and `keys/`. */
+/** The directory that holds the database and every stored file: `app.db`, `site.json`, `fonts/`, `templates/`, `images/`, `certificates/` and `keys/`. */
 export class DataDirectoryService {
   protected static readonly DatabaseFileName = 'app.db';
 
@@ -20,6 +20,8 @@ export class DataDirectoryService {
   protected static readonly FontsFolder = 'fonts';
 
   protected static readonly TemplatesFolder = 'templates';
+
+  protected static readonly ImagesFolder = 'images';
 
   protected static readonly CertificatesFolder = 'certificates';
 
@@ -35,13 +37,24 @@ export class DataDirectoryService {
 
   /** Creates the data directory at the given path, absolute or relative to the working directory. */
   public static create(options: { root: string }): DataDirectoryService {
-    const { FontsFolder, TemplatesFolder, CertificatesFolder, KeysFolder } =
-      DataDirectoryService;
+    const {
+      FontsFolder,
+      TemplatesFolder,
+      ImagesFolder,
+      CertificatesFolder,
+      KeysFolder,
+    } = DataDirectoryService;
 
     return new DataDirectoryService({
       directory: new ManagedDirectory({
         root: options.root,
-        folders: [FontsFolder, TemplatesFolder, CertificatesFolder, KeysFolder],
+        folders: [
+          FontsFolder,
+          TemplatesFolder,
+          ImagesFolder,
+          CertificatesFolder,
+          KeysFolder,
+        ],
       }),
     });
   }
@@ -115,6 +128,23 @@ export class DataDirectoryService {
     return this.resolve(this.getTemplateFile(courseId, sha256));
   }
 
+  /** Returns the path of the folder field images are stored in, one folder per course. */
+  public getImagesFolder(): string {
+    return this.directory.resolve(DataDirectoryService.ImagesFolder);
+  }
+
+  /** Returns the path of a course's field image relative to the directory, given its file name (<sha256>.<png|jpg>). */
+  public getImageFile(courseId: CourseId, fileName: string): string {
+    return [DataDirectoryService.ImagesFolder, String(courseId), fileName].join(
+      '/',
+    );
+  }
+
+  /** Returns the path of a course's field image, given its file name. */
+  public getImagePath(courseId: CourseId, fileName: string): string {
+    return this.resolve(this.getImageFile(courseId, fileName));
+  }
+
   /**
    * Returns the absolute path of a path inside the directory.
    *
@@ -176,6 +206,21 @@ export class DataDirectoryService {
     await rm(
       this.directory.resolve(
         DataDirectoryService.TemplatesFolder,
+        String(courseId),
+      ),
+      { recursive: true, force: true },
+    );
+  }
+
+  /**
+   * Deletes a course's folder of field images. A folder that's already gone isn't an error.
+   *
+   * @throws {Error} If the folder can't be deleted.
+   */
+  public async deleteImageFolder(courseId: CourseId): Promise<void> {
+    await rm(
+      this.directory.resolve(
+        DataDirectoryService.ImagesFolder,
         String(courseId),
       ),
       { recursive: true, force: true },

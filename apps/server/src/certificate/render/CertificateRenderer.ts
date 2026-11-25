@@ -1,13 +1,15 @@
 import {
   type TemplateContent,
+  type TemplateFieldValues,
   TemplateFieldTypeEnum,
-  type TemplateTextFieldType,
   type TemplateValues,
   buildTemplateInputs,
+  listCourseFieldIds,
+  parseCourseFieldTemplateType,
 } from '@cert-it/shared';
 import type { Font, Plugin, Plugins, Schema, Template } from '@pdfme/common';
 import { generate } from '@pdfme/generator';
-import { barcodes, text } from '@pdfme/schemas';
+import { barcodes, image, text } from '@pdfme/schemas';
 import {
   type MissingGlyphs,
   TemplateGlyphChecker,
@@ -20,6 +22,8 @@ type CertificateRendererOptions = {
   /** Fonts by the SHA-256 text fields name them with, or null when there are no text fields. */
   fonts: Font | null;
   glyphs: TemplateGlyphChecker;
+  /** The plugins of the template's field types. */
+  plugins: Plugins;
 };
 
 /** What a renderer reads to load a template version. */
@@ -47,10 +51,13 @@ export class CertificateRenderer {
 
   protected readonly glyphs: TemplateGlyphChecker;
 
+  protected readonly plugins: Plugins;
+
   constructor(options: CertificateRendererOptions) {
     this.template = options.template;
     this.fonts = options.fonts;
     this.glyphs = options.glyphs;
+    this.plugins = options.plugins;
   }
 
   /**
@@ -84,25 +91,72 @@ export class CertificateRenderer {
       template: { ...template, basePdf } as Template,
       fonts: bytes.size > 0 ? fonts : null,
       glyphs,
+      plugins: CertificateRenderer.pluginsFor(template),
     });
   }
 
-  /** Returns the text fields whose value has characters their font can't draw; empty when the certificate can be rendered. */
-  public findMissing(values: TemplateValues): MissingGlyphs[] {
-    return this.glyphs.findMissing(values);
+  /** Returns the IDs of the course fields the template prints. */
+  public getCourseFieldIds(): ReadonlySet<number> {
+    return listCourseFieldIds(this.template);
   }
 
-  /** Renders one certificate as PDF bytes. */
-  public async render(values: TemplateValues): Promise<Uint8Array> {
+  /** Returns what each field of the template prints, by its name. */
+  public inputsOf(
+    values: TemplateValues,
+    fields: TemplateFieldValues = {},
+  ): Record<string, string> {
+    return buildTemplateInputs(this.template.schemas, values, fields)[0] ?? {};
+  }
+
+  /** Returns the text fields whose text has characters their font can't draw; empty when the certificate can be rendered. */
+  public findMissing(
+    inputs: Readonly<Record<string, string>>,
+  ): MissingGlyphs[] {
+    return this.glyphs.findMissing(inputs);
+  }
+
+  /** Renders one certificate as PDF bytes, from {@link CertificateRenderer.inputsOf}. */
+  public async render(
+    inputs: Readonly<Record<string, string>>,
+  ): Promise<Uint8Array> {
     return generate({
       template: this.template,
-      inputs: buildTemplateInputs(this.template.schemas, values),
-      plugins: CertificateRenderer.Plugins,
+      inputs: [{ ...inputs }],
+      plugins: this.plugins,
       options: this.fonts ? { font: this.fonts } : {},
     });
   }
 
-  protected static textPlugin(type: TemplateTextFieldType): Plugin<Schema> {
+  // each course field has a type of its own, so its plugin is added by the type
+  protected static pluginsFor(template: TemplateContent): Plugins {
+    const plugins: Plugins = { ...CertificateRenderer.Plugins };
+    for (const field of template.schemas.flat()) {
+      const course = parseCourseFieldTemplateType(field.type);
+      if (!course || plugins[field.type]) continue;
+      plugins[field.type] =
+        course.kind === TemplateFieldTypeEnum.FieldText
+          ? CertificateRenderer.textPlugin(field.type)
+          : CertificateRenderer.imagePlugin(field.type);
+    }
+    return plugins;
+  }
+
+  protected static imagePlugin(type: string): Plugin<Schema> {
+    const plugin = image as unknown as Plugin<Schema>;
+
+    return {
+      ...plugin,
+      propPanel: {
+        ...plugin.propPanel,
+        defaultSchema: {
+          ...plugin.propPanel.defaultSchema,
+          type,
+        },
+      },
+    };
+  }
+
+  protected static textPlugin(type: string): Plugin<Schema> {
     const plugin = text as unknown as Plugin<Schema>;
 
     return {

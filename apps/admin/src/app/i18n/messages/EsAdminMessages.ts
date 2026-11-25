@@ -2,6 +2,7 @@ import { EsAuditLogMessages } from '../../../audit/i18n/EsAuditLogMessages';
 import { EsAuthMessages } from '../../../auth/i18n/EsAuthMessages';
 import { EsCourseMessages } from '../../../course/i18n/EsCourseMessages';
 import { EsCertificateMessages } from '../../../course/certificates/i18n/EsCertificateMessages';
+import { EsFieldMessages } from '../../../course/fields/i18n/EsFieldMessages';
 import { EsParticipantMessages } from '../../../course/participants/i18n/EsParticipantMessages';
 import { EsOnboardingMessages } from '../../../onboarding/i18n/EsOnboardingMessages';
 import { EsUserMessages } from '../../../user/i18n/EsUserMessages';
@@ -13,6 +14,7 @@ export const EsAdminMessages = {
   ...EsAuthMessages,
   ...EsCourseMessages,
   ...EsParticipantMessages,
+  ...EsFieldMessages,
   ...EsCertificateMessages,
   ...EsUserMessages,
   ...EsAuditLogMessages,

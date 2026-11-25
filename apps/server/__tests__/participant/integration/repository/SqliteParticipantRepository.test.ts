@@ -24,13 +24,13 @@ afterEach(() => {
 });
 
 describe('SqliteParticipantRepository (create)', () => {
-  test('GIVEN no extra columns WHEN creating THEN stores an empty object', () => {
+  test('GIVEN no field values WHEN creating THEN stores an empty object', () => {
     const participant = seeder.participant(seeder.course());
 
-    expect(participant.extra).toEqual({});
+    expect(participant.fieldValues).toEqual({});
   });
 
-  test('GIVEN extra columns WHEN creating THEN returns them as an object', () => {
+  test('GIVEN field values WHEN creating THEN returns them as an object', () => {
     const course = seeder.course();
 
     const participant = repositories.participants
@@ -38,13 +38,13 @@ describe('SqliteParticipantRepository (create)', () => {
         courseId: course.id,
         name: 'Ada',
         email: normalizeEmail('ada@example.org'),
-        extra: { city: 'London' },
+        fieldValues: { '1': 'London', '2': 18.5, '3': true },
       })
       .unwrap();
 
-    expect(repositories.participants.findById(participant.id)?.extra).toEqual({
-      city: 'London',
-    });
+    expect(
+      repositories.participants.findById(participant.id)?.fieldValues,
+    ).toEqual({ '1': 'London', '2': 18.5, '3': true });
   });
 
   test('GIVEN a participant WHEN creating another with the same email in the same course THEN returns a DuplicateModelError on courseId and email', () => {
@@ -278,5 +278,48 @@ describe('SqliteParticipantRepository (delete)', () => {
 
     expect(repositories.participants.delete(participant.id).isOk()).toBe(true);
     expect(repositories.certificates.findById(certificate.id)).toBeNull();
+  });
+});
+
+describe('SqliteParticipantRepository (field values)', () => {
+  test('GIVEN values of two fields WHEN counting THEN answers per field, leaving out other courses', () => {
+    const course = seeder.course();
+    seeder.participant(course, { fieldValues: { '1': 'A', '2': 3 } });
+    seeder.participant(course, { fieldValues: { '1': 'B' } });
+    seeder.participant(seeder.course(), { fieldValues: { '1': 'C' } });
+
+    expect(repositories.participants.countFieldValues(course.id)).toEqual(
+      new Map([
+        ['1', 2],
+        ['2', 1],
+      ]),
+    );
+  });
+
+  test('GIVEN a field with values WHEN removing it THEN clears only that course and field', () => {
+    const course = seeder.course();
+    const ada = seeder.participant(course, {
+      fieldValues: { '1': 'A', '2': 3 },
+    });
+    const other = seeder.participant(seeder.course(), {
+      fieldValues: { '1': 'C' },
+    });
+
+    expect(repositories.participants.removeFieldValue(course.id, 1)).toBe(1);
+    expect(repositories.participants.findById(ada.id)?.fieldValues).toEqual({
+      '2': 3,
+    });
+    expect(repositories.participants.findById(other.id)?.fieldValues).toEqual({
+      '1': 'C',
+    });
+  });
+
+  test('GIVEN values WHEN listing those of some fields THEN answers each with its course', () => {
+    const course = seeder.course();
+    seeder.participant(course, { fieldValues: { '1': 'a.png', '2': 'x' } });
+
+    expect(repositories.participants.listFieldValues([1])).toEqual([
+      { courseId: course.id, value: 'a.png' },
+    ]);
   });
 });

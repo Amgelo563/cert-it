@@ -121,6 +121,15 @@ export function CertificateJobPanel({
                   <Text span size="sm" fw={500}>
                     {participant.name}
                   </Text>
+                  {participant.missingFields
+                    && participant.missingFields.length > 0 && (
+                      <Text span size="sm" c="dimmed">
+                        {' · '}
+                        {t('certificateJob.missingFields', {
+                          fields: participant.missingFields.join(', '),
+                        })}
+                      </Text>
+                    )}
                   {participant.missing.map((field) => (
                     <Text key={field.field} span size="sm" c="dimmed">
                       {' · '}

@@ -259,6 +259,13 @@ export class CourseRoutes extends AbstractApiRoutes {
             `Couldn't delete the templates of course ${course.id}: ${String(error)}`,
           );
         }),
+      this.dataDirectory
+        .deleteImageFolder(course.id)
+        .catch((error: unknown) => {
+          this.logger.error(
+            `Couldn't delete the images of course ${course.id}: ${String(error)}`,
+          );
+        }),
     ]);
     return c.body(null, 204);
   }

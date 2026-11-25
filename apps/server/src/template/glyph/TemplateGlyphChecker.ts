@@ -55,12 +55,16 @@ export class TemplateGlyphChecker {
     return new TemplateGlyphChecker({ fields });
   }
 
-  /** Returns the fields whose value has characters their font can't draw; empty when every value can be printed. */
+  /**
+   * Returns the fields whose text has characters their font can't draw; empty when every value can be printed.
+   *
+   * @param inputs The text of each field, by its name, as pdfme takes it.
+   */
   public findMissing(
-    values: Readonly<Partial<Record<TemplateTextFieldType, string>>>,
+    inputs: Readonly<Record<string, string>>,
   ): MissingGlyphs[] {
     return this.fields.flatMap(({ name, type, checker }) => {
-      const missing = checker.findMissing(values[type] ?? '');
+      const missing = checker.findMissing(inputs[name] ?? '');
       return missing.length > 0 ? [{ field: name, type, missing }] : [];
     });
   }

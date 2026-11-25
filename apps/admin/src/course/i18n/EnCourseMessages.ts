@@ -125,7 +125,7 @@ export const EnCourseMessages = {
       'They would print as blank spaces. Pick another font, or check the sample text.',
     missingGlyphsItem: '{field}: {characters} (missing in {font})',
     fontAdded: '{family} {style} added',
-    save: 'Save version',
+    save: 'Create new version',
     noNameTitle: 'No participant name',
     noNameText:
       "This template has no participant name field, so its certificates won't show anyone's name. You can't issue certificates until you save a version that has one.",

@@ -4,9 +4,9 @@ import { FileStreamer } from '@cert-it/hono';
 import {
   type ApiErrorCode,
   ApiErrorCodeEnum,
-  AuditActionEnum,
-  AuditEntityEnum,
   type BasePdfUpload,
+  CourseFieldTypeEnum,
+  parseCourseFieldTemplateType,
   LargeBasePdfBytes,
   PermissionEnum,
   type SaveTemplateRequest,
@@ -14,6 +14,7 @@ import {
   Sha256Schema,
   type TemplateContent,
   type TemplateDetail,
+  TemplateFieldTypeEnum,
   FileSystemError,
 } from '@cert-it/shared';
 import { type Context, Hono } from 'hono';
@@ -22,7 +23,6 @@ import type { AuditLog } from '../audit/AuditLog';
 import type { AuthGuard } from '../auth/AuthGuard';
 import type { Config } from '../config/schema/ConfigSchema';
 import type { DatabaseService } from '../database/DatabaseService';
-import type { Font } from '../font/Font';
 import { FontRoutes } from '../font/FontRoutes';
 import { AbstractApiRoutes } from '../http/api/AbstractApiRoutes';
 import { UploadReader } from '../http/upload/UploadReader';
@@ -32,8 +32,9 @@ import {
   type BasePdfProblem,
   BasePdfProblemEnum,
 } from './pdf/BasePdfProblemEnum';
-import { listTextFields } from './TemplateTextField';
 import type { TemplateVersion } from './TemplateVersion';
+import { TemplateVersionWriter } from './TemplateVersionWriter';
+import type { CourseId } from '../course/Course';
 import type { CourseEnv } from '../course/CourseEnv';
 import { CourseLoader } from '../course/CourseLoader';
 
@@ -45,6 +46,7 @@ type TemplateRoutesOptions = {
   auditLog: AuditLog;
   uploads: UploadReader;
   pdfChecker: BasePdfChecker;
+  writer: TemplateVersionWriter;
 };
 
 /** Serves a course's template routes: anyone can read the template, Editors upload base PDFs and save new versions. */
@@ -83,6 +85,8 @@ export class TemplateRoutes extends AbstractApiRoutes {
 
   protected readonly pdfChecker: BasePdfChecker;
 
+  protected readonly writer: TemplateVersionWriter;
+
   protected readonly app: ReturnType<TemplateRoutes['createApp']>;
 
   constructor(options: TemplateRoutesOptions) {
@@ -94,6 +98,7 @@ export class TemplateRoutes extends AbstractApiRoutes {
     this.auditLog = options.auditLog;
     this.uploads = options.uploads;
     this.pdfChecker = options.pdfChecker;
+    this.writer = options.writer;
     this.app = this.createApp();
   }
 
@@ -104,7 +109,10 @@ export class TemplateRoutes extends AbstractApiRoutes {
     guard: AuthGuard;
     auditLog: AuditLog;
     injections?: Partial<
-      Pick<TemplateRoutesOptions, 'uploads' | 'pdfChecker' | 'courseLoader'>
+      Pick<
+        TemplateRoutesOptions,
+        'uploads' | 'pdfChecker' | 'courseLoader' | 'writer'
+      >
     >;
   }): TemplateRoutes {
     const { config, injections, ...shared } = options;
@@ -120,6 +128,12 @@ export class TemplateRoutes extends AbstractApiRoutes {
           maxBytes: config.uploads.maxPdfMb * 1024 * 1024,
         }),
       pdfChecker: injections?.pdfChecker ?? BasePdfChecker.create(),
+      writer:
+        injections?.writer
+        ?? new TemplateVersionWriter({
+          database: shared.database,
+          auditLog: shared.auditLog,
+        }),
     });
   }
 
@@ -187,39 +201,19 @@ export class TemplateRoutes extends AbstractApiRoutes {
       return this.error(c, ApiErrorCodeEnum.UnknownBasePdf);
     }
 
-    const fonts = this.findFonts(body.template);
-    if (!fonts) return this.error(c, ApiErrorCodeEnum.UnknownFont);
+    if (!this.writer.findFonts(body.template)) {
+      return this.error(c, ApiErrorCodeEnum.UnknownFont);
+    }
+    if (!this.hasKnownFields(course.id, body.template)) {
+      return this.error(c, ApiErrorCodeEnum.UnknownField);
+    }
 
-    const userId = c.get('user').id;
-    const saved = this.database
-      .getUnitOfWork()
-      .transaction(({ templateVersions }) => {
-        const version =
-          (templateVersions.findLatest(course.id)?.version ?? 0) + 1;
-        return templateVersions
-          .create({
-            courseId: course.id,
-            version,
-            template: body.template,
-            basePdfPath,
-            createdBy: userId,
-          })
-          .map((created) => {
-            templateVersions.setFontIds(
-              created.id,
-              fonts.map((font) => font.id),
-            );
-            this.auditLog.record({
-              userId,
-              action: AuditActionEnum.Create,
-              entity: AuditEntityEnum.TemplateVersion,
-              entityId: created.id,
-              details: { courseId: course.id, version: created.version },
-            });
-            return created;
-          });
-      })
-      .unwrap();
+    const saved = this.writer.save({
+      courseId: course.id,
+      template: body.template,
+      basePdfPath,
+      userId: c.get('user').id,
+    });
 
     return c.json<TemplateDetail, 201>(this.toDetail(saved), 201);
   }
@@ -275,15 +269,26 @@ export class TemplateRoutes extends AbstractApiRoutes {
     return this.error(c, ApiErrorCodeEnum.NotFound);
   }
 
-  // null if a field names a font that isn't stored
-  protected findFonts(template: TemplateContent): Font[] | null {
-    const { fonts } = this.database.getRepositories();
-    const hashes = new Set(
-      listTextFields(template).map((field) => field.fontName),
+  // images only from image fields, text from the others
+  protected hasKnownFields(
+    courseId: CourseId,
+    template: TemplateContent,
+  ): boolean {
+    const fields = new Map(
+      this.database
+        .getRepositories()
+        .courseFields.listByCourse(courseId)
+        .map((field) => [field.id as number, field]),
     );
-    const found = [...hashes].map((sha256) => fonts.findBySha256(sha256));
 
-    return found.every((font) => font !== null) ? found : null;
+    return template.schemas.flat().every((placed) => {
+      const course = parseCourseFieldTemplateType(placed.type);
+      if (!course) return true;
+      const field = fields.get(course.fieldId);
+      if (!field) return false;
+      const image = field.type === CourseFieldTypeEnum.Image;
+      return image === (course.kind === TemplateFieldTypeEnum.FieldImage);
+    });
   }
 
   protected async exists(path: string): Promise<boolean> {

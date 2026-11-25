@@ -5,7 +5,9 @@ import {
   type BasePdfUpload,
   CertificateStatusEnum,
   CourseDateFormatter,
+  type CourseFieldSummary,
   type CourseSummary,
+  type CreateCourseFieldRequest,
   type CreatedUserResponse,
   type CreateCourseRequest,
   type CreateParticipantRequest,
@@ -138,6 +140,9 @@ export class PracticeBackend {
   protected readonly courses: PracticeCourse[] = [];
 
   protected readonly participants: ParticipantSummary[] = [];
+
+  /** Fields added in practice, which keep no values. */
+  protected readonly fields: CourseFieldSummary[] = [];
 
   protected readonly templates: TemplateDetail[] = [];
 
@@ -329,6 +334,29 @@ export class PracticeBackend {
         return course
           ? PracticeBackend.json(200, this.summaryOf(course))
           : PracticeBackend.error(404, ApiErrorCodeEnum.NotFound);
+      }),
+      route('GET', `courses/${id}/fields`, ({ params }) =>
+        PracticeBackend.json(
+          200,
+          this.fields.filter((field) => field.courseId === Number(params[0])),
+        ),
+      ),
+      // the import can add fields; their values aren't kept
+      route('POST', `courses/${id}/fields`, async ({ params, body }) => {
+        const request =
+          await PracticeBackend.read<CreateCourseFieldRequest>(body);
+        const courseId = Number(params[0]);
+        const field: CourseFieldSummary = {
+          id: this.id(),
+          courseId,
+          label: request.label.trim(),
+          type: request.type,
+          required: false,
+          position: this.fields.filter((f) => f.courseId === courseId).length,
+          valueCount: 0,
+        };
+        this.fields.push(field);
+        return PracticeBackend.json(201, field);
       }),
       route('GET', `courses/${id}/participants`, ({ params, query }) =>
         PracticeBackend.json(
@@ -525,7 +553,7 @@ export class PracticeBackend {
       courseId,
       name: request.name.trim(),
       email: request.email.trim().toLowerCase(),
-      extra: {},
+      fieldValues: {},
       certificate: null,
       createdAt: this.timestamp(),
     };
@@ -608,7 +636,7 @@ export class PracticeBackend {
         rows.filter((row) => row.status === status).length,
       ]),
     ) as ImportParticipantsResponse['totals'];
-    return { dryRun: request.dryRun, totals, rows };
+    return { dryRun: request.dryRun, totals, rows, dateOrders: {} };
   }
 
   protected issue(

@@ -1,5 +1,9 @@
 import { GlyphChecker } from '@cert-it/fonts';
 import {
+  courseFieldTemplateType,
+  type CourseFieldSummary,
+  TemplateFieldTypeEnum,
+  CourseFieldTypeEnum,
   type CourseSummary,
   CourseDateFormatter,
   type FontSummary,
@@ -76,6 +80,8 @@ export type TemplateEditorStart = {
 
 type TemplateEditorProps = {
   course: CourseSummary;
+  /** The course's fields, which can be placed on the template. */
+  fields: readonly CourseFieldSummary[];
   start: TemplateEditorStart;
   /** Called after saving a version, such as to refresh the course's counts. */
   onSaved: () => void;
@@ -91,6 +97,7 @@ const SampleCode = 'ABCD-EFGH-JK';
 /** The Designer with its toolbar: upload a base PDF, add fonts, and save the canvas as a new version. */
 export function TemplateEditor({
   course,
+  fields: courseFields,
   start,
   onSaved,
 }: TemplateEditorProps) {
@@ -157,6 +164,21 @@ export function TemplateEditor({
     [t, course.locale, course.dateFormat],
   );
 
+  // what a course field shows until a participant's value replaces it
+  const courseFieldSample = useMemo(() => {
+    const formatter = new CourseDateFormatter({
+      locale: course.locale,
+      dateFormat: course.dateFormat,
+    });
+    return (field: CourseFieldSummary) => {
+      if (field.type === CourseFieldTypeEnum.Number) return '0';
+      if (field.type === CourseFieldTypeEnum.Date) {
+        return formatter.format(today());
+      }
+      return field.label;
+    };
+  }, [course.locale, course.dateFormat]);
+
   // new names or languages restart the Designer, which keeps its canvas
   const hasFonts = fonts.size > 0;
   const plugins = useMemo(
@@ -170,8 +192,14 @@ export function TemplateEditor({
         samples,
         withText: hasFonts,
         fontLabel: (sha256) => fontLabelOf(fontInfo, sha256),
+        courseFields,
+        courseFieldSample,
+        booleanLabels: {
+          trueText: t('fieldTemplate.trueText'),
+          falseText: t('fieldTemplate.falseText'),
+        },
       }),
-    [t, samples, hasFonts, fontInfo],
+    [t, samples, hasFonts, fontInfo, courseFields, courseFieldSample],
   );
 
   const fieldNames = useMemo(
@@ -179,8 +207,19 @@ export function TemplateEditor({
       participantName: t('template.fieldNames.participantName'),
       issueDate: t('template.fieldNames.issueDate'),
       qrcode: t('template.fieldNames.qrcode'),
+      ...Object.fromEntries(
+        courseFields.map((field) => [
+          courseFieldTemplateType(
+            field.type === CourseFieldTypeEnum.Image
+              ? TemplateFieldTypeEnum.FieldImage
+              : TemplateFieldTypeEnum.FieldText,
+            field.id,
+          ),
+          field.label,
+        ]),
+      ),
     }),
-    [t],
+    [t, courseFields],
   );
 
   // a new value only when the base PDF changes, so typing on the canvas never resets it
@@ -480,6 +519,8 @@ export function TemplateEditor({
             fonts={fontOption}
             plugins={plugins}
             samples={samples}
+            fields={courseFields}
+            fieldSample={courseFieldSample}
             checkers={checkers}
             fontLabel={(sha256) => fontLabelOf(fontInfo, sha256)}
           />

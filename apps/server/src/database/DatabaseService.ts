@@ -10,6 +10,7 @@ import { SqliteSessionRepository } from '../auth/session/repository/SqliteSessio
 import { SqliteCertificateRepository } from '../certificate/repository/SqliteCertificateRepository';
 import { SqliteCourseRepository } from '../course/repository/SqliteCourseRepository';
 import { StartupError } from '../error/StartupError';
+import { SqliteCourseFieldRepository } from '../field/repository/SqliteCourseFieldRepository';
 import { SqliteFontRepository } from '../font/repository/SqliteFontRepository';
 import { SqliteJobRepository } from '../job/repository/SqliteJobRepository';
 import { SqliteOnboardingRepository } from '../onboarding/repository/SqliteOnboardingRepository';
@@ -167,6 +168,7 @@ export class DatabaseService {
       users: new SqliteUserRepository({ db }),
       sessions: new SqliteSessionRepository({ db }),
       courses: new SqliteCourseRepository({ db }),
+      courseFields: new SqliteCourseFieldRepository({ db }),
       participants: new SqliteParticipantRepository({ db }),
       fonts: new SqliteFontRepository({ db }),
       templateVersions: new SqliteTemplateVersionRepository({ db }),

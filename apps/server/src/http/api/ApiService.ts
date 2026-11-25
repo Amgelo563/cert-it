@@ -15,6 +15,8 @@ import { CertificateRegenerator } from '../../certificate/job/CertificateRegener
 import type { CredentialSigner } from '../../credential/CredentialSigner';
 import type { Config } from '../../config/schema/ConfigSchema';
 import { CourseRoutes } from '../../course/CourseRoutes';
+import { CourseFieldRoutes } from '../../field/CourseFieldRoutes';
+import { FieldImageRoutes } from '../../field/image/FieldImageRoutes';
 import type { DatabaseService } from '../../database/DatabaseService';
 import { FontCatalogRoutes } from '../../font/catalog/FontCatalogRoutes';
 import { FontLibrary } from '../../font/FontLibrary';
@@ -35,6 +37,8 @@ type ApiServiceOptions = {
   users: UserRoutes;
   courses: CourseRoutes;
   participants: ParticipantRoutes;
+  fields: CourseFieldRoutes;
+  images: FieldImageRoutes;
   certificates: CertificateRoutes;
   certificateExports: CertificateExportRoutes;
   jobs: JobRoutes;
@@ -57,6 +61,10 @@ export class ApiService {
   protected readonly courses: CourseRoutes;
 
   protected readonly participants: ParticipantRoutes;
+
+  protected readonly fields: CourseFieldRoutes;
+
+  protected readonly images: FieldImageRoutes;
 
   protected readonly certificates: CertificateRoutes;
 
@@ -83,6 +91,8 @@ export class ApiService {
     this.users = options.users;
     this.courses = options.courses;
     this.participants = options.participants;
+    this.fields = options.fields;
+    this.images = options.images;
     this.certificates = options.certificates;
     this.certificateExports = options.certificateExports;
     this.jobs = options.jobs;
@@ -156,11 +166,18 @@ export class ApiService {
         injections?.participants
         ?? ParticipantRoutes.create({
           database,
+          dataDirectory,
           guard,
           auditLog,
           certificates,
           regenerator,
         }),
+      fields:
+        injections?.fields
+        ?? CourseFieldRoutes.create({ database, guard, auditLog }),
+      images:
+        injections?.images
+        ?? FieldImageRoutes.create({ database, dataDirectory, guard }),
       certificates:
         injections?.certificates
         ?? CertificateRoutes.create({ database, guard, certificates }),
@@ -218,6 +235,8 @@ export class ApiService {
       .route(UserRoutes.Path, this.users.getApp())
       .route(CourseRoutes.Path, this.courses.getApp())
       .route(ParticipantRoutes.Path, this.participants.getApp())
+      .route(CourseFieldRoutes.Path, this.fields.getApp())
+      .route(FieldImageRoutes.Path, this.images.getApp())
       .route(CertificateExportRoutes.Path, this.certificateExports.getApp())
       .route(CertificateRoutes.Path, this.certificates.getApp())
       .route(JobRoutes.Path, this.jobs.getApp())

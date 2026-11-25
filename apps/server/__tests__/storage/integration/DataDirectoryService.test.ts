@@ -30,7 +30,7 @@ describe('DataDirectoryService (start)', () => {
   test('GIVEN a missing directory WHEN starting THEN creates it with its folders', () => {
     DataDirectoryService.create({ root }).start();
 
-    for (const folder of ['fonts', 'templates', 'certificates']) {
+    for (const folder of ['fonts', 'templates', 'images', 'certificates']) {
       expect(existsSync(join(root, folder))).toBe(true);
     }
   });

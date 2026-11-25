@@ -1,6 +1,8 @@
 import type { GlyphChecker } from '@cert-it/fonts';
 import {
   buildTemplateInputs,
+  type CourseFieldSummary,
+  CourseFieldTypeEnum,
   type CourseSummary,
   CourseDateFormatter,
   type ParticipantSummary,
@@ -35,7 +37,9 @@ import { describeApiError } from '../../../app/api/describeApiError';
 import { certificatePageUrl } from '../../participants/certificatePageUrl';
 import { findGlyphWarnings } from '../editor/templateFields';
 import { generatePreview, sampleInputs } from './generatePreview';
+import { fieldImageUrl } from '../../fields/fieldImageUrl';
 import { ParticipantPicker } from './ParticipantPicker';
+import { loadFieldImages, previewFieldValues } from './previewFieldValues';
 
 type PreviewSource = 'sample' | 'participant';
 
@@ -49,6 +53,10 @@ type PreviewModalProps = {
   plugins: Plugins;
   /** Values of a participant without a certificate yet, for the date and QR code. */
   samples: TemplateValues;
+  /** The course's fields, whose values a participant's preview prints. */
+  fields: readonly CourseFieldSummary[];
+  /** What a field without a value prints instead. */
+  fieldSample: (field: CourseFieldSummary) => string;
   /** Glyph checkers by font SHA-256. */
   checkers: ReadonlyMap<string, GlyphChecker>;
   fontLabel: (sha256: string) => string;
@@ -92,6 +100,8 @@ function PreviewBody({
   fonts,
   plugins,
   samples,
+  fields,
+  fieldSample,
   checkers,
   fontLabel,
 }: PreviewBodyProps) {
@@ -102,22 +112,69 @@ function PreviewBody({
   );
   const [settled, setSettled] = useState<Settled | null>(null);
 
+  // the picked participant's images, loaded before their preview is drawn
+  const [images, setImages] = useState<{
+    participantId: number;
+    urls: ReadonlyMap<string, string>;
+  } | null>(null);
+  useEffect(() => {
+    if (!participant) return;
+    let current = true;
+    const urls = new Map(
+      fields.flatMap((field) => {
+        const value = participant.fieldValues[String(field.id)];
+        return field.type === CourseFieldTypeEnum.Image
+          && typeof value === 'string'
+          ? [[value, fieldImageUrl(course.id, value)] as const]
+          : [];
+      }),
+    );
+    void loadFieldImages(urls).then((loaded) => {
+      if (current) setImages({ participantId: participant.id, urls: loaded });
+    });
+    return () => {
+      current = false;
+    };
+  }, [participant, fields, course.id]);
+  const imagesReady =
+    participant !== null && images?.participantId === participant.id;
+
   const values = useMemo(
     () => (participant ? valuesOf(participant, course, samples) : null),
     [participant, course, samples],
   );
-  // null while a participant is still to be picked
+  // null while a participant is still to be picked, or their images load
   const inputs = useMemo(() => {
     if (source === 'sample') return sampleInputs(template.schemas);
-    return values ? buildTemplateInputs(template.schemas, values) : null;
-  }, [source, values, template]);
+    if (!values || !participant || !imagesReady) return null;
+    return buildTemplateInputs(
+      template.schemas,
+      values,
+      previewFieldValues(fields, participant.fieldValues, {
+        locale: course.locale,
+        dateFormat: course.dateFormat,
+        images: images.urls,
+        sample: fieldSample,
+      }),
+    );
+  }, [
+    source,
+    values,
+    template,
+    participant,
+    imagesReady,
+    images,
+    fields,
+    course,
+    fieldSample,
+  ]);
 
   const warnings = useMemo(
     () =>
-      source === 'participant' && values
-        ? findGlyphWarnings(template.schemas, checkers, values)
+      source === 'participant' && inputs?.[0]
+        ? findGlyphWarnings(template.schemas, checkers, inputs[0])
         : [],
-    [source, values, template, checkers],
+    [source, inputs, template, checkers],
   );
 
   useEffect(() => {

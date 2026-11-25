@@ -1,3 +1,6 @@
+import type { FieldDateOrder } from '../../field/FieldDateOrderEnum';
+import type { FieldValueError } from '../../field/FieldValueErrorEnum';
+
 /** What an import does or would do with a row. */
 export const ImportRowStatusEnum = {
   Create: 'create',
@@ -14,7 +17,7 @@ export type ImportRowStatus =
 export const ImportSkipReasonEnum = {
   /** The course has the email, and the mode is skip. */
   Exists: 'exists',
-  /** The course has the email with the same name and extra columns. */
+  /** The course has the email with the same name and field values. */
   Unchanged: 'unchanged',
   /** An earlier row of the file has the same email. */
   DuplicateInFile: 'duplicate_in_file',
@@ -35,6 +38,12 @@ export const ImportRowErrorEnum = {
 export type ImportRowError =
   (typeof ImportRowErrorEnum)[keyof typeof ImportRowErrorEnum];
 
+/** A row's value that a course field can't take. */
+export type ImportFieldError = {
+  readonly fieldId: number;
+  readonly error: FieldValueError;
+};
+
 /** The outcome of one row of an import. */
 export type ImportRowResult = {
   /** Index of the row in the request, starting at 0. */
@@ -44,6 +53,8 @@ export type ImportRowResult = {
   readonly reason?: ImportSkipReason;
   /** Set when the status is invalid. */
   readonly errors?: readonly ImportRowError[];
+  /** What's wrong with the row's field values, when the status is invalid. */
+  readonly fieldErrors?: readonly ImportFieldError[];
   /** Current name of the participant with this email, for updates and skips. */
   readonly existingName?: string;
   /** Index of the earlier row with the same email, for duplicates in the file. */
@@ -57,4 +68,6 @@ export type ImportParticipantsResponse = {
   readonly totals: Readonly<Record<ImportRowStatus, number>>;
   /** One result per row, in the request's order. */
   readonly rows: readonly ImportRowResult[];
+  /** How numeric dates were read, by date field ID, for the fields whose values could be read either way. */
+  readonly dateOrders: Readonly<Record<string, FieldDateOrder>>;
 };

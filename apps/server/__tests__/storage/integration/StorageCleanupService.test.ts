@@ -205,3 +205,30 @@ describe('StorageCleanupService (base PDFs)', () => {
     expect(readdirSync(join(root, 'templates'))).toEqual([]);
   });
 });
+
+describe('StorageCleanupService (field images)', () => {
+  test('GIVEN images a participant has, unused and recent WHEN cleaning up THEN deletes only the old unused one', async () => {
+    const { cleanup, dataDirectory, seeder } = setup();
+    const course = seeder.course();
+    const photo = seeder.field(course, { type: 'image' });
+    const image = (name: string, ageDays: number) => {
+      const path = dataDirectory.getImagePath(course.id, name);
+      mkdirSync(join(path, '..'), { recursive: true });
+      writeFileSync(path, 'png');
+      const time = new Date(Date.now() - ageDays * Day);
+      utimesSync(path, time, time);
+      return path;
+    };
+    const used = image('used.png', 3);
+    const unused = image('unused.png', 3);
+    const recent = image('recent.png', 0);
+    seeder.participant(course, { fieldValues: { [photo.id]: 'used.png' } });
+
+    const result = await cleanup(Date.now());
+
+    expect(result.images).toBe(1);
+    expect(existsSync(unused)).toBe(false);
+    expect(existsSync(recent)).toBe(true);
+    expect(existsSync(used)).toBe(true);
+  });
+});

@@ -32,7 +32,7 @@ export function TemplateTab() {
   const { t, i18n } = useTranslation();
   const api = useApiClient();
   const can = usePermissions();
-  const { course, reload } = useCourse();
+  const { course, reload, fields } = useCourse();
   const courseId = String(course.id);
   // certificates on an older version after a save, to offer regenerating them
   const [outdated, setOutdated] = useState<OutdatedCertificates | null>(null);
@@ -101,6 +101,7 @@ export function TemplateTab() {
       <TemplateEditor
         key={courseId}
         course={course}
+        fields={fields}
         start={start}
         onSaved={saved}
       />

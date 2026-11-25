@@ -1,3 +1,4 @@
+import type { FieldValues } from '@cert-it/shared';
 import { integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 import type { CourseId } from '../../course/Course';
 import { courseTable } from '../../course/repository/courseTable';
@@ -16,9 +17,9 @@ export const participantTable = sqliteTable(
       .$type<CourseId>(),
     name: text('name').notNull(),
     email: text('email').notNull().$type<NormalizedEmail>(),
-    extra: text('extra', { mode: 'json' })
+    fieldValues: text('field_values', { mode: 'json' })
       .notNull()
-      .$type<Readonly<Record<string, string>>>()
+      .$type<FieldValues>()
       .$defaultFn(() => ({})),
     createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()

@@ -1,4 +1,4 @@
-import type { Brand } from '@cert-it/shared';
+import type { Brand, FieldValues } from '@cert-it/shared';
 import type { CourseId } from '../course/Course';
 import type { NormalizedEmail } from '../util/email/NormalizedEmail';
 
@@ -11,7 +11,7 @@ export type Participant = {
   readonly name: string;
   /** Unique per course, used only for the public lookup. */
   readonly email: NormalizedEmail;
-  /** Extra columns imported from the CSV, by column name. */
-  readonly extra: Readonly<Record<string, string>>;
+  /** Values of the course's fields, by field ID. */
+  readonly fieldValues: FieldValues;
   readonly createdAt: Date;
 };

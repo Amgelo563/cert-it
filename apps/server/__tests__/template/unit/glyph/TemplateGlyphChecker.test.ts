@@ -70,8 +70,9 @@ describe('TemplateGlyphChecker', () => {
 
     expect(
       checker.findMissing({
-        participantName: 'René Smith',
-        issueDate: 'November 20, 2026',
+        Name: 'René Smith',
+        Date: 'November 20, 2026',
+        'Name again': 'René Smith',
       }),
     ).toEqual([]);
   });
@@ -79,13 +80,19 @@ describe('TemplateGlyphChecker', () => {
   test('GIVEN a name with missing characters WHEN checking THEN lists each field that prints it', async () => {
     const checker = await TemplateGlyphChecker.load(Template, readFont);
 
-    expect(checker.findMissing({ participantName: 'Żółć' })).toEqual([
-      { field: 'Name', type: 'participantName', missing: ['Ż', 'ó', 'ł', 'ć'] },
-      {
-        field: 'Name again',
-        type: 'participantName',
-        missing: ['Ż', 'ó', 'ł', 'ć'],
-      },
-    ]);
+    expect(checker.findMissing({ Name: 'Żółć', 'Name again': 'Żółć' })).toEqual(
+      [
+        {
+          field: 'Name',
+          type: 'participantName',
+          missing: ['Ż', 'ó', 'ł', 'ć'],
+        },
+        {
+          field: 'Name again',
+          type: 'participantName',
+          missing: ['Ż', 'ó', 'ł', 'ć'],
+        },
+      ],
+    );
   });
 });

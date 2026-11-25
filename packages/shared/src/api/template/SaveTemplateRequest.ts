@@ -1,6 +1,5 @@
 import {
   array,
-  discriminatedUnion,
   enum as zEnum,
   literal,
   looseObject,
@@ -8,11 +7,10 @@ import {
   type output,
   strictObject,
   string,
+  templateLiteral,
+  union,
 } from 'zod';
-import {
-  TemplateFieldTypeEnum,
-  TemplateTextFieldTypes,
-} from '../../template/TemplateFieldTypeEnum';
+import { TemplateFieldTypeEnum } from '../../template/TemplateFieldTypeEnum';
 
 /** Most fields one template takes. */
 export const MaxTemplateFields = 50;
@@ -27,15 +25,49 @@ const FieldBase = {
   height: number().positive(),
 };
 
+/** Most characters a boolean field's wording takes. */
+export const MaxBooleanWordingLength = 200;
+
+/** SHA-256 of a stored font. Required, so rendering never falls back to a font fetched online. */
+const FontNameSchema = Sha256Schema;
+
+// the course field's ID, as the type names it
+const CourseFieldIdSchema = number().int().positive();
+
 // loose, so the pdfme properties of each field are kept as the Designer sets them
-const TemplateFieldSchema = discriminatedUnion('type', [
+const TemplateFieldSchema = union([
   looseObject({
     ...FieldBase,
-    type: zEnum(TemplateTextFieldTypes),
-    /** SHA-256 of a stored font. Required, so rendering never falls back to a font fetched online. */
-    fontName: Sha256Schema,
+    type: zEnum([
+      TemplateFieldTypeEnum.ParticipantName,
+      TemplateFieldTypeEnum.IssueDate,
+    ]),
+    fontName: FontNameSchema,
   }),
   looseObject({ ...FieldBase, type: literal(TemplateFieldTypeEnum.QrCode) }),
+  looseObject({
+    ...FieldBase,
+    /** Prints the course field whose ID follows the colon. */
+    type: templateLiteral([
+      TemplateFieldTypeEnum.FieldText,
+      ':',
+      CourseFieldIdSchema,
+    ]),
+    fontName: FontNameSchema,
+    /** What a boolean field prints when true; nothing if unset. */
+    trueText: string().max(MaxBooleanWordingLength).optional(),
+    /** What a boolean field prints when false; nothing if unset. */
+    falseText: string().max(MaxBooleanWordingLength).optional(),
+  }),
+  looseObject({
+    ...FieldBase,
+    /** Draws the course field whose ID follows the colon. */
+    type: templateLiteral([
+      TemplateFieldTypeEnum.FieldImage,
+      ':',
+      CourseFieldIdSchema,
+    ]),
+  }),
 ]);
 
 export const TemplateContentSchema = looseObject({

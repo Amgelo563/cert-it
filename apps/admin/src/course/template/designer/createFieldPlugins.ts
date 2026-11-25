@@ -1,4 +1,9 @@
 import {
+  courseFieldTemplateType,
+  type CourseFieldSummary,
+  parseCourseFieldTemplateType,
+  CourseFieldTypeEnum,
+  type TemplateBuiltInFieldType,
   TemplateFieldTypeEnum,
   type TemplateTextFieldType,
 } from '@cert-it/shared';
@@ -9,11 +14,21 @@ import type {
   PropPanelSchema,
   Schema,
 } from '@pdfme/common';
-import { barcodes, text } from '@pdfme/schemas';
-import { IssueDateIcon, ParticipantNameIcon, QrCodeIcon } from './fieldIcons';
+import { barcodes, image, text } from '@pdfme/schemas';
+import {
+  CourseFieldIcon,
+  ImageFieldIcon,
+  IssueDateIcon,
+  ParticipantNameIcon,
+  QrCodeIcon,
+} from './fieldIcons';
 
-/** A text, one per field type, such as its label or its sample value. */
-type PerFieldType = Readonly<Record<TemplateTextFieldType | 'qrcode', string>>;
+/** A text, one per field type that's the same for every course, such as its label or its sample value. */
+type PerFieldType = Readonly<Record<TemplateBuiltInFieldType, string>>;
+
+/** A grey box, which image fields show until a participant's image replaces it. */
+export const ImagePlaceholder =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGO4e/8xAAU8AqAg/pEyAAAAAElFTkSuQmCC';
 
 type FieldPluginsOptions = {
   /** Labels shown in the Designer's sidebar. */
@@ -24,6 +39,12 @@ type FieldPluginsOptions = {
   withText: boolean;
   /** Returns the name shown for a font, given the SHA-256 fields use for it. */
   fontLabel: (sha256: string) => string;
+  /** The course's fields, one entry each in the sidebar. */
+  courseFields?: readonly CourseFieldSummary[];
+  /** Returns what a new field of a course field shows until real values replace it. */
+  courseFieldSample?: (field: CourseFieldSummary) => string;
+  /** Titles of the wording a boolean field prints. */
+  booleanLabels?: { trueText: string; falseText: string };
 };
 
 type TextPropPanel = PropPanel<Schema>;
@@ -46,17 +67,19 @@ const HiddenFieldFlags: PanelSchema = {
   required: { type: 'boolean', hidden: true },
 };
 
+type PanelProps = Parameters<Extract<TextPropPanel['schema'], Function>>[0];
+
 // pdfme puts our panel entries after its own, so same keys replace them
 function trimPanel(
   base: TextPropPanel,
-  trim: (schema: PanelSchema) => void = () => {},
+  trim: (schema: PanelSchema, props: PanelProps) => void = () => {},
 ): TextPropPanel['schema'] {
   return (props) => {
     const schema: PanelSchema = {
       ...(typeof base.schema === 'function' ? base.schema(props) : base.schema),
       ...HiddenFieldFlags,
     };
-    trim(schema);
+    trim(schema, props);
     return schema;
   };
 }
@@ -89,7 +112,8 @@ export function createFieldPlugins(options: FieldPluginsOptions): Plugins {
       },
     },
   };
-  if (!withText) return { [labels.qrcode]: qrcode };
+  const fields = courseFieldPlugins(options);
+  if (!withText) return { [labels.qrcode]: qrcode, ...fields.images };
 
   return {
     [labels.participantName]: textField(
@@ -115,6 +139,89 @@ export function createFieldPlugins(options: FieldPluginsOptions): Plugins {
       { width: 80, height: 10, fontSize: 14 },
     ),
     [labels.qrcode]: qrcode,
+    ...fields.texts,
+    ...fields.images,
+  };
+}
+
+// one entry per course field, keyed by its label; images need no font, so they're apart
+function courseFieldPlugins(options: FieldPluginsOptions): {
+  texts: Plugins;
+  images: Plugins;
+} {
+  const { courseFields = [], courseFieldSample = (field) => field.label } =
+    options;
+  const types = new Map(courseFields.map((field) => [field.id, field.type]));
+  const texts: Plugins = {};
+  const images: Plugins = {};
+  // a field's label may match a built-in one, which keeps its own
+  const taken = new Set(Object.values(options.labels));
+  const keyOf = (field: CourseFieldSummary) => {
+    let key = field.label;
+    for (let n = 2; taken.has(key); n += 1) key = `${field.label} (${n})`;
+    taken.add(key);
+    return key;
+  };
+
+  for (const field of courseFields) {
+    if (field.type === CourseFieldTypeEnum.Image) {
+      images[keyOf(field)] = imageField(field);
+      continue;
+    }
+    texts[keyOf(field)] = textField(
+      courseFieldTemplateType(TemplateFieldTypeEnum.FieldText, field.id),
+      courseFieldSample(field),
+      CourseFieldIcon,
+      options.fontLabel,
+      { width: 80, height: 10, fontSize: 14 },
+      (schema, props) => {
+        // only booleans print a wording of their own
+        const id = parseCourseFieldTemplateType(
+          props.activeSchema.type,
+        )?.fieldId;
+        if (id === undefined || types.get(id) !== CourseFieldTypeEnum.Boolean) {
+          return;
+        }
+        const labels = options.booleanLabels;
+        schema['trueText'] = {
+          title: labels?.trueText ?? 'trueText',
+          type: 'string',
+          widget: 'input',
+          span: 12,
+        };
+        schema['falseText'] = {
+          title: labels?.falseText ?? 'falseText',
+          type: 'string',
+          widget: 'input',
+          span: 12,
+        };
+      },
+    );
+  }
+  return { texts, images };
+}
+
+// pdfme's image field with our type, drawing a placeholder until a value replaces it
+function imageField(field: CourseFieldSummary): Plugin<Schema> {
+  const base = image.propPanel as unknown as TextPropPanel;
+
+  return {
+    ...(image as unknown as Plugin<Schema>),
+    icon: ImageFieldIcon,
+    propPanel: {
+      ...base,
+      schema: trimPanel(base),
+      defaultSchema: {
+        ...base.defaultSchema,
+        type: courseFieldTemplateType(
+          TemplateFieldTypeEnum.FieldImage,
+          field.id,
+        ),
+        content: ImagePlaceholder,
+        width: 30,
+        height: 30,
+      },
+    },
   };
 }
 
@@ -152,6 +259,7 @@ function textField(
   icon: string,
   fontLabel: (sha256: string) => string,
   defaults: Record<string, unknown>,
+  extend: (schema: PanelSchema, props: PanelProps) => void = () => {},
 ): Plugin<Schema> {
   const base = text.propPanel as unknown as TextPropPanel;
 
@@ -160,7 +268,8 @@ function textField(
     icon,
     propPanel: {
       ...base,
-      schema: trimPanel(base, (schema) => {
+      schema: trimPanel(base, (schema, props) => {
+        extend(schema, props);
         for (const key of HiddenTextControls) delete schema[key];
         if (schema['formatter'])
           schema['formatter'] = withoutFormatButtons(schema['formatter']);

@@ -59,7 +59,7 @@ const seed = db.transaction(() => {
   ]) {
     const participantId = db
       .prepare(
-        `INSERT INTO participants (course_id, name, email, extra, created_at)
+        `INSERT INTO participants (course_id, name, email, field_values, created_at)
          VALUES (?, ?, ?, '{}', ?) RETURNING id`,
       )
       .get(courseId, `Dev ${status}`, `${status}@example.org`, now).id;

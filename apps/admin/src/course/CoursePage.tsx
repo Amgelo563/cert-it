@@ -55,12 +55,34 @@ export function CoursePage() {
       [courseId],
     ),
   );
+  const fieldsRequest = useApiRequest(
+    useCallback(
+      (routes: ApiRoutes) =>
+        routes.courses[':courseId'].fields.$get({ param: { courseId } }),
+      [courseId],
+    ),
+  );
   // the last answer may be for the course before a link to another
   const course =
     request.data && String(request.data.id) === courseId ? request.data : null;
+  const fields = useMemo(
+    () =>
+      (fieldsRequest.data ?? []).filter(
+        (field) => String(field.courseId) === courseId,
+      ),
+    [fieldsRequest.data, courseId],
+  );
   const context = useMemo<CourseContext | null>(
-    () => (course ? { course, reload: request.reload } : null),
-    [course, request.reload],
+    () =>
+      course
+        ? {
+            course,
+            reload: request.reload,
+            fields,
+            reloadFields: fieldsRequest.reload,
+          }
+        : null,
+    [course, request.reload, fields, fieldsRequest.reload],
   );
   const numbers = useMemo(
     () => new Intl.NumberFormat(i18n.language),

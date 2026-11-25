@@ -3,8 +3,11 @@ import type { SiteUrl } from '@cert-it/hono';
 import type { JobHandler, JobContext } from '@cert-it/jobs';
 import {
   CourseDateFormatter,
+  CourseFieldTypeEnum,
   type TemplateContent,
+  type TemplateFieldValues,
   type TemplateValues,
+  toTemplateFieldValues,
 } from '@cert-it/shared';
 import { PDFDocument } from '@pdfme/pdf-lib';
 import type { Result } from 'better-result';
@@ -16,6 +19,7 @@ import type { Participant } from '../../participant/Participant';
 import type { DataDirectoryService } from '../../storage/DataDirectoryService';
 import type { TemplateVersion } from '../../template/TemplateVersion';
 import type { CertificateCode } from '../code/CertificateCode';
+import { imageMediaTypeOf } from '../../field/image/ImageExtension';
 import { CertificateRenderer } from '../render/CertificateRenderer';
 import type { CertificateJobOutput } from './CertificateJobOutput';
 import type { SkippedParticipant } from './SkippedParticipant';
@@ -98,14 +102,17 @@ export abstract class AbstractCertificateJobHandler<
     course: Course,
     certificate: CertificateToRender,
   ): Promise<SkippedParticipant | null> {
-    const values = this.valuesOf(course, certificate);
-    const missing = renderer.findMissing(values);
+    const inputs = renderer.inputsOf(
+      this.valuesOf(course, certificate),
+      await this.fieldValuesOf(renderer, course, certificate.participant),
+    );
+    const missing = renderer.findMissing(inputs);
     if (missing.length > 0) {
       const { participant } = certificate;
       return { participantId: participant.id, name: participant.name, missing };
     }
 
-    const rendered = await renderer.render(values);
+    const rendered = await renderer.render(inputs);
     const pdf =
       certificate.statusIndex === null
         ? rendered
@@ -170,6 +177,54 @@ export abstract class AbstractCertificateJobHandler<
       issueDate: new CourseDateFormatter(course).format(certificate.issueDate),
       qrcode: this.siteUrl.url(`/c/${encodeURIComponent(certificate.code)}`),
     };
+  }
+
+  // only the fields the template prints, reading each of their images
+  protected async fieldValuesOf(
+    renderer: CertificateRenderer,
+    course: Course,
+    participant: Participant,
+  ): Promise<TemplateFieldValues> {
+    const printed = renderer.getCourseFieldIds();
+    if (printed.size === 0) return {};
+
+    const fields = this.database
+      .getRepositories()
+      .courseFields.listByCourse(course.id)
+      .filter((field) => printed.has(field.id));
+    const images = new Map<string, string>();
+    for (const field of fields) {
+      const value = participant.fieldValues[String(field.id)];
+      if (
+        field.type !== CourseFieldTypeEnum.Image
+        || typeof value !== 'string'
+      ) {
+        continue;
+      }
+      const url = await this.readImage(course, value);
+      if (url) images.set(value, url);
+    }
+
+    return toTemplateFieldValues(fields, participant.fieldValues, {
+      locale: course.locale,
+      dateFormat: course.dateFormat,
+      imageUrl: (fileName) => images.get(fileName),
+    });
+  }
+
+  // a missing image prints nothing, as an empty value does
+  protected async readImage(
+    course: Course,
+    fileName: string,
+  ): Promise<string | null> {
+    try {
+      const bytes = await readFile(
+        this.dataDirectory.getImagePath(course.id, fileName),
+      );
+      return `data:${imageMediaTypeOf(fileName)};base64,${bytes.toString('base64')}`;
+    } catch {
+      return null;
+    }
   }
 
   // only fonts the server checked and stored are referenced by templates

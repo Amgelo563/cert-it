@@ -4,6 +4,7 @@ import { Result } from 'better-result';
 import type { Course } from '../../course/Course';
 import type { Job } from '../../job/Job';
 import type { JobTypeEnum } from '@cert-it/shared';
+import { listMissingRequired } from '../../field/CourseField';
 import type { Participant } from '../../participant/Participant';
 import type { TemplateVersionId } from '../../template/TemplateVersion';
 import type { CertificateCode } from '../code/CertificateCode';
@@ -57,8 +58,13 @@ export class IssueJobHandler extends AbstractCertificateJobHandler<
   ): Promise<
     Result<CertificateJobOutput, ModelNotFoundError | NoTemplateError>
   > {
-    const { courses, templateVersions, participants, certificates } =
-      this.database.getRepositories();
+    const {
+      courses,
+      templateVersions,
+      participants,
+      certificates,
+      courseFields,
+    } = this.database.getRepositories();
     const course = courses.findById(job.courseId);
     if (!course) {
       return Result.err(
@@ -71,6 +77,7 @@ export class IssueJobHandler extends AbstractCertificateJobHandler<
       return Result.err(new NoTemplateError({ courseId: course.id }));
 
     const renderer = await this.loadRenderer(version);
+    const fields = courseFields.listByCourse(course.id);
     const { participantIds, issueDate } = job.payload;
     const skipped: SkippedParticipant[] = [];
     let rendered = 0;
@@ -83,10 +90,22 @@ export class IssueJobHandler extends AbstractCertificateJobHandler<
         participant?.courseId === course.id
         && !certificates.findByParticipant(id)
       ) {
-        const skip = await this.issue(renderer, course, version.id, {
-          participant,
-          issueDate,
-        });
+        const missingFields = listMissingRequired(
+          fields,
+          participant.fieldValues,
+        );
+        const skip =
+          missingFields.length > 0
+            ? {
+                participantId: participant.id,
+                name: participant.name,
+                missing: [],
+                missingFields: missingFields.map((field) => field.label),
+              }
+            : await this.issue(renderer, course, version.id, {
+                participant,
+                issueDate,
+              });
         if (skip) skipped.push(skip);
         else rendered += 1;
       }

@@ -36,6 +36,7 @@ const ActionColors: Record<AuditAction, MantineColor> = {
   [AuditActionEnum.Delete]: 'red',
   [AuditActionEnum.Revoke]: 'red',
   [AuditActionEnum.Update]: 'gray',
+  [AuditActionEnum.Reorder]: 'gray',
   [AuditActionEnum.Regenerate]: 'gray',
   [AuditActionEnum.Login]: 'gray',
   [AuditActionEnum.ChangePassword]: 'gray',
@@ -126,6 +127,34 @@ function useDetailDescriber(): (entry: AuditEntrySummary) => string[] {
           label(t(`participantImport.groups.${s}`), d[s]),
         ),
       ],
+      [AuditActionEnum.Reorder]: (d) => [d.fields.join(', ')],
+    },
+    [AuditEntityEnum.CourseField]: {
+      [AuditActionEnum.Create]: (d) => [
+        label(t('courseFields.label'), d.label),
+        label(t('courseFields.type'), t(`courseFields.types.${d.type}`)),
+        ...(d.required ? [t('courseFields.required')] : []),
+      ],
+      [AuditActionEnum.Update]: (d) => [
+        ...(d.label === undefined
+          ? []
+          : [label(t('courseFields.label'), d.label)]),
+        ...(d.type === undefined
+          ? []
+          : [label(t('courseFields.type'), t(`courseFields.types.${d.type}`))]),
+        ...(d.required === undefined
+          ? []
+          : [
+              label(
+                t('courseFields.required'),
+                t(d.required ? 'courseFields.yes' : 'courseFields.no'),
+              ),
+            ]),
+      ],
+      [AuditActionEnum.Delete]: (d) => [
+        label(t('courseFields.label'), d.label),
+        t('courseFields.valueCount', { count: d.values }),
+      ],
     },
     [AuditEntityEnum.Participant]: {
       [AuditActionEnum.Create]: (d) => [
@@ -136,6 +165,9 @@ function useDetailDescriber(): (entry: AuditEntrySummary) => string[] {
         ...(d.email === undefined
           ? []
           : [label(t('participants.email'), d.email)]),
+        ...(d.fields === undefined
+          ? []
+          : [label(t('courseFields.title'), d.fields.join(', '))]),
       ],
       [AuditActionEnum.Delete]: (d) => [
         label(t('participants.email'), d.email),

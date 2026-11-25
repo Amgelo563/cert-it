@@ -127,6 +127,8 @@ export type CertificateMessages = {
     skippedText: string;
     /** One left-out participant's missing characters, with the field's `{field}` and the characters in `{characters}`. */
     missingCharacters: string;
+    /** One left-out participant's required fields without a value, in {fields}. */
+    missingFields: string;
     /** Why a failed job stopped, in `{error}`. */
     failedText: string;
     retry: string;

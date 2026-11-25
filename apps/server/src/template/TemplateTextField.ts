@@ -1,6 +1,6 @@
 import {
+  isTemplateTextFieldType,
   type TemplateContent,
-  TemplateFieldTypeEnum,
   type TemplateTextFieldType,
 } from '@cert-it/shared';
 
@@ -14,8 +14,14 @@ export type TemplateTextField = {
 /** Returns the text fields of a template's page. */
 export function listTextFields(template: TemplateContent): TemplateTextField[] {
   return (template.schemas[0] ?? []).flatMap((field) =>
-    field.type === TemplateFieldTypeEnum.QrCode
-      ? []
-      : [{ name: field.name, type: field.type, fontName: field.fontName }],
+    isTemplateTextFieldType(field.type) && typeof field['fontName'] === 'string'
+      ? [
+          {
+            name: field.name,
+            type: field.type as TemplateTextFieldType,
+            fontName: field['fontName'] as string,
+          },
+        ]
+      : [],
   );
 }

@@ -1,4 +1,11 @@
-import { ApiErrorCodeEnum, type ParticipantSummary } from '@cert-it/shared';
+import {
+  ApiErrorCodeEnum,
+  type CourseFieldSummary,
+  type CourseSummary,
+  type FieldValue,
+  type FieldValuesInput,
+  type ParticipantSummary,
+} from '@cert-it/shared';
 import { Alert, Button, Group, Modal, Stack, TextInput } from '@mantine/core';
 import { isEmail, isNotEmpty, useForm } from '@mantine/form';
 import { IconAlertCircle } from '@tabler/icons-react';
@@ -7,20 +14,26 @@ import { useTranslation } from 'react-i18next';
 import { describeApiError } from '../../../app/api/describeApiError';
 import { ApiRequestError } from '../../../app/api/errors/ApiRequestError';
 import { useApiClient } from '../../../app/api/useApiClient';
+import { FieldValueInput } from '../../fields/FieldValueInput';
 
 type ParticipantFormModalProps = {
   opened: boolean;
-  courseId: number;
+  course: Pick<CourseSummary, 'id' | 'locale' | 'dateFormat'>;
+  /** The course's fields, one input each. */
+  fields: readonly CourseFieldSummary[];
   /** The participant to edit, or null to add one. */
   participant: ParticipantSummary | null;
   onClose: () => void;
   onSaved: (participant: ParticipantSummary) => void;
 };
 
-/** Form to add a participant to a course or change one's name and email. */
+type Values = Record<string, FieldValue | undefined>;
+
+/** Form to add a participant to a course or change one's name, email and field values. */
 export function ParticipantFormModal({
   opened,
-  courseId,
+  course,
+  fields,
   participant,
   onClose,
   onSaved,
@@ -29,6 +42,8 @@ export function ParticipantFormModal({
   const api = useApiClient();
   const [error, setError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [values, setValues] = useState<Values>({});
+  const [missing, setMissing] = useState<ReadonlySet<number>>(new Set());
 
   const form = useForm({
     mode: 'controlled',
@@ -37,30 +52,56 @@ export function ParticipantFormModal({
       name: isNotEmpty(t('participants.fieldRequired')),
       email: isEmail(t('participants.invalidEmail')),
     },
-    transformValues: (values) => ({
-      name: values.name.trim(),
-      email: values.email.trim(),
+    transformValues: (entered) => ({
+      name: entered.name.trim(),
+      email: entered.email.trim(),
     }),
   });
 
   // refill on open, for the participant it opens with
   useEffect(() => {
     if (!opened) return;
-    const values = {
+    const entered = {
       name: participant?.name ?? '',
       email: participant?.email ?? '',
     };
-    form.setValues(values);
-    form.resetDirty(values);
+    form.setValues(entered);
+    form.resetDirty(entered);
     form.clearErrors();
+    setValues({ ...participant?.fieldValues });
+    setMissing(new Set());
     setError(null);
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- form is stable
   }, [opened, participant]);
 
-  const submit = form.onSubmit(async (json) => {
+  // only the changed values on an edit, null for a cleared one
+  const fieldValuesOf = (): FieldValuesInput => {
+    const current = participant?.fieldValues ?? {};
+    return Object.fromEntries(
+      fields.flatMap((field) => {
+        const id = String(field.id);
+        const value = values[id];
+        if (value === current[id]) return [];
+        return [[id, value ?? null] as const];
+      }),
+    );
+  };
+
+  const submit = form.onSubmit(async (entered) => {
+    const empty = fields.filter(
+      (field) => field.required && values[String(field.id)] === undefined,
+    );
+    setMissing(new Set(empty.map((field) => field.id)));
+    if (empty.length > 0) return;
+
     setSubmitting(true);
     setError(null);
-    const param = { courseId: String(courseId) };
+    const param = { courseId: String(course.id) };
+    const fieldValues = fieldValuesOf();
+    const json = {
+      ...entered,
+      ...(Object.keys(fieldValues).length > 0 ? { fieldValues } : {}),
+    };
     try {
       const saved = participant
         ? await api.request((routes) =>
@@ -126,6 +167,30 @@ export function ParticipantFormModal({
             required
             {...form.getInputProps('email')}
           />
+          {fields.map((field) => (
+            <FieldValueInput
+              key={field.id}
+              field={field}
+              course={course}
+              value={values[String(field.id)]}
+              error={
+                missing.has(field.id)
+                  ? t('participants.fieldRequired')
+                  : undefined
+              }
+              onChange={(value) => {
+                setValues((current) => ({
+                  ...current,
+                  [String(field.id)]: value,
+                }));
+                setMissing((current) => {
+                  const next = new Set(current);
+                  next.delete(field.id);
+                  return next;
+                });
+              }}
+            />
+          ))}
           <Group justify="flex-end" mt="xs">
             <Button variant="subtle" color="gray" onClick={onClose}>
               {t('auth.cancel')}

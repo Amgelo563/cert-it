@@ -2,6 +2,7 @@ export const AuditEntityEnum = {
   User: 'user',
   Course: 'course',
   Participant: 'participant',
+  CourseField: 'course_field',
   Font: 'font',
   TemplateVersion: 'template_version',
   Certificate: 'certificate',
