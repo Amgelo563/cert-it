@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Release mode
+        type: choice
+        options: [normal, dry-run, draft]
+        default: normal
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      released: ${{ steps.changelog.outputs.skipped != 'true' && inputs.mode == 'normal' }}
+      tag: ${{ steps.changelog.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # version, tag and notes come from the conventional commits since the last tag
+      - name: Conventional changelog
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          preset: conventionalcommits
+          tag-prefix: v
+          output-file: 'false'
+          skip-version-file: true
+          skip-commit: true
+          skip-tag: ${{ inputs.mode == 'dry-run' }}
+          skip-on-empty: true
+
+      - name: Dry run summary
+        if: inputs.mode == 'dry-run' && steps.changelog.outputs.skipped != 'true'
+        env:
+          VERSION: ${{ steps.changelog.outputs.version }}
+          NOTES: ${{ steps.changelog.outputs.clean_changelog }}
+        run: |
+          {
+            echo "## dry: would release v$VERSION"
+            echo
+            echo "$NOTES"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create GitHub release
+        if: steps.changelog.outputs.skipped != 'true' && inputs.mode != 'dry-run'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.changelog.outputs.tag }}
+          NOTES: ${{ steps.changelog.outputs.clean_changelog }}
+          DRAFT_FLAG: ${{ inputs.mode == 'draft' && '--draft' || '' }}
+        run: |
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes "$NOTES" \
+            $DRAFT_FLAG
+
+  # draft releases are published by hand, which triggers docker.yml on its own
+  docker:
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    uses: ./.github/workflows/docker.yml
+    with:
+      tag: ${{ needs.release.outputs.tag }}
+    permissions:
+      contents: read
+      packages: write
