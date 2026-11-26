@@ -27,6 +27,10 @@ export const EsOnboardingMessages = {
         title: 'Diseñar la plantilla',
         description: 'Coloca el nombre del participante sobre tu PDF',
       },
+      manageFields: {
+        title: 'Agregar campos propios',
+        description: 'Datos extra de cada participante, como una nota',
+      },
       addParticipants: {
         title: 'Agregar participantes',
         description: 'Uno por uno o desde un archivo CSV',
@@ -104,6 +108,24 @@ export const EsOnboardingMessages = {
         narrow: {
           title: 'Mejor en una pantalla más ancha',
           body: 'El diseñador de plantillas necesita una pantalla al menos tan ancha como la de una laptop. Abre el panel en una computadora para probarlo.',
+        },
+      },
+      manageFields: {
+        open: {
+          title: 'Campos propios',
+          body: 'Además del nombre y el correo, un curso puede guardar datos extra de cada participante, como un grupo, una nota o una foto. Abre los campos para continuar.',
+        },
+        add: {
+          title: 'Agregar un campo',
+          body: 'Ponle un nombre y elige qué guarda: texto, un número, una fecha, sí o no, o una imagen. Agrega uno ahora para continuar.',
+        },
+        options: {
+          title: 'Cámbialo después',
+          body: 'Aquí puedes renombrar, reordenar o eliminar campos. Marca uno como obligatorio para emitir certificados solo a quienes tengan un valor. El tipo ya no cambia cuando alguien tiene un valor. Cierra los campos para continuar.',
+        },
+        use: {
+          title: 'Dónde aparecen',
+          body: 'Cada campo tiene su columna aquí. Se llena al agregar un participante o desde una columna del CSV, y se coloca en la plantilla desde la barra del editor para imprimirlo en los certificados.',
         },
       },
       addParticipants: {

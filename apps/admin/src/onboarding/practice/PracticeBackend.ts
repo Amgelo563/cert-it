@@ -8,6 +8,7 @@ import {
   type CourseFieldSummary,
   type CourseSummary,
   type CreateCourseFieldRequest,
+  type ReorderCourseFieldsRequest,
   type CreatedUserResponse,
   type CreateCourseRequest,
   type CreateParticipantRequest,
@@ -36,6 +37,7 @@ import {
   type TemplateContent,
   type TemplateDetail,
   TemplateFieldTypeEnum,
+  type UpdateCourseFieldRequest,
   type UserSummary,
 } from '@cert-it/shared';
 import type { InvalidFontReason } from '@cert-it/fonts';
@@ -354,12 +356,49 @@ export class PracticeBackend {
           courseId,
           label: request.label.trim(),
           type: request.type,
-          required: false,
+          required: request.required,
           position: this.fields.filter((f) => f.courseId === courseId).length,
           valueCount: 0,
         };
         this.fields.push(field);
+        this.emit({ type: PracticeEventEnum.FieldAdded, courseId });
         return PracticeBackend.json(201, field);
+      }),
+      route('PUT', `courses/${id}/fields/order`, async ({ params, body }) => {
+        const courseId = Number(params[0]);
+        const { ids } =
+          await PracticeBackend.read<ReorderCourseFieldsRequest>(body);
+        this.fields.forEach((field, index) => {
+          if (field.courseId !== courseId) return;
+          this.fields[index] = { ...field, position: ids.indexOf(field.id) };
+        });
+        this.fields.sort((a, b) => a.position - b.position);
+        return PracticeBackend.json(
+          200,
+          this.fields.filter((field) => field.courseId === courseId),
+        );
+      }),
+      route('PATCH', `courses/${id}/fields/${id}`, async ({ params, body }) => {
+        const field = this.findField(params);
+        if (!field)
+          return PracticeBackend.error(404, ApiErrorCodeEnum.NotFound);
+        const request =
+          await PracticeBackend.read<UpdateCourseFieldRequest>(body);
+        const updated: CourseFieldSummary = {
+          ...field,
+          label: request.label?.trim() ?? field.label,
+          type: request.type ?? field.type,
+          required: request.required ?? field.required,
+        };
+        this.fields[this.fields.indexOf(field)] = updated;
+        return PracticeBackend.json(200, updated);
+      }),
+      route('DELETE', `courses/${id}/fields/${id}`, ({ params }) => {
+        const field = this.findField(params);
+        if (!field)
+          return PracticeBackend.error(404, ApiErrorCodeEnum.NotFound);
+        this.fields.splice(this.fields.indexOf(field), 1);
+        return new Response(null, { status: 204 });
       }),
       route('GET', `courses/${id}/participants`, ({ params, query }) =>
         PracticeBackend.json(
@@ -894,6 +933,15 @@ export class PracticeBackend {
 
   protected findCourse(id: string | undefined): PracticeCourse | null {
     return this.courses.find((course) => course.id === Number(id)) ?? null;
+  }
+
+  protected findField([courseId, id]: string[]): CourseFieldSummary | null {
+    return (
+      this.fields.find(
+        (field) =>
+          field.courseId === Number(courseId) && field.id === Number(id),
+      ) ?? null
+    );
   }
 
   protected findTemplate(courseId: number): TemplateDetail | null {

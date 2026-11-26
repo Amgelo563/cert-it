@@ -1,5 +1,6 @@
 import {
   ApiErrorCodeEnum,
+  CourseFieldTypeEnum,
   type CurrentUser,
   type FontSummary,
   FontSourceEnum,
@@ -229,6 +230,74 @@ describe('PracticeBackend (writes)', () => {
     expect(events).toEqual([
       { type: PracticeEventEnum.TemplateSaved, courseId, hasName: false },
     ]);
+  });
+});
+
+describe('PracticeBackend (fields)', () => {
+  test('GIVEN a new field WHEN added THEN lists it and tells the tour', async () => {
+    const { backend, api, events } = await setup();
+    const courseId = String(backend.getSampleCourseId());
+
+    const field = await api.request((routes) =>
+      routes.courses[':courseId'].fields.$post({
+        param: { courseId },
+        json: {
+          label: 'Grade',
+          type: CourseFieldTypeEnum.Number,
+          required: true,
+        },
+      }),
+    );
+    const fields = await api.request((routes) =>
+      routes.courses[':courseId'].fields.$get({ param: { courseId } }),
+    );
+
+    expect(fields).toEqual([field]);
+    expect(field.required).toBe(true);
+    expect(events).toEqual([
+      { type: PracticeEventEnum.FieldAdded, courseId: Number(courseId) },
+    ]);
+  });
+
+  test('GIVEN two fields WHEN renamed, reordered and one deleted THEN lists what is left in order', async () => {
+    const { backend, api } = await setup();
+    const courseId = String(backend.getSampleCourseId());
+    const add = (label: string) =>
+      api.request((routes) =>
+        routes.courses[':courseId'].fields.$post({
+          param: { courseId },
+          json: { label, type: CourseFieldTypeEnum.Text, required: false },
+        }),
+      );
+    const first = await add('Group');
+    const second = await add('Grade');
+
+    await api.request((routes) =>
+      routes.courses[':courseId'].fields[':id'].$patch({
+        param: { courseId, id: String(first.id) },
+        json: { label: 'Team' },
+      }),
+    );
+    await api.request((routes) =>
+      routes.courses[':courseId'].fields.order.$put({
+        param: { courseId },
+        json: { ids: [second.id, first.id] },
+      }),
+    );
+    const ordered = await api.request((routes) =>
+      routes.courses[':courseId'].fields.$get({ param: { courseId } }),
+    );
+    await api.request((routes) =>
+      routes.courses[':courseId'].fields[':id'].$delete({
+        param: { courseId, id: String(second.id) },
+      }),
+    );
+    const left = await api.request((routes) =>
+      routes.courses[':courseId'].fields.$get({ param: { courseId } }),
+    );
+
+    expect(ordered.map((field) => field.label)).toEqual(['Grade', 'Team']);
+    expect(left.map((field) => field.label)).toEqual(['Team']);
   });
 });
 

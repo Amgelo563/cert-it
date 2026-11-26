@@ -31,6 +31,7 @@ import { useTranslation } from 'react-i18next';
 import type { ApiRoutes } from '../../app/api/ApiClient';
 import { describeApiError } from '../../app/api/describeApiError';
 import { useApiClient } from '../../app/api/useApiClient';
+import { TourTargetEnum } from '../../onboarding/tour/TourTargetEnum';
 
 type CourseFieldsModalProps = {
   opened: boolean;
@@ -159,7 +160,7 @@ export function CourseFieldsModal({
       title={t('courseFields.title')}
       size="lg"
     >
-      <Stack gap="md">
+      <Stack gap="md" data-tour={TourTargetEnum.FieldsModal}>
         <Text size="sm" c="dimmed">
           {t('courseFields.description')}
         </Text>

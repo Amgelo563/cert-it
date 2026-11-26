@@ -3,6 +3,9 @@ export const TourTargetEnum = {
   CoursesTable: 'courses-table',
   CourseTabs: 'course-tabs',
   ParticipantsAdd: 'participants-add',
+  ParticipantsFields: 'participants-fields',
+  /** The fields modal's list and the form to add one. */
+  FieldsModal: 'fields-modal',
   ParticipantsImport: 'participants-import',
   ParticipantsTable: 'participants-table',
   CertificatesIssue: 'certificates-issue',

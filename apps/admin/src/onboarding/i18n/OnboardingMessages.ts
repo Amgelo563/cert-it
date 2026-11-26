@@ -23,6 +23,7 @@ export type OnboardingMessages = {
     steps: Record<
       | 'createCourse'
       | 'designTemplate'
+      | 'manageFields'
       | 'addParticipants'
       | 'issueCertificates'
       | 'browseCourse'
@@ -55,6 +56,10 @@ export type OnboardingMessages = {
         | 'applyFont'
         | 'save'
         | 'narrow',
+        TourStepMessages
+      >;
+      manageFields: Record<
+        'open' | 'add' | 'options' | 'use',
         TourStepMessages
       >;
       addParticipants: Record<'table' | 'import' | 'add', TourStepMessages>;

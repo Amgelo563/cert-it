@@ -8,6 +8,7 @@ describe('getOnboardingSteps', () => {
     expect(getOnboardingSteps(RoleEnum.Admin)).toEqual([
       OnboardingStepEnum.CreateCourse,
       OnboardingStepEnum.DesignTemplate,
+      OnboardingStepEnum.ManageFields,
       OnboardingStepEnum.AddParticipants,
       OnboardingStepEnum.IssueCertificates,
       OnboardingStepEnum.ViewCertificate,

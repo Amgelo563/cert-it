@@ -1,11 +1,9 @@
 import { type ParticipantSummary, PermissionEnum } from '@cert-it/shared';
 import {
-  ActionIcon,
   Alert,
   Button,
   Flex,
   Group,
-  Menu,
   Stack,
   Text,
   TextInput,
@@ -15,7 +13,6 @@ import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import {
   IconAlertCircle,
-  IconChevronDown,
   IconFileImport,
   IconForms,
   IconSearch,
@@ -151,47 +148,24 @@ export function ParticipantsTab() {
           </Group>
           {can(PermissionEnum.EditParticipants) && (
             <Group gap="sm">
-              <Group gap={0} wrap="nowrap">
+              {can(PermissionEnum.EditCourses) && (
                 <Button
                   variant="default"
-                  data-tour={TourTargetEnum.ParticipantsImport}
-                  leftSection={<IconFileImport size={16} stroke={1.5} />}
-                  onClick={() => setImporting(true)}
-                  style={
-                    can(PermissionEnum.EditCourses)
-                      ? { borderTopRightRadius: 0, borderBottomRightRadius: 0 }
-                      : undefined
-                  }
+                  data-tour={TourTargetEnum.ParticipantsFields}
+                  leftSection={<IconForms size={16} stroke={1.5} />}
+                  onClick={() => setManagingFields(true)}
                 >
-                  {t('participantImport.open')}
+                  {t('courseFields.manage')}
                 </Button>
-                {can(PermissionEnum.EditCourses) && (
-                  <Menu position="bottom-end" width={200}>
-                    <Menu.Target>
-                      <ActionIcon
-                        variant="default"
-                        size={36}
-                        aria-label={t('courseFields.manage')}
-                        style={{
-                          borderTopLeftRadius: 0,
-                          borderBottomLeftRadius: 0,
-                          borderLeft: 0,
-                        }}
-                      >
-                        <IconChevronDown size={16} stroke={1.5} />
-                      </ActionIcon>
-                    </Menu.Target>
-                    <Menu.Dropdown>
-                      <Menu.Item
-                        leftSection={<IconForms size={16} stroke={1.5} />}
-                        onClick={() => setManagingFields(true)}
-                      >
-                        {t('courseFields.manage')}
-                      </Menu.Item>
-                    </Menu.Dropdown>
-                  </Menu>
-                )}
-              </Group>
+              )}
+              <Button
+                variant="default"
+                data-tour={TourTargetEnum.ParticipantsImport}
+                leftSection={<IconFileImport size={16} stroke={1.5} />}
+                onClick={() => setImporting(true)}
+              >
+                {t('participantImport.open')}
+              </Button>
               <Button
                 data-tour={TourTargetEnum.ParticipantsAdd}
                 leftSection={<IconUserPlus size={16} stroke={1.5} />}

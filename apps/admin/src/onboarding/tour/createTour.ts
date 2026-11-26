@@ -93,6 +93,30 @@ export function createTour(
         },
       ];
 
+    case OnboardingStepEnum.ManageFields:
+      return [
+        {
+          key: 'open',
+          targets: at('ParticipantsFields'),
+          path: course(CourseTabEnum.Participants),
+          until: () => isShown('FieldsModal'),
+        },
+        {
+          key: 'add',
+          targets: at('FieldsModal'),
+          interactive: true,
+          waitFor: (event) => event.type === PracticeEventEnum.FieldAdded,
+        },
+        {
+          key: 'options',
+          targets: at('FieldsModal'),
+          interactive: true,
+          // closed first, so the guide doesn't open under it
+          until: () => !isShown('FieldsModal'),
+        },
+        { key: 'use', targets: at('ParticipantsTable') },
+      ];
+
     case OnboardingStepEnum.AddParticipants:
       return [
         {

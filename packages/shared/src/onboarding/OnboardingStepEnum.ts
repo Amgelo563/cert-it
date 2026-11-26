@@ -1,6 +1,7 @@
 export const OnboardingStepEnum = {
   CreateCourse: 'create_course',
   DesignTemplate: 'design_template',
+  ManageFields: 'manage_fields',
   AddParticipants: 'add_participants',
   IssueCertificates: 'issue_certificates',
   /** Looks around a course, for roles that can't edit one. */

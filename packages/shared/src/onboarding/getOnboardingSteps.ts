@@ -18,6 +18,10 @@ export function getOnboardingSteps(role: Role): OnboardingStep[] {
     steps.push(OnboardingStepEnum.BrowseCourse);
   }
   if (can(PermissionEnum.EditParticipants)) {
+    // the fields are managed from the participants tab
+    if (can(PermissionEnum.EditCourses)) {
+      steps.push(OnboardingStepEnum.ManageFields);
+    }
     steps.push(OnboardingStepEnum.AddParticipants);
   }
   if (can(PermissionEnum.IssueCertificates)) {

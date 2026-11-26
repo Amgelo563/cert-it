@@ -1,6 +1,7 @@
 export const PracticeEventEnum = {
   CourseCreated: 'course_created',
   TemplateSaved: 'template_saved',
+  FieldAdded: 'field_added',
   ParticipantsAdded: 'participants_added',
   CertificatesIssued: 'certificates_issued',
   /** A job of the practice finished making its certificates. */
@@ -21,6 +22,7 @@ export type PracticeEvent =
       /** Whether the saved version prints the participant's name. */
       hasName: boolean;
     }
+  | { type: typeof PracticeEventEnum.FieldAdded; courseId: number }
   | { type: typeof PracticeEventEnum.ParticipantsAdded; courseId: number }
   | { type: typeof PracticeEventEnum.CertificatesIssued; courseId: number }
   | { type: typeof PracticeEventEnum.JobCompleted; courseId: number }

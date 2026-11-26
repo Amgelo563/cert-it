@@ -26,6 +26,10 @@ export const EnOnboardingMessages = {
         title: 'Design the template',
         description: 'Place the participant name on your PDF',
       },
+      manageFields: {
+        title: 'Add custom fields',
+        description: 'Extra details per participant, like a grade',
+      },
       addParticipants: {
         title: 'Add participants',
         description: 'One by one, or from a CSV file',
@@ -103,6 +107,24 @@ export const EnOnboardingMessages = {
         narrow: {
           title: 'Best on a wider screen',
           body: 'The template designer needs a screen at least as wide as a laptop. Open the panel on a computer to try it.',
+        },
+      },
+      manageFields: {
+        open: {
+          title: 'Custom fields',
+          body: 'Besides a name and email, a course can keep extra details about each participant, such as a group, a grade or a photo. Open the fields to continue.',
+        },
+        add: {
+          title: 'Add a field',
+          body: 'Give it a label and pick what it holds: text, a number, a date, yes or no, or an image. Add one now to continue.',
+        },
+        options: {
+          title: 'Change it later',
+          body: 'Rename, reorder or delete fields here. Mark one as required to only issue certificates to participants who have a value. The type stays fixed once someone has a value. Close the fields to continue.',
+        },
+        use: {
+          title: 'Where fields show up',
+          body: 'Each field gets a column here. Fill it in when adding a participant or from a CSV column, and place it on the template from the editor bar to print it on certificates.',
         },
       },
       addParticipants: {
