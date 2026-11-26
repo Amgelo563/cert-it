@@ -54,7 +54,7 @@ describe('ApiClient (types)', () => {
     expectTypeOf(
       client.request((routes) =>
         routes.users.$post({
-          json: { email: 'a@b.c', role: RoleEnum.Viewer },
+          json: { email: 'a@b.c', name: 'A', role: RoleEnum.Viewer },
         }),
       ),
     ).resolves.toMatchTypeOf<CreatedUserResponse>();
@@ -108,7 +108,9 @@ describe('ApiClient (errors)', () => {
 
     const error = await catchError(
       client.request((routes) =>
-        routes.users.$post({ json: { email: 'a@b.c', role: RoleEnum.Admin } }),
+        routes.users.$post({
+          json: { email: 'a@b.c', name: 'A', role: RoleEnum.Admin },
+        }),
       ),
     );
 

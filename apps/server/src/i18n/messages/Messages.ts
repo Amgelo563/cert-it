@@ -94,4 +94,8 @@ export type Messages = {
     /** Placeholders: {org}. */
     certificateNotFoundHelp: string;
   };
+  user: {
+    /** Name of the users created or migrated without one. */
+    placeholderName: string;
+  };
 };

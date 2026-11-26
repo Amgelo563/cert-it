@@ -150,6 +150,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
           t('onboarding.samples.participant3'),
         ],
         teammateEmail: t('onboarding.samples.teammateEmail'),
+        teammateName: t('onboarding.samples.teammateName'),
         pdf: {
           title: t('onboarding.samples.pdfTitle'),
           intro: t('onboarding.samples.pdfIntro'),

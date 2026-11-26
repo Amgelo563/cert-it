@@ -36,6 +36,7 @@ export class MockSeeder {
     const user = users
       .create({
         email: normalizeEmail(`user${this.next()}@example.org`),
+        name: 'Test User',
         passwordHash: 'hash',
         role: options.role ?? RoleEnum.Editor,
       })

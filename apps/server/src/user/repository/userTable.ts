@@ -6,6 +6,7 @@ import type { UserId } from '../User';
 export const userTable = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }).$type<UserId>(),
   email: text('email').notNull().unique().$type<NormalizedEmail>(),
+  name: text('name').notNull(),
   passwordHash: text('password_hash').notNull(),
   role: text('role').notNull().$type<Role>(),
   active: integer('active', { mode: 'boolean' }).notNull().default(true),

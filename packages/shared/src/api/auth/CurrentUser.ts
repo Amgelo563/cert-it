@@ -4,6 +4,7 @@ import type { Role } from '../../role/RoleEnum';
 export type CurrentUser = {
   readonly id: number;
   readonly email: string;
+  readonly name: string;
   readonly role: Role;
   /** Whether every other route is blocked until the password is changed. */
   readonly mustChangePassword: boolean;

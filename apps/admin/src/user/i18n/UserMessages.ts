@@ -10,6 +10,7 @@ export type UserMessages = {
     /** With the number of users in `{count}`. */
     count: string;
     empty: string;
+    name: string;
     email: string;
     role: string;
     status: string;
@@ -40,6 +41,12 @@ export type UserMessages = {
     addSubmit: string;
     added: string;
     invalidEmail: string;
+    nameRequired: string;
+    rename: string;
+    renameTitle: string;
+    renameSubmit: string;
+    /** With the user's `{email}` and new `{name}`. */
+    renamed: string;
     passwordTitle: string;
     passwordText: string;
     passwordLabel: string;

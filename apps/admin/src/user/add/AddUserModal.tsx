@@ -3,6 +3,7 @@ import {
   type CreatedUserResponse,
   type Role,
   RoleEnum,
+  UserNameMaxLength,
 } from '@cert-it/shared';
 import {
   Alert,
@@ -13,7 +14,7 @@ import {
   Stack,
   TextInput,
 } from '@mantine/core';
-import { isEmail, useForm } from '@mantine/form';
+import { isEmail, isNotEmpty, useForm } from '@mantine/form';
 import { IconAlertCircle } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -28,7 +29,7 @@ type AddUserModalProps = {
   onCreated: (created: CreatedUserResponse) => void;
 };
 
-/** Form to add a user by email and role; the server picks a temporary password. */
+/** Form to add a user by name, email and role; the server picks a temporary password. */
 export function AddUserModal({
   opened,
   onClose,
@@ -39,10 +40,13 @@ export function AddUserModal({
   const [error, setError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const form = useForm<{ email: string; role: Role }>({
+  const form = useForm<{ name: string; email: string; role: Role }>({
     mode: 'controlled',
-    initialValues: { email: '', role: RoleEnum.Viewer },
-    validate: { email: isEmail(t('users.invalidEmail')) },
+    initialValues: { name: '', email: '', role: RoleEnum.Viewer },
+    validate: {
+      name: isNotEmpty(t('users.nameRequired')),
+      email: isEmail(t('users.invalidEmail')),
+    },
   });
 
   // cleared once the modal is gone, so nothing changes while it fades out
@@ -89,11 +93,17 @@ export function AddUserModal({
             </Alert>
           )}
           <TextInput
+            label={t('users.name')}
+            maxLength={UserNameMaxLength}
+            required
+            data-autofocus
+            {...form.getInputProps('name')}
+          />
+          <TextInput
             label={t('users.email')}
             type="email"
             maxLength={254}
             required
-            data-autofocus
             {...form.getInputProps('email')}
           />
           <Select

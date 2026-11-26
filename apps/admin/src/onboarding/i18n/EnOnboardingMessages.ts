@@ -175,6 +175,7 @@ export const EnOnboardingMessages = {
       participant2: 'Sam Rivera',
       participant3: 'Jordan Lee',
       teammateEmail: 'teammate@example.org',
+      teammateName: 'Sam Rivera',
       pdfTitle: 'Certificate of completion',
       pdfIntro: 'This certifies that',
       pdfOutro: 'has completed the course',

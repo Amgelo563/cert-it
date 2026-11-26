@@ -7,6 +7,8 @@ export type UserId = Brand<number, 'UserId'>;
 export type User = {
   readonly id: UserId;
   readonly email: NormalizedEmail;
+  /** Name shown to identify the user in the panel. */
+  readonly name: string;
   readonly role: Role;
   /** Whether the user can log in, false once an admin deactivates them. */
   readonly active: boolean;

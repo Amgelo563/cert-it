@@ -70,4 +70,7 @@ export const EnMessages = {
     certificateNotFoundHelp:
       'No certificate matches this link. Make sure you copied the whole link, or contact {org}.',
   },
+  user: {
+    placeholderName: 'None',
+  },
 } satisfies Messages;

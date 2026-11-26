@@ -1,8 +1,9 @@
 import { type Role, RoleEnum, type UserSummary } from '@cert-it/shared';
-import { ActionIcon, Group, Menu, Select, Text } from '@mantine/core';
+import { ActionIcon, Group, Menu, Select, Stack, Text } from '@mantine/core';
 import {
   IconDots,
   IconKey,
+  IconPencil,
   IconUserCheck,
   IconUserOff,
 } from '@tabler/icons-react';
@@ -23,12 +24,13 @@ type UsersTableProps = {
   /** The user whose change is being sent, whose controls are disabled meanwhile. */
   busyId: number | null;
   onPageChange: (page: number) => void;
+  onRename: (user: UserSummary) => void;
   onChangeRole: (user: UserSummary, role: Role) => void;
   onSetActive: (user: UserSummary, active: boolean) => void;
   onResetPassword: (user: UserSummary) => void;
 };
 
-/** One page of users, with their role, status and the actions on each; the logged-in user's own row can't be changed here. */
+/** One page of users, with their role, status and the actions on each; the logged-in user can only rename themself here. */
 export function UsersTable({
   users,
   total,
@@ -37,6 +39,7 @@ export function UsersTable({
   loading,
   busyId,
   onPageChange,
+  onRename,
   onChangeRole,
   onSetActive,
   onResetPassword,
@@ -84,20 +87,25 @@ export function UsersTable({
       })}
       columns={[
         {
-          accessor: 'email',
+          accessor: 'name',
           noWrap: true,
-          title: t('users.email'),
+          title: t('users.name'),
           render: (user) => (
-            <Group gap="xs" wrap="nowrap">
-              <Text size="sm" fw={500}>
+            <Stack gap={0}>
+              <Group gap="xs" wrap="nowrap">
+                <Text size="sm" fw={500}>
+                  {user.name}
+                </Text>
+                {user.id === me?.id && (
+                  <Text size="xs" c="dimmed">
+                    {t('users.you')}
+                  </Text>
+                )}
+              </Group>
+              <Text size="xs" c="dimmed">
                 {user.email}
               </Text>
-              {user.id === me?.id && (
-                <Text size="xs" c="dimmed">
-                  {t('users.you')}
-                </Text>
-              )}
-            </Group>
+            </Stack>
           ),
         },
         {
@@ -158,43 +166,52 @@ export function UsersTable({
           title: '',
           textAlign: 'right',
           width: 60,
-          render: (user) =>
-            user.id === me?.id ? null : (
-              <Menu position="bottom-end" width={220}>
-                <Menu.Target>
-                  <ActionIcon
-                    disabled={user.id === busyId}
-                    aria-label={t('users.actions', { email: user.email })}
-                  >
-                    <IconDots size={18} stroke={1.5} />
-                  </ActionIcon>
-                </Menu.Target>
-                <Menu.Dropdown>
-                  <Menu.Item
-                    leftSection={<IconKey size={16} stroke={1.5} />}
-                    onClick={() => onResetPassword(user)}
-                  >
-                    {t('users.resetPassword')}
-                  </Menu.Item>
-                  {user.active ? (
+          render: (user) => (
+            <Menu position="bottom-end" width={220}>
+              <Menu.Target>
+                <ActionIcon
+                  disabled={user.id === busyId}
+                  aria-label={t('users.actions', { email: user.email })}
+                >
+                  <IconDots size={18} stroke={1.5} />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<IconPencil size={16} stroke={1.5} />}
+                  onClick={() => onRename(user)}
+                >
+                  {t('users.rename')}
+                </Menu.Item>
+                {user.id !== me?.id && (
+                  <>
                     <Menu.Item
-                      color="red"
-                      leftSection={<IconUserOff size={16} stroke={1.5} />}
-                      onClick={() => onSetActive(user, false)}
+                      leftSection={<IconKey size={16} stroke={1.5} />}
+                      onClick={() => onResetPassword(user)}
                     >
-                      {t('users.deactivate')}
+                      {t('users.resetPassword')}
                     </Menu.Item>
-                  ) : (
-                    <Menu.Item
-                      leftSection={<IconUserCheck size={16} stroke={1.5} />}
-                      onClick={() => onSetActive(user, true)}
-                    >
-                      {t('users.reactivate')}
-                    </Menu.Item>
-                  )}
-                </Menu.Dropdown>
-              </Menu>
-            ),
+                    {user.active ? (
+                      <Menu.Item
+                        color="red"
+                        leftSection={<IconUserOff size={16} stroke={1.5} />}
+                        onClick={() => onSetActive(user, false)}
+                      >
+                        {t('users.deactivate')}
+                      </Menu.Item>
+                    ) : (
+                      <Menu.Item
+                        leftSection={<IconUserCheck size={16} stroke={1.5} />}
+                        onClick={() => onSetActive(user, true)}
+                      >
+                        {t('users.reactivate')}
+                      </Menu.Item>
+                    )}
+                  </>
+                )}
+              </Menu.Dropdown>
+            </Menu>
+          ),
         },
       ]}
     />

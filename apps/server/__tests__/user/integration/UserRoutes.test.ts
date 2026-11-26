@@ -34,7 +34,7 @@ function createDatabase(): DatabaseService {
   return database;
 }
 
-function setupStart() {
+function setupStart(firstAdminName?: string) {
   const database = createDatabase();
   const lines: string[] = [];
   const sessions = new SessionService({
@@ -50,6 +50,8 @@ function setupStart() {
     guard,
     auditLog: new AuditLog({ database }),
     firstAdminEmail: ' Admin@Example.org ',
+    firstAdminName,
+    placeholderName: 'None',
     logger: new MockLogger({ lines }),
   });
 
@@ -86,10 +88,34 @@ describe('UserRoutes (start)', () => {
       .users.findByEmail('admin@example.org' as NormalizedEmail);
 
     expect(admin).toMatchObject({
+      name: 'None',
       role: RoleEnum.Admin,
       active: true,
       mustChangePassword: true,
     });
+  });
+
+  test('GIVEN a first Admin name WHEN starting THEN creates the Admin with it', async () => {
+    const { database, service } = setupStart('Ada Lovelace');
+
+    await service.start();
+    const admin = database
+      .getRepositories()
+      .users.findByEmail('admin@example.org' as NormalizedEmail);
+
+    expect(admin?.name).toBe('Ada Lovelace');
+  });
+
+  test('GIVEN users without a name WHEN starting THEN gives them the placeholder name', async () => {
+    const { database, lines, service } = setupStart();
+    const { users } = database.getRepositories();
+    const user = new MockSeeder(database.getRepositories()).user();
+    users.update(user.id, { name: '' }).unwrap();
+
+    await service.start();
+
+    expect(users.findById(user.id)?.name).toBe('None');
+    expect(lines).toHaveLength(1);
   });
 
   test('GIVEN no users WHEN starting THEN logs a password that matches the stored hash', async () => {
@@ -160,6 +186,7 @@ describe('UserRoutes (list)', () => {
       {
         id: page.items[0]!.id,
         email: 'admin@example.org',
+        name: 'Ana',
         role: RoleEnum.Admin,
         active: true,
         mustChangePassword: false,
@@ -182,6 +209,7 @@ describe('UserRoutes (add)', () => {
 
     const response = await users('POST', '', {
       email: ' New@Example.org ',
+      name: ' Nora ',
       role: RoleEnum.Viewer,
     });
     const body = (await response.json()) as CreatedUserResponse;
@@ -192,6 +220,7 @@ describe('UserRoutes (add)', () => {
     expect(response.status).toBe(201);
     expect(body.user).toMatchObject({
       email: 'new@example.org',
+      name: 'Nora',
       role: RoleEnum.Viewer,
       mustChangePassword: true,
     });
@@ -203,6 +232,7 @@ describe('UserRoutes (add)', () => {
 
     const response = await users('POST', '', {
       email: 'ADMIN@example.org',
+      name: 'Other',
       role: RoleEnum.Editor,
     });
 
@@ -211,10 +241,21 @@ describe('UserRoutes (add)', () => {
   });
 
   test.each([
-    { case: 'an invalid email', body: { email: 'nope', role: 'editor' } },
+    {
+      case: 'an invalid email',
+      body: { email: 'nope', name: 'A', role: 'editor' },
+    },
     {
       case: 'an unknown role',
-      body: { email: 'a@example.org', role: 'owner' },
+      body: { email: 'a@example.org', name: 'A', role: 'owner' },
+    },
+    {
+      case: 'no name',
+      body: { email: 'a@example.org', role: 'editor' },
+    },
+    {
+      case: 'a blank name',
+      body: { email: 'a@example.org', name: '   ', role: 'editor' },
     },
   ])('GIVEN $case WHEN adding a user THEN answers 400', async ({ body }) => {
     const { users } = await setupRoutes();
@@ -225,7 +266,11 @@ describe('UserRoutes (add)', () => {
   test('GIVEN a new user WHEN reading the audit log THEN records who added them', async () => {
     const { admin, auditActions, database, users } = await setupRoutes();
 
-    await users('POST', '', { email: 'new@example.org', role: 'editor' });
+    await users('POST', '', {
+      email: 'new@example.org',
+      name: 'Nora',
+      role: 'editor',
+    });
     const [entry] = database
       .getRepositories()
       .auditLog.list({ page: 1, size: 1 }).items;
@@ -233,7 +278,7 @@ describe('UserRoutes (add)', () => {
     expect(auditActions()).toEqual([AuditActionEnum.Create]);
     expect(entry).toMatchObject({
       userId: admin.user.id,
-      details: { role: RoleEnum.Editor },
+      details: { name: 'Nora', role: RoleEnum.Editor },
     });
   });
 });
@@ -277,6 +322,27 @@ describe('UserRoutes (update)', () => {
     });
 
     expect(login.status).toBe(200);
+  });
+
+  test('GIVEN another user WHEN renaming them THEN answers the renamed user', async () => {
+    const { createUser, users } = await setupRoutes();
+    const editor = await createUser();
+
+    const response = await users('PATCH', `/${editor.id}`, { name: ' Eva ' });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ name: 'Eva' });
+  });
+
+  test('GIVEN the Admin themself WHEN renaming themself THEN allows it', async () => {
+    const { admin, users } = await setupRoutes();
+
+    const response = await users('PATCH', `/${admin.user.id}`, {
+      name: 'Ana Admin',
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ name: 'Ana Admin' });
   });
 
   test('GIVEN the Admin themself WHEN changing their own role THEN answers 409', async () => {

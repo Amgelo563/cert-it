@@ -1,8 +1,10 @@
 import { email, enum as zEnum, type output, strictObject, string } from 'zod';
 import { RoleEnum } from '../../role/RoleEnum';
+import { UserName } from './UserName';
 
 export const CreateUserRequestSchema = strictObject({
   email: string().trim().max(254).pipe(email()),
+  name: UserName,
   role: zEnum(RoleEnum),
 });
 

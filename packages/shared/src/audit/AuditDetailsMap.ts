@@ -22,8 +22,9 @@ type JobRetryDetails = { readonly courseId: number; readonly retry: true };
 /** The details each pair of audited model and action records, by entity and then by action. */
 export type AuditDetailsMap = {
   [AuditEntityEnum.User]: {
-    [AuditActionEnum.Create]: { readonly role: Role };
+    [AuditActionEnum.Create]: { readonly name: string; readonly role: Role };
     [AuditActionEnum.Update]: {
+      readonly name?: string;
       readonly role?: Role;
       readonly active?: boolean;
     };

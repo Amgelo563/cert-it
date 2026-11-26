@@ -131,6 +131,11 @@ admin:
   # Required.
   email: admin@example.org
 
+  # Name of the first Admin account, shown in the admin panel and the audit log.
+  # It can be changed later from the admin panel.
+  # Empty: None (Ninguno in Spanish, following default_locale).
+  name: ''
+
 server:
   # Addresses allowed to set the client IP through X-Real-IP or
   # X-Forwarded-For (used for rate limits). Requests from anywhere else are

@@ -49,6 +49,7 @@ export type PracticeSampleTexts = {
   draftCourseName: string;
   participantNames: readonly string[];
   teammateEmail: string;
+  teammateName: string;
   pdf: SamplePdfTexts;
   /** Names the Designer gives new fields, by type. */
   fieldNames: { participantName: string; issueDate: string; qrcode: string };
@@ -218,6 +219,7 @@ export class PracticeBackend {
       {
         id: this.currentUser.id,
         email: this.currentUser.email,
+        name: this.currentUser.name,
         role: this.currentUser.role,
         active: true,
         mustChangePassword: false,
@@ -226,6 +228,7 @@ export class PracticeBackend {
       {
         id: this.id(),
         email: this.texts.teammateEmail,
+        name: this.texts.teammateName,
         role: RoleEnum.Editor,
         active: true,
         mustChangePassword: false,
@@ -513,6 +516,7 @@ export class PracticeBackend {
         const user: UserSummary = {
           id: this.id(),
           email: request.email.toLowerCase(),
+          name: request.name.trim(),
           role: request.role,
           active: true,
           mustChangePassword: true,

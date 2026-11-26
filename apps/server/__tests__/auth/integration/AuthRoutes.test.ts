@@ -45,6 +45,7 @@ describe('AuthRoutes (login)', () => {
     expect(await response.json()).toEqual({
       id: user.id,
       email: 'ana@example.org',
+      name: 'Ana',
       role: RoleEnum.Viewer,
       mustChangePassword: false,
     });

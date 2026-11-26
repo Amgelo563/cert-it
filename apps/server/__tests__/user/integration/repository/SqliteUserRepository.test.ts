@@ -25,6 +25,7 @@ describe('SqliteUserRepository (create)', () => {
     const user = repositories.users
       .create({
         email: normalizeEmail('Ada@Example.org '),
+        name: 'Ada',
         passwordHash: 'secret-hash',
         role: RoleEnum.Admin,
       })
@@ -33,6 +34,7 @@ describe('SqliteUserRepository (create)', () => {
     expect(user).toEqual({
       id: user.id,
       email: 'ada@example.org',
+      name: 'Ada',
       role: RoleEnum.Admin,
       active: true,
       mustChangePassword: true,
@@ -46,6 +48,7 @@ describe('SqliteUserRepository (create)', () => {
 
     const result = repositories.users.create({
       email: existing.email,
+      name: 'Other',
       passwordHash: 'hash',
       role: RoleEnum.Viewer,
     });
@@ -109,6 +112,7 @@ describe('SqliteUserRepository (list)', () => {
       repositories.users
         .create({
           email: normalizeEmail(email),
+          name: email,
           passwordHash: 'hash',
           role: RoleEnum.Viewer,
         })

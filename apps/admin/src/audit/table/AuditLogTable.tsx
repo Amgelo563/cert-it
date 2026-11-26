@@ -81,6 +81,7 @@ function useDetailDescriber(): (entry: AuditEntrySummary) => string[] {
   const none = () => [];
 
   const userUpdate = (d: UserUpdate) => [
+    ...(d.name === undefined ? [] : [label(t('users.name'), d.name)]),
     ...(d.role === undefined ? [] : [role(d.role)]),
     ...(d.active === undefined ? [] : [status(d.active, t('users.inactive'))]),
   ];
@@ -289,17 +290,28 @@ export function AuditLogTable({
           ),
         },
         {
-          accessor: 'userEmail',
+          accessor: 'userName',
           title: t('auditLog.who'),
           noWrap: true,
-          render: (entry) => (
-            <Text size="sm" fw={500}>
-              {entry.userId === null
-                ? t('auditLog.system')
-                : (entry.userEmail
-                  ?? t('auditLog.removedUser', { id: entry.userId }))}
-            </Text>
-          ),
+          render: (entry) =>
+            entry.userId === null ? (
+              <Text size="sm" fw={500}>
+                {t('auditLog.system')}
+              </Text>
+            ) : entry.userName === null ? (
+              <Text size="sm" fw={500}>
+                {t('auditLog.removedUser', { id: entry.userId })}
+              </Text>
+            ) : (
+              <Stack gap={0}>
+                <Text size="sm" fw={500}>
+                  {entry.userName}
+                </Text>
+                <Text size="xs" c="dimmed">
+                  {entry.userEmail}
+                </Text>
+              </Stack>
+            ),
         },
         {
           accessor: 'action',

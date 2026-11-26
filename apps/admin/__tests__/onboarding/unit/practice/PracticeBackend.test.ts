@@ -24,6 +24,7 @@ const BaseUrl = new URL('https://example.org/certs/');
 const User: CurrentUser = {
   id: 1,
   email: 'admin@example.org',
+  name: 'Ana',
   role: RoleEnum.Admin,
   mustChangePassword: false,
 };
@@ -74,6 +75,7 @@ async function setup(options: { fonts?: FontSummary[] } = {}) {
       draftCourseName: 'Draft course',
       participantNames: ['Alex Morgan', 'Sam Rivera'],
       teammateEmail: 'teammate@example.org',
+      teammateName: 'Sam Rivera',
       pdf: {
         title: 'Certificate',
         intro: 'This certifies that',

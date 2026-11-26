@@ -168,6 +168,7 @@ async function seed(
   const user = repositories.users
     .create({
       email: normalizeEmail('bench@example.org'),
+      name: 'Bench',
       passwordHash: 'bench',
       role: RoleEnum.Editor,
     })

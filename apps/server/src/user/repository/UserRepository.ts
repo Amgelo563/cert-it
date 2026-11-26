@@ -23,6 +23,7 @@ export interface UserRepository {
   /** Creates a user, unless one already has that email. */
   create(data: {
     email: NormalizedEmail;
+    name: string;
     passwordHash: string;
     role: Role;
     mustChangePassword?: boolean;
@@ -33,6 +34,7 @@ export interface UserRepository {
     id: UserId,
     data: {
       email?: NormalizedEmail;
+      name?: string;
       passwordHash?: string;
       role?: Role;
       active?: boolean;
@@ -42,6 +44,9 @@ export interface UserRepository {
 
   /** Returns a page of users, sorted by email. */
   list(page: PageRequest): Page<User>;
+
+  /** Gives the given name to users without one, returning how many changed. */
+  fillMissingNames(name: string): number;
 
   /** Returns the number of users, active or not. */
   count(): number;

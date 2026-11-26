@@ -176,6 +176,7 @@ export const EsOnboardingMessages = {
       participant2: 'Mateo Rojas',
       participant3: 'Valeria Castro',
       teammateEmail: 'equipo@example.org',
+      teammateName: 'Sofía Ramos',
       pdfTitle: 'Certificado de finalización',
       pdfIntro: 'Se certifica que',
       pdfOutro: 'ha completado el curso',

@@ -1,4 +1,4 @@
-import { LocaleEnum, ThemeValues } from '@cert-it/shared';
+import { LocaleEnum, ThemeValues, UserName } from '@cert-it/shared';
 import ipaddr from 'ipaddr.js';
 import {
   array,
@@ -110,6 +110,7 @@ export const ConfigSchema = strictObject({
 
   admin: strictObject({
     email: email(),
+    name: blank(UserName.optional()),
   }),
 
   server: strictObject({

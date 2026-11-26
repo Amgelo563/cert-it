@@ -4,6 +4,7 @@ import type { Role } from '../../role/RoleEnum';
 export type UserSummary = {
   readonly id: number;
   readonly email: string;
+  readonly name: string;
   readonly role: Role;
   readonly active: boolean;
   readonly mustChangePassword: boolean;

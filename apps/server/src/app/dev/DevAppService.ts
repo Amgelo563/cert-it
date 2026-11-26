@@ -18,6 +18,7 @@ import { SiteUrl } from '@cert-it/hono';
 
 type DevUser = {
   email: string;
+  name: string;
   role: Role;
   mustChangePassword: boolean;
 };
@@ -37,21 +38,25 @@ export class DevAppService extends AppService {
   protected static readonly Users: readonly DevUser[] = [
     {
       email: 'admin@cert-it.test',
+      name: 'Ana Admin',
       role: RoleEnum.Admin,
       mustChangePassword: false,
     },
     {
       email: 'editor@cert-it.test',
+      name: 'Eddie Editor',
       role: RoleEnum.Editor,
       mustChangePassword: false,
     },
     {
       email: 'viewer@cert-it.test',
+      name: 'Vera Viewer',
       role: RoleEnum.Viewer,
       mustChangePassword: false,
     },
     {
       email: 'new@cert-it.test',
+      name: 'Nico New',
       role: RoleEnum.Viewer,
       mustChangePassword: true,
     },
@@ -115,8 +120,8 @@ export class DevAppService extends AppService {
       [
         `Dev users, all with the password ${DevAppService.Password}:`,
         ...DevAppService.Users.map(
-          ({ email, role, mustChangePassword }) =>
-            `  ${email} (${role}${mustChangePassword ? ', must change password' : ''})`,
+          ({ email, name, role, mustChangePassword }) =>
+            `  ${name} <${email}> (${role}${mustChangePassword ? ', must change password' : ''})`,
         ),
       ].join('\n'),
     );

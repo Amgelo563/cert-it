@@ -70,6 +70,7 @@ export type OnboardingMessages = {
       participant2: string;
       participant3: string;
       teammateEmail: string;
+      teammateName: string;
       pdfTitle: string;
       pdfIntro: string;
       pdfOutro: string;

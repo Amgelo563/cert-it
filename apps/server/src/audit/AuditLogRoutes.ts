@@ -13,7 +13,7 @@ import type { CourseId } from '../course/Course';
 import type { ParticipantId } from '../participant/Participant';
 import type { DatabaseService } from '../database/DatabaseService';
 import { AbstractApiRoutes } from '../http/api/AbstractApiRoutes';
-import type { UserId } from '../user/User';
+import type { User, UserId } from '../user/User';
 import type { AuditEntry } from './AuditEntry';
 
 type AuditLogRoutesOptions = {
@@ -68,12 +68,10 @@ export class AuditLogRoutes extends AbstractApiRoutes {
       this.database.getRepositories();
     const page = auditLog.list(query);
     // a page shows few users, so one lookup per distinct ID is enough
-    const emails = new Map<number, string | null>();
-    const emailOf = (id: number): string | null => {
-      if (!emails.has(id)) {
-        emails.set(id, users.findById(id as UserId)?.email ?? null);
-      }
-      return emails.get(id) ?? null;
+    const found = new Map<number, User | null>();
+    const userOf = (id: number): User | null => {
+      if (!found.has(id)) found.set(id, users.findById(id as UserId));
+      return found.get(id) ?? null;
     };
     const names = new Map<string, string | null>();
     const cachedName = (key: string, find: () => string | null) => {
@@ -101,7 +99,7 @@ export class AuditLogRoutes extends AbstractApiRoutes {
       }
       const current =
         entry.entity === AuditEntityEnum.User
-          ? emailOf(entry.entityId)
+          ? (userOf(entry.entityId)?.name ?? null)
           : entry.entity === AuditEntityEnum.Course
             ? courseName(entry.entityId)
             : entry.entity === AuditEntityEnum.Participant
@@ -123,7 +121,12 @@ export class AuditLogRoutes extends AbstractApiRoutes {
         items: page.items.map((entry) => ({
           ...entry,
           createdAt: entry.createdAt.toISOString(),
-          userEmail: entry.userId === null ? null : emailOf(entry.userId),
+          userEmail:
+            entry.userId === null
+              ? null
+              : (userOf(entry.userId)?.email ?? null),
+          userName:
+            entry.userId === null ? null : (userOf(entry.userId)?.name ?? null),
           entityName: nameOf(entry),
         })),
       },

@@ -82,6 +82,7 @@ describe('AuditLogRoutes (list)', () => {
         id: page.items[0]!.id,
         userId: admin.user.id,
         userEmail: 'admin@example.org',
+        userName: 'Ana',
         action: AuditActionEnum.Update,
         entity: AuditEntityEnum.User,
         entityId: 102,
@@ -113,7 +114,8 @@ describe('AuditLogRoutes (list)', () => {
     expect(page.items[0]).toMatchObject({
       userId: null,
       userEmail: null,
-      entityName: 'admin@example.org',
+      userName: null,
+      entityName: 'Ana',
     });
   });
 

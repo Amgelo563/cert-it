@@ -84,6 +84,8 @@ export function createAuthOptions(
     guard,
     auditLog,
     firstAdminEmail: 'admin@example.org',
+    firstAdminName: undefined,
+    placeholderName: 'None',
     logger: new MockLogger(),
   });
 

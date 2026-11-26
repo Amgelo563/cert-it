@@ -34,6 +34,14 @@ export class SqliteUserRepository
     return this.findPage(page, { orderBy: [userTable.email] });
   }
 
+  public fillMissingNames(name: string): number {
+    return this.db
+      .update(userTable)
+      .set({ name })
+      .where(eq(userTable.name, ''))
+      .run().changes;
+  }
+
   public override count(): number {
     return super.count();
   }
@@ -49,6 +57,7 @@ export class SqliteUserRepository
     return {
       id: row.id,
       email: row.email,
+      name: row.name,
       role: row.role,
       active: row.active,
       mustChangePassword: row.mustChangePassword,

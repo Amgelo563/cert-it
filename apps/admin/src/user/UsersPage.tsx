@@ -12,23 +12,27 @@ import { useApiClient } from '../app/api/useApiClient';
 import { useApiRequest } from '../app/api/useApiRequest';
 import { PageHeader } from '../app/layout/PageHeader';
 import { Surface } from '../app/layout/Surface';
+import { useAuth } from '../auth/useAuth';
 import { AddUserModal } from './add/AddUserModal';
 import {
   type IssuedPassword,
   OneTimePasswordModal,
 } from './password/OneTimePasswordModal';
+import { RenameUserModal } from './rename/RenameUserModal';
 import { UsersTable } from './table/UsersTable';
 import { TourTargetEnum } from '../onboarding/tour/TourTargetEnum';
 
 const PageSize = 25;
 
-/** The admin panel's users: add them, change their role, deactivate them or reset their password. */
+/** The admin panel's users: add or rename them, change their role, deactivate them or reset their password. */
 export function UsersPage() {
   const { t, i18n } = useTranslation();
   const api = useApiClient();
   const [page, setPage] = useState(1);
   const [adding, { open: openAdd, close: closeAdd }] = useDisclosure(false);
   const [issued, setIssued] = useState<IssuedPassword | null>(null);
+  const [renaming, setRenaming] = useState<UserSummary | null>(null);
+  const { user: me, setUser } = useAuth();
   // the user whose change is being sent, so their row can't send another
   const [busyId, setBusyId] = useState<number | null>(null);
 
@@ -179,6 +183,7 @@ export function UsersPage() {
             loading={users.loading}
             busyId={busyId}
             onPageChange={setPage}
+            onRename={setRenaming}
             onChangeRole={changeRole}
             onSetActive={setActive}
             onResetPassword={resetPassword}
@@ -195,6 +200,20 @@ export function UsersPage() {
           notifications.show({
             color: 'teal',
             message: t('users.added', { email: user.email }),
+          });
+          users.reload();
+        }}
+      />
+      <RenameUserModal
+        user={renaming}
+        onClose={() => setRenaming(null)}
+        onRenamed={(user) => {
+          setRenaming(null);
+          // the header shows the own name too
+          if (me && user.id === me.id) setUser({ ...me, name: user.name });
+          notifications.show({
+            color: 'teal',
+            message: t('users.renamed', { email: user.email, name: user.name }),
           });
           users.reload();
         }}

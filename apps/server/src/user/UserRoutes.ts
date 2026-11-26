@@ -31,6 +31,7 @@ import type { DatabaseService } from '../database/DatabaseService';
 import { AbstractApiRoutes } from '../http/api/AbstractApiRoutes';
 import { normalizeEmail } from '../util/email/NormalizedEmail';
 import type { User, UserId } from './User';
+import { MessageCatalog } from '../i18n/MessageCatalog';
 import { ConsoleLogger } from '../log/ConsoleLogger';
 import type { Logger } from '../log/Logger';
 
@@ -42,6 +43,10 @@ type UserRoutesOptions = {
   auditLog: AuditLog;
   /** Email of the first Admin, as in admin.email. */
   firstAdminEmail: string;
+  /** Name of the first Admin, as in admin.name. */
+  firstAdminName: string | undefined;
+  /** Name given to users without one, in the site's default language. */
+  placeholderName: string;
   logger: Logger;
 };
 
@@ -71,6 +76,10 @@ export class UserRoutes extends AbstractApiRoutes {
 
   protected readonly firstAdminEmail: string;
 
+  protected readonly firstAdminName: string | undefined;
+
+  protected readonly placeholderName: string;
+
   protected readonly logger: Logger;
 
   protected readonly app: ReturnType<UserRoutes['createApp']>;
@@ -83,31 +92,48 @@ export class UserRoutes extends AbstractApiRoutes {
     this.guard = options.guard;
     this.auditLog = options.auditLog;
     this.firstAdminEmail = options.firstAdminEmail;
+    this.firstAdminName = options.firstAdminName;
+    this.placeholderName = options.placeholderName;
     this.logger = options.logger;
     this.app = this.createApp();
   }
 
   public static create(options: {
-    config: Pick<Config, 'admin'>;
+    config: Pick<Config, 'admin' | 'site'>;
     database: DatabaseService;
     passwords: PasswordHasher;
     sessions: SessionService;
     guard: AuthGuard;
     auditLog: AuditLog;
-    injections?: Partial<Pick<UserRoutesOptions, 'firstAdminEmail' | 'logger'>>;
+    injections?: Partial<
+      Pick<
+        UserRoutesOptions,
+        'firstAdminEmail' | 'firstAdminName' | 'placeholderName' | 'logger'
+      >
+    >;
   }): UserRoutes {
     const { config, injections, ...shared } = options;
+    const messages = new MessageCatalog().get(config.site.defaultLocale);
 
     return new UserRoutes({
       ...shared,
       firstAdminEmail: injections?.firstAdminEmail ?? config.admin.email,
+      firstAdminName: injections?.firstAdminName ?? config.admin.name,
+      placeholderName:
+        injections?.placeholderName ?? messages.user.placeholderName,
       logger: injections?.logger ?? ConsoleLogger.Instance,
     });
   }
 
-  /** Creates the first Admin when there are no users, printing its random password once. */
+  /** Names the users that have no name yet, and creates the first Admin when there are no users, printing its random password once. */
   public async start(): Promise<void> {
     const { users } = this.database.getRepositories();
+    const named = users.fillMissingNames(this.placeholderName);
+    if (named > 0) {
+      this.logger.info(
+        `Gave ${named} user(s) without a name the name ${this.placeholderName}; rename them from the admin panel`,
+      );
+    }
     if (users.count() > 0) return;
 
     const password = this.passwords.generate();
@@ -115,6 +141,7 @@ export class UserRoutes extends AbstractApiRoutes {
     const admin = users
       .create({
         email: normalizeEmail(this.firstAdminEmail),
+        name: this.firstAdminName ?? this.placeholderName,
         passwordHash,
         role: RoleEnum.Admin,
         mustChangePassword: true,
@@ -172,6 +199,7 @@ export class UserRoutes extends AbstractApiRoutes {
       users
         .create({
           email: normalizeEmail(body.email),
+          name: body.name,
           passwordHash,
           role: body.role,
           mustChangePassword: true,
@@ -179,7 +207,7 @@ export class UserRoutes extends AbstractApiRoutes {
         .map((user) => {
           this.audit(c, user, {
             action: AuditActionEnum.Create,
-            details: { role: user.role },
+            details: { name: user.name, role: user.role },
           });
           return user;
         }),
@@ -204,7 +232,11 @@ export class UserRoutes extends AbstractApiRoutes {
       .transaction(({ users }): Result<User, ApiErrorCode> => {
         const target = id === null ? null : users.findById(id);
         if (!target) return Result.err(ApiErrorCodeEnum.NotFound);
-        if (target.id === c.get('user').id) {
+        // users may rename themselves, but not change their own access
+        if (
+          target.id === c.get('user').id
+          && (body.role !== undefined || body.active !== undefined)
+        ) {
           return Result.err(ApiErrorCodeEnum.OwnAccount);
         }
         if (
@@ -287,6 +319,7 @@ export class UserRoutes extends AbstractApiRoutes {
     return {
       id: user.id,
       email: user.email,
+      name: user.name,
       role: user.role,
       active: user.active,
       mustChangePassword: user.mustChangePassword,

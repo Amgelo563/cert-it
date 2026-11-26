@@ -72,4 +72,7 @@ export const EsMessages = {
     certificateNotFoundHelp:
       'Ningún certificado coincide con este enlace. Verifica que lo copiaste completo o contacta a {org}.',
   },
+  user: {
+    placeholderName: 'Ninguno',
+  },
 } satisfies Messages;

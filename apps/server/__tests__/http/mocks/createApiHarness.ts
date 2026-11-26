@@ -162,12 +162,18 @@ export function createApiHarness(
     );
 
   const createUser = async (
-    data: { email?: string; role?: Role; mustChangePassword?: boolean } = {},
+    data: {
+      email?: string;
+      name?: string;
+      role?: Role;
+      mustChangePassword?: boolean;
+    } = {},
   ): Promise<User> =>
     database
       .getRepositories()
       .users.create({
         email: normalizeEmail(data.email ?? 'ana@example.org'),
+        name: data.name ?? 'Ana',
         passwordHash: await passwords.hash(ApiHarnessPassword),
         role: data.role ?? RoleEnum.Editor,
         mustChangePassword: data.mustChangePassword ?? false,

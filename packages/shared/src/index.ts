@@ -50,6 +50,7 @@ export * from './api/user/CreatedUserResponse';
 export * from './api/user/CreateUserRequest';
 export * from './api/user/ResetPasswordResponse';
 export * from './api/user/UpdateUserRequest';
+export * from './api/user/UserName';
 export * from './api/user/UserSummary';
 export * from './audit/AuditActionEnum';
 export * from './audit/AuditChange';
