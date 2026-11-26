@@ -33,6 +33,18 @@ export interface TemplateVersionRepository {
     createdBy: UserId;
   }): Result<TemplateVersion, DuplicateModelError>;
 
+  /** Replaces the content of a template version, keeping its number. */
+  update(
+    id: TemplateVersionId,
+    data: {
+      template?: Omit<Template, 'basePdf'>;
+      basePdfPath?: string;
+    },
+  ): Result<TemplateVersion, ModelNotFoundError | DuplicateModelError>;
+
+  /** Returns whether a certificate uses a template version. */
+  isUsed(id: TemplateVersionId): boolean;
+
   /**
    * Deletes a template version.
    *

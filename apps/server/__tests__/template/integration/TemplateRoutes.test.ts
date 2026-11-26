@@ -185,13 +185,54 @@ describe('TemplateRoutes (save)', () => {
     expect(await response.json()).toBeNull();
   });
 
-  test('GIVEN a base PDF and a font WHEN saving twice THEN creates versions 1 and 2, with their fonts, and audits both', async () => {
+  test('GIVEN no certificate WHEN saving twice THEN replaces version 1 in place and audits both', async () => {
+    const { course, database, template, uploadFont, uploadPdf } = await setup();
+    const font = await uploadFont();
+    const { basePdf } = await uploadPdf();
+    const body = request(basePdf, font.sha256);
+    const changed = request(basePdf, font.sha256);
+    changed.template.schemas[0]![0]!['fontSize'] = 24;
+
+    const first = await template('POST', '', body);
+    const second = await template('POST', '', changed);
+    const created = (await first.json()) as TemplateDetail;
+    const latest = (await (await template('GET')).json()) as TemplateDetail;
+
+    expect([first.status, second.status]).toEqual([201, 200]);
+    expect(latest).toMatchObject({
+      id: created.id,
+      version: 1,
+      template: changed.template,
+    });
+    expect(
+      database.getRepositories().templateVersions.listByCourse(course.id),
+    ).toHaveLength(1);
+    expect(
+      database
+        .getRepositories()
+        .auditLog.list({ page: 1, size: 50 })
+        .items.filter(
+          (entry) => entry.entity === AuditEntityEnum.TemplateVersion,
+        )
+        .map((entry) => [entry.action, entry.details]),
+    ).toEqual([
+      [AuditActionEnum.Update, { courseId: course.id, version: 1 }],
+      [AuditActionEnum.Create, { courseId: course.id, version: 1 }],
+    ]);
+  });
+
+  test('GIVEN a certificate on the latest version WHEN saving THEN creates versions 1 and 2, with their fonts, and audits both', async () => {
     const { course, database, template, uploadFont, uploadPdf } = await setup();
     const font = await uploadFont();
     const { basePdf } = await uploadPdf();
     const body = request(basePdf, font.sha256);
 
     const first = await template('POST', '', body);
+    const seeder = new MockSeeder(database.getRepositories());
+    seeder.certificate(
+      seeder.participant(course),
+      database.getRepositories().templateVersions.findLatest(course.id)!,
+    );
     const second = await template('POST', '', body);
     const latest = (await (await template('GET')).json()) as TemplateDetail;
 

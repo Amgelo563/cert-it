@@ -84,6 +84,10 @@ export type AuditDetailsMap = {
       readonly courseId: number;
       readonly version: number;
     };
+    [AuditActionEnum.Update]: {
+      readonly courseId: number;
+      readonly version: number;
+    };
   };
   [AuditEntityEnum.Certificate]: {
     [AuditActionEnum.Update]: {

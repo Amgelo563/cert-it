@@ -177,7 +177,7 @@ describe('CourseFieldRoutes (update)', () => {
     });
   });
 
-  test('GIVEN a printed text field without values WHEN making it an image THEN saves a template version without it', async () => {
+  test('GIVEN a printed text field without values WHEN making it an image THEN removes it from the unused template version in place', async () => {
     const { course, database, editor, fields, seeder } = await setup();
     const field = seeder.field(course);
     seeder.templateVersion(course, editor.user, printing(field.id));
@@ -190,7 +190,7 @@ describe('CourseFieldRoutes (update)', () => {
     const latest = database
       .getRepositories()
       .templateVersions.findLatest(course.id);
-    expect(latest?.version).toBe(2);
+    expect(latest?.version).toBe(1);
     const names = (template: unknown) =>
       (template as TemplateContent).schemas[0]?.map((placed) => placed.name);
     expect(names(latest?.template)).toEqual(names(MockSeeder.NamedTemplate));
@@ -240,14 +240,19 @@ describe('CourseFieldRoutes (order)', () => {
 });
 
 describe('CourseFieldRoutes (delete)', () => {
-  test('GIVEN a printed field with values WHEN deleting it THEN removes the values, saves a template version without it and audits both', async () => {
+  test('GIVEN a printed field with values and an issued certificate WHEN deleting it THEN removes the values, saves a template version without it and audits both', async () => {
     const { audits, course, database, editor, fields, seeder } = await setup();
     const field = seeder.field(course, { label: 'Group' });
     const kept = seeder.field(course, { label: 'City' });
     const ada = seeder.participant(course, {
       fieldValues: { [field.id]: 'A', [kept.id]: 'Lima' },
     });
-    seeder.templateVersion(course, editor.user, printing(field.id));
+    const version = seeder.templateVersion(
+      course,
+      editor.user,
+      printing(field.id),
+    );
+    seeder.certificate(ada, version);
 
     const response = await fields('DELETE', `/${field.id}`);
 

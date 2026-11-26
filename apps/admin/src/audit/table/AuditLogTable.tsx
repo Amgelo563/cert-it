@@ -182,6 +182,9 @@ function useDetailDescriber(): (entry: AuditEntrySummary) => string[] {
       [AuditActionEnum.Create]: (d) => [
         t('certificates.templateVersion', { version: d.version }),
       ],
+      [AuditActionEnum.Update]: (d) => [
+        t('certificates.templateVersion', { version: d.version }),
+      ],
     },
     [AuditEntityEnum.Certificate]: {
       [AuditActionEnum.Update]: (d) => [

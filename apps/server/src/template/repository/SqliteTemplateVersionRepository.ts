@@ -70,6 +70,16 @@ export class SqliteTemplateVersionRepository
     return new Map(latest.map((version) => [version.courseId, version]));
   }
 
+  public isUsed(id: TemplateVersionId): boolean {
+    const row = this.db
+      .select({ id: certificateTable.id })
+      .from(certificateTable)
+      .where(eq(certificateTable.templateVersionId, id))
+      .limit(1)
+      .get();
+    return row !== undefined;
+  }
+
   public listByCourse(courseId: CourseId): TemplateVersion[] {
     return this.findMany({
       where: eq(templateVersionTable.courseId, courseId),

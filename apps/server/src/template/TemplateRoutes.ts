@@ -49,7 +49,7 @@ type TemplateRoutesOptions = {
   writer: TemplateVersionWriter;
 };
 
-/** Serves a course's template routes: anyone can read the template, Editors upload base PDFs and save new versions. */
+/** Serves a course's template routes: anyone can read the template, Editors upload base PDFs and save versions. */
 export class TemplateRoutes extends AbstractApiRoutes {
   /** Path of the routes, relative to the base path. */
   public static readonly Path = '/api/courses/:courseId/template';
@@ -189,7 +189,7 @@ export class TemplateRoutes extends AbstractApiRoutes {
     );
   }
 
-  // the version number and its fonts are written in one transaction
+  // replaces the latest version while no certificate uses it
   protected async save(c: Context<CourseEnv>, body: SaveTemplateRequest) {
     const course = c.get('course');
 
@@ -215,7 +215,10 @@ export class TemplateRoutes extends AbstractApiRoutes {
       userId: c.get('user').id,
     });
 
-    return c.json<TemplateDetail, 201>(this.toDetail(saved), 201);
+    const detail = this.toDetail(saved.version);
+    return saved.created
+      ? c.json<TemplateDetail, 201>(detail, 201)
+      : c.json<TemplateDetail, 200>(detail, 200);
   }
 
   // streamed to a temporary file, checked in a worker, then stored by its hash

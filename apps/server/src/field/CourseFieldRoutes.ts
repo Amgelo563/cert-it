@@ -303,9 +303,9 @@ export class CourseFieldRoutes extends AbstractApiRoutes {
   }
 
   /**
-   * Saves the course's template as a new version without the fields that print the given one, so its certificates show as outdated.
+   * Saves the course's template without the fields that print the given one, so its certificates show as outdated.
    *
-   * @returns The new version, or null if the latest one doesn't print the field.
+   * @returns The saved version, or null if the latest one doesn't print the field.
    */
   protected dropFromTemplate(
     course: Course,
@@ -330,7 +330,7 @@ export class CourseFieldRoutes extends AbstractApiRoutes {
       ),
       basePdfPath: latest.basePdfPath,
       userId,
-    });
+    }).version;
   }
 
   protected listSummaries(c: Context<CourseEnv>): CourseFieldSummary[] {

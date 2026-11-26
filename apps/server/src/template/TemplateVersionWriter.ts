@@ -1,8 +1,10 @@
+import type { DuplicateModelError, ModelNotFoundError } from '@cert-it/data';
 import {
   AuditActionEnum,
   AuditEntityEnum,
   type TemplateContent,
 } from '@cert-it/shared';
+import type { Result } from 'better-result';
 import type { AuditLog } from '../audit/AuditLog';
 import type { CourseId } from '../course/Course';
 import type { DatabaseService } from '../database/DatabaseService';
@@ -16,7 +18,14 @@ type TemplateVersionWriterOptions = {
   auditLog: AuditLog;
 };
 
-/** Saves a course's template as its next version, linked to the fonts its text fields use, and writes it to the audit log. */
+/** The result of saving a template: the version, and whether it's a new one. */
+export type SavedTemplateVersion = {
+  readonly version: TemplateVersion;
+  /** False if the latest version had no certificates and was replaced in place. */
+  readonly created: boolean;
+};
+
+/** Saves a course's template, linked to the fonts its text fields use, and writes it to the audit log. */
 export class TemplateVersionWriter {
   protected readonly database: DatabaseService;
 
@@ -39,7 +48,8 @@ export class TemplateVersionWriter {
   }
 
   /**
-   * Saves the template as the course's next version, in one transaction with its fonts and audit entry.
+   * Saves the template in one transaction with its fonts and audit entry.
+   * Replaces the latest version if no certificate uses it, else creates the next one.
    *
    * @throws {Error} If a font isn't stored, or the version can't be created.
    */
@@ -48,7 +58,7 @@ export class TemplateVersionWriter {
     template: TemplateContent;
     basePdfPath: string;
     userId: UserId;
-  }): TemplateVersion {
+  }): SavedTemplateVersion {
     const { courseId, template, basePdfPath, userId } = options;
     const fonts = this.findFonts(template);
     if (!fonts)
@@ -57,30 +67,36 @@ export class TemplateVersionWriter {
     return this.database
       .getUnitOfWork()
       .transaction(({ templateVersions }) => {
-        const version =
-          (templateVersions.findLatest(courseId)?.version ?? 0) + 1;
-        return templateVersions
-          .create({
-            courseId,
-            version,
-            template,
-            basePdfPath,
-            createdBy: userId,
-          })
-          .map((created) => {
-            templateVersions.setFontIds(
-              created.id,
-              fonts.map((font) => font.id),
-            );
-            this.auditLog.record({
-              userId,
-              action: AuditActionEnum.Create,
-              entity: AuditEntityEnum.TemplateVersion,
-              entityId: created.id,
-              details: { courseId, version: created.version },
+        const latest = templateVersions.findLatest(courseId);
+        const replaced = latest && !templateVersions.isUsed(latest.id);
+
+        const saved: Result<
+          TemplateVersion,
+          ModelNotFoundError | DuplicateModelError
+        > = replaced
+          ? templateVersions.update(latest.id, { template, basePdfPath })
+          : templateVersions.create({
+              courseId,
+              version: (latest?.version ?? 0) + 1,
+              template,
+              basePdfPath,
+              createdBy: userId,
             });
-            return created;
+
+        return saved.map((version) => {
+          templateVersions.setFontIds(
+            version.id,
+            fonts.map((font) => font.id),
+          );
+          this.auditLog.record({
+            userId,
+            action: replaced ? AuditActionEnum.Update : AuditActionEnum.Create,
+            entity: AuditEntityEnum.TemplateVersion,
+            entityId: version.id,
+            details: { courseId, version: version.version },
           });
+          return { version, created: !replaced };
+        });
       })
       .unwrap();
   }
